@@ -1,6 +1,8 @@
+-- ==========================================
+-- STEP 1: LOAD BYPASSES FIRST
+-- ==========================================
 
 -- BYPASS 1: Core Anti-Kick (Essential)
--- Modifies a core script to nullify kick actions. This is fundamental.
 for k, v in pairs(getgc(true)) do
     if pcall(function()
         return rawget(v, "indexInstance")
@@ -16,13 +18,19 @@ for k, v in pairs(getgc(true)) do
 end
 
 -- BYPASS 2: Adonis Cries Anti-Kick (Optional)
--- Loads an external script for additional anti-kick protection.
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
 
 -- BYPASS 3: MEGGD Anti-Kick (Optional)
--- Loads another external script for further anti-kick enhancement.
 loadstring(game:HttpGet('https://raw.githubusercontent.com/SUUUUUS00000/MEGGD-Anti-kick/refs/heads/main/MEGGD%20Best%20Anti-kick.lua'))()
 
+-- ==========================================
+-- STEP 2: WAIT 3 SECONDS
+-- ==========================================
+task.wait(18)
+
+-- ==========================================
+-- STEP 3: LOAD LIBRARY & CREATE MENU
+-- ==========================================
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
@@ -562,14 +570,14 @@ FOVFillGradient.Parent = FOVFillFrame
 
 -- [External-like Premium FOV Draw]
 local FOVCircleOutline = Drawing.new("Circle")
-FOVCircleOutline.Thickness = 2.0 -- เงาด้านหลังหนาขึ้นเล็กน้อยเพื่อความคมชัด
-FOVCircleOutline.NumSides = 144  -- 144 ด้านเนียนกริบไม่มีเหลี่ยมสไตล์ External overlay
+FOVCircleOutline.Thickness = 2.0
+FOVCircleOutline.NumSides = 144
 FOVCircleOutline.Filled = false
 FOVCircleOutline.Visible = getgenv().FOVVisible
 
 local FOVCircle = Drawing.new("Circle")
-FOVCircle.Thickness = 1.0  -- เส้นขอบหลักคมกริบขนาด 1 พิกเซล
-FOVCircle.NumSides = 144   -- โค้งมนสูงสุดระดับโปรแกรมภายนอก
+FOVCircle.Thickness = 1.0
+FOVCircle.NumSides = 144
 FOVCircle.Filled = false
 FOVCircle.Visible = getgenv().FOVVisible
 
@@ -698,7 +706,6 @@ task.spawn(function()
                 local head = TempTargetChar:FindFirstChild("Head")
                 local root = TempTargetChar:FindFirstChild("HumanoidRootPart")
                 
-                -- [ระบบคำนวณชิ้นส่วนแบบ Closet / Closest Part จากหน้าจอ]
                 local targetPartObj = nil
                 if targetPartName == "Closet" then
                     local closestPart = nil
@@ -727,18 +734,17 @@ task.spawn(function()
                         local targetedVelocity = root.Velocity
 
                         if getgenv().ResolverEnabled then
-                            -- Harsh Resolver / Anti-Aim / Desync / Velocity Spoof Detection
                             local isVelocitySpoofed = (targetedVelocity.Magnitude > 75) or 
                                                       (math.abs(targetedVelocity.Y) > 50) or 
                                                       (targetedVelocity.Magnitude < 0.1 and root.AssemblyLinearVelocity.Magnitude > 10) or
-                                                      (targetedVelocity.X ~= targetedVelocity.X) -- NaN Check
+                                                      (targetedVelocity.X ~= targetedVelocity.X)
                             
                             if isVelocitySpoofed then
                                 local historyData = TargetVelocityHistory[TempPlayer and TempPlayer.Name or ""]
                                 if historyData and historyData.Velocity.Magnitude < 150 then
                                     targetedVelocity = historyData.Velocity
                                 else
-                                    targetedVelocity = Vector3.new(0, 0, 0) -- Completely neutralize desync/anti-aim
+                                    targetedVelocity = Vector3.new(0, 0, 0)
                                 end
                             end
                         end
@@ -1149,9 +1155,7 @@ task.spawn(function()
     end
 end)
 
--- ============================================================================
--- [7] Silent Aim Hook Metamethod (รันแยกส่วนกับระบบ Anti-Remote)
--- ============================================================================
+-- Silent Aim Hook Metamethod
 local OldNamecall
 OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
     if checkcaller() then return OldNamecall(Self, ...) end
@@ -1371,7 +1375,6 @@ PermLockGroupBox:AddButton({Text = "Target Player", Func = function()
     end
 end})
 
--- [เพิ่มตัวเลือก Closet ลงใน Dropdown เรียบร้อย]
 TargetGroupBox:AddDropdown("TargetPartDropdown", { Text = "Target Lock Part", Values = {"Head", "HumanoidRootPart", "Root to Head", "Closet"}, Default = 1, Multi = false })
 Options.TargetPartDropdown:OnChanged(function()
     getgenv().TargetPartMode = Options.TargetPartDropdown.Value
