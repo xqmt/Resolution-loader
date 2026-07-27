@@ -1,25 +1,27 @@
--- =============================================================
---  _    _  ____   ____  _  _  ____  _____ _   _  ____  _____ 
--- | |  | |/ __ \ / __ \| |/ // ___|| ____| \ | |/ ___|| ____|
--- | |__| | |  | | |  | | ' / \___ \|  _| |  \| \___ \|  _|   
--- |  __  | |__| | |__| | . \  ___) | |___| |\  |___) | |___  
--- |_|  |_|\____/ \____/|_|\_\|____/|_____|_| \_|____/|_____|
--- =============================================================
-if not game:IsLoaded() then 
-    game.Loaded:Wait()
-end
 
-if getnamecallmethod then
-    local success, err = pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
-    end)
-    
-    if success then
-        warn("[+] hooksense bypassed")
-    else
-        warn("[-] failed: " .. tostring(err))
+-- BYPASS 1: Core Anti-Kick (Essential)
+-- Modifies a core script to nullify kick actions. This is fundamental.
+for k, v in pairs(getgc(true)) do
+    if pcall(function()
+        return rawget(v, "indexInstance")
+    end) and type(rawget(v, "indexInstance")) == "table" and (rawget(v, "indexInstance"))[1] == "kick" then
+        setreadonly(v, false)
+        v.tvk = {
+            "kick",
+            function()
+                return game.Workspace:WaitForChild("")
+            end
+        }
     end
 end
+
+-- BYPASS 2: Adonis Cries Anti-Kick (Optional)
+-- Loads an external script for additional anti-kick protection.
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
+
+-- BYPASS 3: MEGGD Anti-Kick (Optional)
+-- Loads another external script for further anti-kick enhancement.
+loadstring(game:HttpGet('https://raw.githubusercontent.com/SUUUUUS00000/MEGGD-Anti-kick/refs/heads/main/MEGGD%20Best%20Anti-kick.lua'))()
 
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
