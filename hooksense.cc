@@ -24,9 +24,9 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries
 loadstring(game:HttpGet('https://raw.githubusercontent.com/SUUUUUS00000/MEGGD-Anti-kick/refs/heads/main/MEGGD%20Best%20Anti-kick.lua'))()
 
 -- ==========================================
--- STEP 2: WAIT 3 SECONDS
+-- STEP 2: WAIT 15 SECONDS
 -- ==========================================
-task.wait(18)
+task.wait(15)
 
 -- ==========================================
 -- STEP 3: LOAD LIBRARY & CREATE MENU
@@ -89,31 +89,32 @@ task.spawn(function()
     end
 end)
 
-getgenv().SilentAimEnabled = false
-getgenv().ResolverEnabled = false
-getgenv().BulletTPEnabled = false
-getgenv().WallCheckEnabled = false
-getgenv().TeamCheckEnabled = false
-getgenv().DieCheckEnabled = true
-getgenv().LookAtEnabled = false
-getgenv().FOVSize = 100
-getgenv().FOVVisible = true
-getgenv().TracerEnabled = true
+-- LOCAL CONFIG VARIABLES
+local SilentAimEnabled = false
+local ResolverEnabled = false
+local BulletTPEnabled = false
+local WallCheckEnabled = false
+local TeamCheckEnabled = false
+local DieCheckEnabled = true
+local LookAtEnabled = false
+local FOVSize = 100
+local FOVVisible = true
+local TracerEnabled = true
 
-getgenv().MobileAimbotEnabled = false
-getgenv().AimbotSmoothness = 0.1
-getgenv().AutoPredictionEnabled = false
-getgenv().PredictionValue = 0.1
-getgenv().AimbotTargetPart = "Head"
+local MobileAimbotEnabled = false
+local AimbotSmoothness = 0.1
+local AutoPredictionEnabled = false
+local PredictionValue = 0.1
+local AimbotTargetPart = "Head"
 
-getgenv().JumpSmooth = 1
-getgenv().SmoothX = 1
-getgenv().SmoothZ = 1
-getgenv().PermLockEnabled = false
-getgenv().PermTargetList = {}
-getgenv().GlobalFontSetting = Enum.Font.Cartoon
+local JumpSmooth = 1
+local SmoothX = 1
+local SmoothZ = 1
+local PermLockEnabled = false
+local PermTargetList = {}
+local GlobalFontSetting = Enum.Font.Cartoon
 
-getgenv().CustomFOVValue = 70
+local CustomFOVValue = 70
 
 local RobloxFontsList = {}
 for _, font in ipairs(Enum.Font:GetEnumItems()) do
@@ -121,8 +122,8 @@ for _, font in ipairs(Enum.Font:GetEnumItems()) do
 end
 table.sort(RobloxFontsList)
 
-getgenv().HitSoundMode = "None"
-getgenv().HitSoundVolume = 2
+local HitSoundMode = "None"
+local HitSoundVolume = 2
 local SoundIDs = {
     ["None"] = "None",
     ["Spark"] = "rbxassetid://110241936966089",
@@ -136,19 +137,19 @@ local SoundIDs = {
     ["Skeet"] = "rbxassetid://80461265049096"
 }
 
-getgenv().HitNotifyEnabled = false 
-getgenv().HitNotifyDuration = 2.5
-getgenv().HitNotifyTransparency = 0.0
-getgenv().HitNotifyFont = Enum.Font.Cartoon
-getgenv().HitNotifyTemplate = "Hit {name} in the {part} for {dmg} dmg with {weapon}" 
-getgenv().HitNotifyPosX = 50 
-getgenv().HitNotifyPosY = 65 
+local HitNotifyEnabled = false 
+local HitNotifyDuration = 2.5
+local HitNotifyTransparency = 0.0
+local HitNotifyFont = Enum.Font.Cartoon
+local HitNotifyTemplate = "Hit {name} in the {part} for {dmg} dmg with {weapon}" 
+local HitNotifyPosX = 50 
+local HitNotifyPosY = 65 
 
-getgenv().HitOverlayEnabled = false
-getgenv().HitOverlayColor = Color3.fromRGB(255, 0, 0)
+local HitOverlayEnabled = false
+local HitOverlayColor = Color3.fromRGB(255, 0, 0)
 
-getgenv().SkyboxEnabled = false
-getgenv().SelectedSkybox = "Minecraft"
+local SkyboxEnabled = false
+local SelectedSkybox = "Minecraft"
 local SkyboxIDs = {
     ["Minecraft"] = "rbxassetid://96736589365838",
     ["Minecraft 2"] = "rbxassetid://117301665698887",
@@ -159,62 +160,62 @@ local SkyboxIDs = {
     ["Skyblox 5"] = "rbxassetid://90988519"
 }
 
-getgenv().FOVCircleColor = Color3.fromRGB(255, 255, 255)
-getgenv().FOVCircleOutlineColor = Color3.fromRGB(0, 0, 0)
-getgenv().TracerLineColor = Color3.fromRGB(255, 0, 0)
-getgenv().TracerLineOutlineColor = Color3.fromRGB(0, 0, 0)
-getgenv().TracerThickness = 1.0
-getgenv().TracerOutlineThickness = 3.0
+local FOVCircleColor = Color3.fromRGB(255, 255, 255)
+local FOVCircleOutlineColor = Color3.fromRGB(0, 0, 0)
+local TracerLineColor = Color3.fromRGB(255, 0, 0)
+local TracerLineOutlineColor = Color3.fromRGB(0, 0, 0)
+local TracerThickness = 1.0
+local TracerOutlineThickness = 3.0
 
-getgenv().FOVFillEnabled = false
-getgenv().FOVFillTransparency = 0.2
-getgenv().FOVFillColor1 = Color3.fromRGB(255, 0, 0)
-getgenv().FOVFillColor2 = Color3.fromRGB(0, 255, 0)
-getgenv().FOVFillColor3 = Color3.fromRGB(0, 0, 255)
-getgenv().FOVFillRotateEnabled = false
-getgenv().FOVFillRotateSpeed = 1
+local FOVFillEnabled = false
+local FOVFillTransparency = 0.2
+local FOVFillColor1 = Color3.fromRGB(255, 0, 0)
+local FOVFillColor2 = Color3.fromRGB(0, 255, 0)
+local FOVFillColor3 = Color3.fromRGB(0, 0, 255)
+local FOVFillRotateEnabled = false
+local FOVFillRotateSpeed = 1
 local currentRotationAngle = 0
 
-getgenv().TargetPartMode = "Head"
-getgenv().TransitionSpeed = 5
-getgenv().MaxTargetDistance = 10000
+local TargetPartMode = "Head"
+local TransitionSpeed = 5
+local MaxTargetDistance = 10000
 
-getgenv().ESPEnabled = false
-getgenv().ESPName = false
-getgenv().ESPHighlights = false
-getgenv().ESPHealth = false
-getgenv().ColorBox = Color3.fromRGB(0, 255, 255)
-getgenv().ColorName = Color3.fromRGB(255, 255, 255)
+local ESPEnabled = false
+local ESPName = false
+local ESPHighlights = false
+local ESPHealth = false
+local ColorBox = Color3.fromRGB(0, 255, 255)
+local ColorName = Color3.fromRGB(255, 255, 255)
 
-getgenv().AntiAimEnabled = false
-getgenv().AntiAimMode = "Spin"
-getgenv().AntiAimSpeed = 15
-getgenv().JitterMode = "Multi"
+local AntiAimEnabled = false
+local AntiAimMode = "Spin"
+local AntiAimSpeed = 15
+local JitterMode = "Multi"
 
-getgenv().ThirdPersonEnabled = false
-getgenv().ThirdPersonDistance = 12
-getgenv().MotionBlurEnabled = false
-getgenv().MotionBlurIntensity = 1.5
+local ThirdPersonEnabled = false
+local ThirdPersonDistance = 12
+local MotionBlurEnabled = false
+local MotionBlurIntensity = 1.5
 
-getgenv().BhopEnabled = false
-getgenv().BhopSpeedMultiplier = 1.5
+local BhopEnabled = false
+local BhopSpeedMultiplier = 1.5
 
-getgenv().TargetHudToggle = true
-getgenv().TargetHudPosX = 0
-getgenv().TargetHudPosY = 0
-getgenv().TargetHudBorderColor1 = Color3.fromRGB(0, 255, 100)
-getgenv().TargetHudBorderColor2 = Color3.fromRGB(0, 150, 0)
-getgenv().TargetHudHealthHigh = Color3.fromRGB(0, 255, 100)
-getgenv().TargetHudHealthMid = Color3.fromRGB(255, 200, 0)
-getgenv().TargetHudHealthLow = Color3.fromRGB(255, 50, 50)
+local TargetHudToggle = true
+local TargetHudPosX = 0
+local TargetHudPosY = 0
+local TargetHudBorderColor1 = Color3.fromRGB(0, 255, 100)
+local TargetHudBorderColor2 = Color3.fromRGB(0, 150, 0)
+local TargetHudHealthHigh = Color3.fromRGB(0, 255, 100)
+local TargetHudHealthMid = Color3.fromRGB(255, 200, 0)
+local TargetHudHealthLow = Color3.fromRGB(255, 50, 50)
 
-getgenv().AtmosphereEnabled = false 
-getgenv().AtmosphereColor = Color3.fromRGB(178, 200, 255)
-getgenv().AtmosphereDecay = Color3.fromRGB(255, 178, 120)
-getgenv().AtmosphereGlare = 0.4
-getgenv().AtmosphereHaze = 1.2
-getgenv().AtmosphereOffset = 0.25
-getgenv().AtmosphereDensity = 0.35
+local AtmosphereEnabled = false 
+local AtmosphereColor = Color3.fromRGB(178, 200, 255)
+local AtmosphereDecay = Color3.fromRGB(255, 178, 120)
+local AtmosphereGlare = 0.4
+local AtmosphereHaze = 1.2
+local AtmosphereOffset = 0.25
+local AtmosphereDensity = 0.35
 
 local Camera = workspace.CurrentCamera
 local Players = game.Players
@@ -241,14 +242,14 @@ local OverlayFrame = Instance.new("Frame")
 OverlayFrame.Name = "HitOverlay"
 OverlayFrame.Size = UDim2.new(1, 0, 1, 0)
 OverlayFrame.BorderSizePixel = 0
-OverlayFrame.BackgroundColor3 = getgenv().HitOverlayColor
+OverlayFrame.BackgroundColor3 = HitOverlayColor
 OverlayFrame.BackgroundTransparency = 1
 OverlayFrame.ZIndex = 99999
 OverlayFrame.Parent = HitOverlayGui
 
 local function TriggerHitOverlay()
-    if not getgenv().HitOverlayEnabled then return end
-    OverlayFrame.BackgroundColor3 = getgenv().HitOverlayColor
+    if not HitOverlayEnabled then return end
+    OverlayFrame.BackgroundColor3 = HitOverlayColor
     
     local fadeIn = TweenService:Create(OverlayFrame, TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.5})
     local fadeOut = TweenService:Create(OverlayFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
@@ -269,7 +270,7 @@ local CenterNotifyContainer = Instance.new("Frame")
 CenterNotifyContainer.Name = "NotifyContainer"
 CenterNotifyContainer.Size = UDim2.new(0.6, 0, 0.4, 0)
 CenterNotifyContainer.AnchorPoint = Vector2.new(0.5, 0.5)
-CenterNotifyContainer.Position = UDim2.new(getgenv().HitNotifyPosX / 100, 0, getgenv().HitNotifyPosY / 100, 0)
+CenterNotifyContainer.Position = UDim2.new(HitNotifyPosX / 100, 0, HitNotifyPosY / 100, 0)
 CenterNotifyContainer.BackgroundTransparency = 1
 CenterNotifyContainer.BorderSizePixel = 0
 CenterNotifyContainer.Parent = CenterNotifyGui
@@ -283,11 +284,11 @@ CenterNotifyLayout.Padding = UDim.new(0, 5)
 CenterNotifyLayout.Parent = CenterNotifyContainer
 
 local function ShowCustomHitNotification(targetName, partName, damage, weaponName)
-    if not getgenv().HitNotifyEnabled then return end
+    if not HitNotifyEnabled then return end
     
     weaponName = weaponName or "Hands"
     
-    local notifyText = getgenv().HitNotifyTemplate
+    local notifyText = HitNotifyTemplate
     notifyText = string.gsub(notifyText, "{name}", targetName)
     notifyText = string.gsub(notifyText, "{part}", partName)
     notifyText = string.gsub(notifyText, "{dmg}", tostring(damage))
@@ -299,7 +300,7 @@ local function ShowCustomHitNotification(targetName, partName, damage, weaponNam
     NotifyLabel.Text = notifyText
     NotifyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     NotifyLabel.TextSize = 16
-    NotifyLabel.Font = getgenv().HitNotifyFont
+    NotifyLabel.Font = HitNotifyFont
     NotifyLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
     
     NotifyLabel.Position = UDim2.new(0, 0, 0, 15)
@@ -309,12 +310,12 @@ local function ShowCustomHitNotification(targetName, partName, damage, weaponNam
 
     local openTween = TweenService:Create(NotifyLabel, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
         Position = UDim2.new(0, 0, 0, 0),
-        TextTransparency = getgenv().HitNotifyTransparency,
-        TextStrokeTransparency = math.clamp(getgenv().HitNotifyTransparency + 0.4, 0, 1)
+        TextTransparency = HitNotifyTransparency,
+        TextStrokeTransparency = math.clamp(HitNotifyTransparency + 0.4, 0, 1)
     })
     openTween:Play()
 
-    task.delay(getgenv().HitNotifyDuration, function()
+    task.delay(HitNotifyDuration, function()
         if not NotifyLabel or not NotifyLabel.Parent then return end
         
         local closeTween = TweenService:Create(NotifyLabel, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
@@ -330,10 +331,10 @@ local function ShowCustomHitNotification(targetName, partName, damage, weaponNam
 end
 
 local function PlayHitSound()
-    if getgenv().HitSoundMode == "None" or not SoundIDs[getgenv().HitSoundMode] then return end
+    if HitSoundMode == "None" or not SoundIDs[HitSoundMode] then return end
     local Sound = Instance.new("Sound")
-    Sound.SoundId = SoundIDs[getgenv().HitSoundMode]
-    Sound.Volume = getgenv().HitSoundVolume
+    Sound.SoundId = SoundIDs[HitSoundMode]
+    Sound.Volume = HitSoundVolume
     Sound.PlayOnRemove = true
     Sound.Parent = SoundService
     Sound:Destroy()
@@ -345,8 +346,8 @@ local function UpdateSkybox()
             obj:Destroy()
         end
     end
-    if getgenv().SkyboxEnabled and SkyboxIDs[getgenv().SelectedSkybox] then
-        local assetId = SkyboxIDs[getgenv().SelectedSkybox]
+    if SkyboxEnabled and SkyboxIDs[SelectedSkybox] then
+        local assetId = SkyboxIDs[SelectedSkybox]
         local success, result = pcall(function() return game:GetObjects(assetId)[1] end)
         if success and result and result:IsA("Sky") then
             local NewSky = result:Clone()
@@ -368,17 +369,17 @@ end
 
 local function UpdateAtmosphere()
     local atmos = Lighting:FindFirstChildOfClass("Atmosphere")
-    if getgenv().AtmosphereEnabled then
+    if AtmosphereEnabled then
         if not atmos then
             atmos = Instance.new("Atmosphere")
             atmos.Parent = Lighting
         end
-        atmos.Color = getgenv().AtmosphereColor
-        atmos.Decay = getgenv().AtmosphereDecay
-        atmos.Glare = getgenv().AtmosphereGlare
-        atmos.Haze = getgenv().AtmosphereHaze
-        atmos.Offset = getgenv().AtmosphereOffset
-        atmos.Density = getgenv().AtmosphereDensity
+        atmos.Color = AtmosphereColor
+        atmos.Decay = AtmosphereDecay
+        atmos.Glare = AtmosphereGlare
+        atmos.Haze = AtmosphereHaze
+        atmos.Offset = AtmosphereOffset
+        atmos.Density = AtmosphereDensity
         
         if not Lighting:FindFirstChildOfClass("Sky") then
             local DefaultSky = Instance.new("Sky")
@@ -389,7 +390,7 @@ local function UpdateAtmosphere()
         if atmos then
             atmos:Destroy()
         end
-        if not getgenv().SkyboxEnabled then
+        if not SkyboxEnabled then
             local defaultSky = Lighting:FindFirstChild("hooksenseDefaultSky")
             if defaultSky then
                 defaultSky:Destroy()
@@ -429,8 +430,8 @@ Stroke.Parent = MainCanvas
 
 local BorderGradient = Instance.new("UIGradient")
 BorderGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, getgenv().TargetHudBorderColor1),
-    ColorSequenceKeypoint.new(1, getgenv().TargetHudBorderColor2)
+    ColorSequenceKeypoint.new(0, TargetHudBorderColor1),
+    ColorSequenceKeypoint.new(1, TargetHudBorderColor2)
 })
 BorderGradient.Rotation = 45
 BorderGradient.Parent = Stroke
@@ -469,7 +470,7 @@ InfoFrame.Parent = MainCanvas
 
 DisplayNameLabel = Instance.new("TextLabel")
 DisplayNameLabel.Size = UDim2.new(1, 0, 0, 18)
-DisplayNameLabel.Font = getgenv().GlobalFontSetting
+DisplayNameLabel.Font = GlobalFontSetting
 DisplayNameLabel.TextSize = 14
 DisplayNameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 DisplayNameLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -480,7 +481,7 @@ DisplayNameLabel.Parent = InfoFrame
 UsernameLabel = Instance.new("TextLabel")
 UsernameLabel.Size = UDim2.new(1, 0, 0, 14)
 UsernameLabel.Position = UDim2.new(0, 0, 0, 18)
-UsernameLabel.Font = getgenv().GlobalFontSetting
+UsernameLabel.Font = GlobalFontSetting
 UsernameLabel.TextSize = 11
 UsernameLabel.TextColor3 = Color3.fromRGB(140, 140, 155)
 UsernameLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -491,7 +492,7 @@ UsernameLabel.Parent = InfoFrame
 UserIdLabel = Instance.new("TextLabel")
 UserIdLabel.Size = UDim2.new(1, 0, 0, 12)
 UserIdLabel.Position = UDim2.new(0, 0, 0, 32)
-UserIdLabel.Font = getgenv().GlobalFontSetting
+UserIdLabel.Font = GlobalFontSetting
 UserIdLabel.TextSize = 10
 UserIdLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 UserIdLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -512,7 +513,7 @@ HealthBarCorner.Parent = HealthBackground
 
 local HealthBar = Instance.new("Frame")
 HealthBar.Size = UDim2.new(1, 0, 1, 0)
-HealthBar.BackgroundColor3 = getgenv().TargetHudHealthHigh
+HealthBar.BackgroundColor3 = TargetHudHealthHigh
 HealthBar.BorderSizePixel = 0
 HealthBar.Parent = HealthBackground
 
@@ -522,7 +523,7 @@ MainBarCorner.Parent = HealthBar
 
 local isHudVisible = false
 local function ToggleHUD(state)
-    if state and getgenv().TargetHudToggle then
+    if state and TargetHudToggle then
         if not isHudVisible then
             isHudVisible = true
             MainCanvas.Visible = true
@@ -573,13 +574,13 @@ local FOVCircleOutline = Drawing.new("Circle")
 FOVCircleOutline.Thickness = 2.0
 FOVCircleOutline.NumSides = 144
 FOVCircleOutline.Filled = false
-FOVCircleOutline.Visible = getgenv().FOVVisible
+FOVCircleOutline.Visible = FOVVisible
 
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 1.0
 FOVCircle.NumSides = 144
 FOVCircle.Filled = false
-FOVCircle.Visible = getgenv().FOVVisible
+FOVCircle.Visible = FOVVisible
 
 local TracerLineOutline = Drawing.new("Line")
 TracerLineOutline.Thickness = 3.0
@@ -594,13 +595,13 @@ local function getScreenCenter()
 end
 
 local function isBehindWall(targetPart)
-    if not getgenv().WallCheckEnabled then return false end
+    if not WallCheckEnabled then return false end
     local Parts = Camera:GetPartsObscuringTarget({targetPart.Position}, {LocalPlayer.Character, targetPart.Parent})
     return #Parts > 0
 end
 
 local function isDead(humanoid, char)
-    if not getgenv().DieCheckEnabled then return false end
+    if not DieCheckEnabled then return false end
     if humanoid and humanoid.Health <= 0 then return true end
     if char and not char:IsDescendantOf(workspace) then return true end
     return false
@@ -634,7 +635,7 @@ task.spawn(function()
             end
         end
 
-        if not getgenv().SilentAimEnabled and not getgenv().MobileAimbotEnabled then
+        if not SilentAimEnabled and not MobileAimbotEnabled then
             CurrentAimTargetPosition = nil
             CurrentTargetPlayer = nil
             CurrentTargetCharacter = nil
@@ -643,22 +644,22 @@ task.spawn(function()
         else
             local TempTargetChar = nil
             local TempPlayer = nil
-            local MaxDistance = getgenv().FOVSize
+            local MaxDistance = FOVSize
             local Center = getScreenCenter()
             local MyRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
             local PotentialTargets = {}
 
-            if getgenv().PermLockEnabled and #getgenv().PermTargetList > 0 then
-                for _, pName in ipairs(getgenv().PermTargetList) do
+            if PermLockEnabled and #PermTargetList > 0 then
+                for _, pName in ipairs(PermTargetList) do
                     local targetPlayerObject = Players:FindFirstChild(pName)
                     if targetPlayerObject and targetPlayerObject.Character then
                         local char = targetPlayerObject.Character
                         local rootPart = char:FindFirstChild("HumanoidRootPart")
                         local humanoid = char:FindFirstChildOfClass("Humanoid")
                         if rootPart and humanoid and not isDead(humanoid, char) then
-                            if MyRoot and (rootPart.Position - MyRoot.Position).Magnitude <= getgenv().MaxTargetDistance then
+                            if MyRoot and (rootPart.Position - MyRoot.Position).Magnitude <= MaxTargetDistance then
                                 if not isBehindWall(rootPart) then
-                                    if not (getgenv().TeamCheckEnabled and targetPlayerObject.Team == LocalPlayer.Team) then
+                                    if not (TeamCheckEnabled and targetPlayerObject.Team == LocalPlayer.Team) then
                                         TempTargetChar = char
                                         TempPlayer = targetPlayerObject
                                         break
@@ -681,10 +682,10 @@ task.spawn(function()
                     local humanoid = char:FindFirstChildOfClass("Humanoid")
                     if rootPart and humanoid then
                         if isDead(humanoid, char) then continue end
-                        if MyRoot and (rootPart.Position - MyRoot.Position).Magnitude > getgenv().MaxTargetDistance then continue end
+                        if MyRoot and (rootPart.Position - MyRoot.Position).Magnitude > MaxTargetDistance then continue end
                         if isBehindWall(rootPart) then continue end
                         local targetPlayerObject = Players:GetPlayerFromCharacter(char)
-                        if getgenv().TeamCheckEnabled and targetPlayerObject and targetPlayerObject.Team == LocalPlayer.Team then continue end
+                        if TeamCheckEnabled and targetPlayerObject and targetPlayerObject.Team == LocalPlayer.Team then continue end
                         local ScreenPosition, OnScreen = Camera:WorldToViewportPoint(rootPart.Position)
                         if OnScreen then
                             local DistanceToCenter = (Vector2.new(ScreenPosition.X, ScreenPosition.Y) - Center).Magnitude
@@ -702,7 +703,7 @@ task.spawn(function()
             CurrentTargetCharacter = TempTargetChar
 
             if TempTargetChar then
-                local targetPartName = getgenv().MobileAimbotEnabled and getgenv().AimbotTargetPart or getgenv().TargetPartMode
+                local targetPartName = MobileAimbotEnabled and AimbotTargetPart or TargetPartMode
                 local head = TempTargetChar:FindFirstChild("Head")
                 local root = TempTargetChar:FindFirstChild("HumanoidRootPart")
                 
@@ -729,11 +730,11 @@ task.spawn(function()
 
                 if targetPartObj then
                     local basePosition = targetPartObj.Position
-                    if getgenv().AutoPredictionEnabled and root then
+                    if AutoPredictionEnabled and root then
                         local ping = LocalPlayer:GetNetworkPing()
                         local targetedVelocity = root.Velocity
 
-                        if getgenv().ResolverEnabled then
+                        if ResolverEnabled then
                             local isVelocitySpoofed = (targetedVelocity.Magnitude > 75) or 
                                                       (math.abs(targetedVelocity.Y) > 50) or 
                                                       (targetedVelocity.Magnitude < 0.1 and root.AssemblyLinearVelocity.Magnitude > 10) or
@@ -749,14 +750,14 @@ task.spawn(function()
                             end
                         end
 
-                        basePosition = basePosition + (targetedVelocity * ping * getgenv().PredictionValue)
+                        basePosition = basePosition + (targetedVelocity * ping * PredictionValue)
                     end
-                    if getgenv().TargetPartMode == "Root to Head" and not getgenv().MobileAimbotEnabled then
+                    if TargetPartMode == "Root to Head" and not MobileAimbotEnabled then
                         if lastTarget ~= TempTargetChar then
                             lastTarget = TempTargetChar
                             interpolationProgress = 0
                         end
-                        interpolationProgress = math.clamp(interpolationProgress + (0.01 * getgenv().TransitionSpeed), 0, 1)
+                        interpolationProgress = math.clamp(interpolationProgress + (0.01 * TransitionSpeed), 0, 1)
                         CurrentAimTargetPosition = root.Position:Lerp(head.Position, interpolationProgress)
                     else
                         CurrentAimTargetPosition = basePosition
@@ -789,7 +790,7 @@ local function BindHealthTracker(targetPlayer)
             local damageCalculated = math.floor(lastHealth - hum.Health)
             task.spawn(PlayHitSound)
             task.spawn(TriggerHitOverlay) 
-            local hitPartName = getgenv().TargetPartMode
+            local hitPartName = TargetPartMode
             if hitPartName == "Root to Head" then
                 hitPartName = "Body/Head"
             elseif hitPartName == "HumanoidRootPart" then
@@ -821,9 +822,9 @@ local function CreateESP(player)
 
     local NameLabel = Instance.new("TextLabel")
     NameLabel.Size = UDim2.new(1, 0, 0, 16)
-    NameLabel.Font = getgenv().GlobalFontSetting
+    NameLabel.Font = GlobalFontSetting
     NameLabel.TextSize = 13
-    NameLabel.TextColor3 = getgenv().ColorName
+    NameLabel.TextColor3 = ColorName
     NameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
     NameLabel.TextStrokeTransparency = 0
     NameLabel.BackgroundTransparency = 1
@@ -832,7 +833,7 @@ local function CreateESP(player)
     local HealthLabel = Instance.new("TextLabel")
     HealthLabel.Size = UDim2.new(1, 0, 0, 14)
     HealthLabel.Position = UDim2.new(0, 0, 0, 16)
-    HealthLabel.Font = getgenv().GlobalFontSetting
+    HealthLabel.Font = GlobalFontSetting
     HealthLabel.TextSize = 12
     HealthLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
     HealthLabel.TextStrokeTransparency = 0
@@ -887,32 +888,32 @@ local LastCameraRotation = Camera.CFrame.LookVector
 
 RunService.RenderStepped:Connect(function()
     local Center = getScreenCenter()
-    local ShowCircle = getgenv().FOVVisible and (getgenv().SilentAimEnabled or getgenv().MobileAimbotEnabled)
+    local ShowCircle = FOVVisible and (SilentAimEnabled or MobileAimbotEnabled)
     
     FOVCircleOutline.Position = Center
-    FOVCircleOutline.Radius = getgenv().FOVSize
+    FOVCircleOutline.Radius = FOVSize
     FOVCircleOutline.Visible = ShowCircle
-    FOVCircleOutline.Color = getgenv().FOVCircleOutlineColor
+    FOVCircleOutline.Color = FOVCircleOutlineColor
 
     FOVCircle.Position = Center
-    FOVCircle.Radius = getgenv().FOVSize
+    FOVCircle.Radius = FOVSize
     FOVCircle.Visible = ShowCircle
-    FOVCircle.Color = getgenv().FOVCircleColor
+    FOVCircle.Color = FOVCircleColor
 
-    if ShowCircle and getgenv().FOVFillEnabled then
+    if ShowCircle and FOVFillEnabled then
         FOVFillFrame.Position = UDim2.new(0, Center.X, 0, Center.Y)
-        FOVFillFrame.Size = UDim2.new(0, getgenv().FOVSize * 2, 0, getgenv().FOVSize * 2)
+        FOVFillFrame.Size = UDim2.new(0, FOVSize * 2, 0, FOVSize * 2)
         
         FOVFillGradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, getgenv().FOVFillColor1),
-            ColorSequenceKeypoint.new(0.5, getgenv().FOVFillColor2),
-            ColorSequenceKeypoint.new(1, getgenv().FOVFillColor3)
+            ColorSequenceKeypoint.new(0, FOVFillColor1),
+            ColorSequenceKeypoint.new(0.5, FOVFillColor2),
+            ColorSequenceKeypoint.new(1, FOVFillColor3)
         })
         
-        FOVFillFrame.BackgroundTransparency = getgenv().FOVFillTransparency
+        FOVFillFrame.BackgroundTransparency = FOVFillTransparency
         
-        if getgenv().FOVFillRotateEnabled then
-            currentRotationAngle = (currentRotationAngle + (0.5 * getgenv().FOVFillRotateSpeed)) % 360
+        if FOVFillRotateEnabled then
+            currentRotationAngle = (currentRotationAngle + (0.5 * FOVFillRotateSpeed)) % 360
         end
         FOVFillGradient.Rotation = currentRotationAngle
         FOVFillFrame.Visible = true
@@ -920,21 +921,21 @@ RunService.RenderStepped:Connect(function()
         FOVFillFrame.Visible = false
     end
 
-    if (getgenv().SilentAimEnabled or getgenv().MobileAimbotEnabled) and getgenv().TracerEnabled and CurrentAimTargetPosition then
+    if (SilentAimEnabled or MobileAimbotEnabled) and TracerEnabled and CurrentAimTargetPosition then
         local TargetPos, OnScreen = Camera:WorldToViewportPoint(CurrentAimTargetPosition)
         if OnScreen then
             local ToPos = Vector2.new(TargetPos.X, TargetPos.Y)
             TracerLineOutline.From = Center
             TracerLineOutline.To = ToPos
             TracerLineOutline.Visible = true
-            TracerLineOutline.Color = getgenv().TracerLineOutlineColor
-            TracerLineOutline.Thickness = getgenv().TracerOutlineThickness
+            TracerLineOutline.Color = TracerLineOutlineColor
+            TracerLineOutline.Thickness = TracerOutlineThickness
 
             TracerLine.From = Center
             TracerLine.To = ToPos
             TracerLine.Visible = true
-            TracerLine.Color = getgenv().TracerLineColor
-            TracerLine.Thickness = getgenv().TracerThickness
+            TracerLine.Color = TracerLineColor
+            TracerLine.Thickness = TracerThickness
         else
             TracerLineOutline.Visible = false
             TracerLine.Visible = false
@@ -944,14 +945,14 @@ RunService.RenderStepped:Connect(function()
         TracerLine.Visible = false
     end
 
-    if getgenv().MobileAimbotEnabled and CurrentAimTargetPosition then
+    if MobileAimbotEnabled and CurrentAimTargetPosition then
         local targetCFrame = CFrame.new(Camera.CFrame.Position, CurrentAimTargetPosition)
-        Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, getgenv().AimbotSmoothness)
+        Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, AimbotSmoothness)
     end
 
-    MainCanvas.Position = UDim2.new(1, -20 + getgenv().TargetHudPosX, 0, 20 + getgenv().TargetHudPosY)
+    MainCanvas.Position = UDim2.new(1, -20 + TargetHudPosX, 0, 20 + TargetHudPosY)
 
-    if (getgenv().SilentAimEnabled or getgenv().MobileAimbotEnabled) and CurrentTargetPlayer and CurrentTargetPlayer.Character and getgenv().TargetHudToggle then
+    if (SilentAimEnabled or MobileAimbotEnabled) and CurrentTargetPlayer and CurrentTargetPlayer.Character and TargetHudToggle then
         local Hum = CurrentTargetPlayer.Character:FindFirstChildOfClass("Humanoid")
         if Hum then
             DisplayNameLabel.Text = CurrentTargetPlayer.DisplayName
@@ -970,11 +971,11 @@ RunService.RenderStepped:Connect(function()
             HealthBar.Size = UDim2.new(currentHudHealthLerp, 0, 1, 0)
             
             if currentHudHealthLerp > 0.6 then
-                HealthBar.BackgroundColor3 = getgenv().TargetHudHealthHigh
+                HealthBar.BackgroundColor3 = TargetHudHealthHigh
             elseif currentHudHealthLerp > 0.3 then
-                HealthBar.BackgroundColor3 = getgenv().TargetHudHealthMid
+                HealthBar.BackgroundColor3 = TargetHudHealthMid
             else
-                HealthBar.BackgroundColor3 = getgenv().TargetHudHealthLow
+                HealthBar.BackgroundColor3 = TargetHudHealthLow
             end
             
             BindHealthTracker(CurrentTargetPlayer)
@@ -988,10 +989,10 @@ RunService.RenderStepped:Connect(function()
         LastLoggedHudTargetId = 0
     end
 
-    if getgenv().SilentAimEnabled and getgenv().LookAtEnabled and LocalPlayer.Character then
+    if SilentAimEnabled and LookAtEnabled and LocalPlayer.Character then
         local Root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if Root and Humanoid and Humanoid.Health > 0 and not getgenv().AntiAimEnabled then
+        if Root and Humanoid and Humanoid.Health > 0 and not AntiAimEnabled then
             if CurrentAimTargetPosition then
                 Humanoid.AutoRotate = false
                 local lookVector = Vector3.new(CurrentAimTargetPosition.X, Root.Position.Y, CurrentAimTargetPosition.Z)
@@ -1002,21 +1003,21 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    if getgenv().AntiAimEnabled and LocalPlayer.Character then
+    if AntiAimEnabled and LocalPlayer.Character then
         local Root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
         if Root and Humanoid and Humanoid.Health > 0 then
             Humanoid.AutoRotate = false
-            if getgenv().AntiAimMode == "Spin" then
-                spinAngle = (spinAngle + getgenv().AntiAimSpeed) % 360
+            if AntiAimMode == "Spin" then
+                spinAngle = (spinAngle + AntiAimSpeed) % 360
                 Root.CFrame = CFrame.new(Root.Position) * CFrame.Angles(0, math.rad(spinAngle), 0)
-            elseif getgenv().AntiAimMode == "Jitter" then
+            elseif AntiAimMode == "Jitter" then
                 local intensity = 1
-                if getgenv().JitterMode == "Multi" then intensity = math.random(1, 5)
-                elseif getgenv().JitterMode == "5x always" then intensity = 5
-                elseif getgenv().JitterMode == "3x always" then intensity = 3
-                elseif getgenv().JitterMode == "2x always" then intensity = 2
-                elseif getgenv().JitterMode == "random" then intensity = math.random(1, 5)
+                if JitterMode == "Multi" then intensity = math.random(1, 5)
+                elseif JitterMode == "5x always" then intensity = 5
+                elseif JitterMode == "3x always" then intensity = 3
+                elseif JitterMode == "2x always" then intensity = 2
+                elseif JitterMode == "random" then intensity = math.random(1, 5)
                 else intensity = math.random(1, 5) end
                 jitterToggle = not jitterToggle
                 local _, cameraY, _ = Camera.CFrame:ToOrientation()
@@ -1032,7 +1033,7 @@ RunService.RenderStepped:Connect(function()
         if LocalPlayer.Character then
             local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
             if Humanoid then
-                if not getgenv().LookAtEnabled or (getgenv().LookAtEnabled and not CurrentAimTargetPosition) then
+                if not LookAtEnabled or (LookAtEnabled and not CurrentAimTargetPosition) then
                     Humanoid.AutoRotate = true
                 end
             end
@@ -1043,13 +1044,13 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    if getgenv().ThirdPersonEnabled then
+    if ThirdPersonEnabled then
         local char = LocalPlayer.Character
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         if hum then
             hum.CameraOffset = Vector3.new(1.5, 2, 0)
-            LocalPlayer.CameraMinZoomDistance = getgenv().ThirdPersonDistance
-            LocalPlayer.CameraMaxZoomDistance = getgenv().ThirdPersonDistance
+            LocalPlayer.CameraMinZoomDistance = ThirdPersonDistance
+            LocalPlayer.CameraMaxZoomDistance = ThirdPersonDistance
             if Camera.CameraType ~= Enum.CameraType.Custom then
                 Camera.CameraType = Enum.CameraType.Custom
             end
@@ -1063,7 +1064,7 @@ RunService.RenderStepped:Connect(function()
     end
 
     local blurEffect = Lighting:FindFirstChild("hooksenseMotionBlur")
-    if getgenv().MotionBlurEnabled then
+    if MotionBlurEnabled then
         if not blurEffect then
             blurEffect = Instance.new("BlurEffect")
             blurEffect.Name = "hooksenseMotionBlur"
@@ -1071,7 +1072,7 @@ RunService.RenderStepped:Connect(function()
         end
         local currentLookVector = Camera.CFrame.LookVector
         local angleDifference = math.acos(math.clamp(currentLookVector:Dot(LastCameraRotation), -1, 1))
-        local blurTarget = math.clamp(angleDifference * 45 * getgenv().MotionBlurIntensity, 0, 56)
+        local blurTarget = math.clamp(angleDifference * 45 * MotionBlurIntensity, 0, 56)
         
         blurEffect.Size = blurEffect.Size + (blurTarget - blurEffect.Size) * 0.25
         LastCameraRotation = currentLookVector
@@ -1085,21 +1086,21 @@ RunService.RenderStepped:Connect(function()
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         local humanoid = char and char:FindFirstChildOfClass("Humanoid")
         
-        if getgenv().ESPEnabled and char and head and hrp and humanoid and humanoid.Health > 0 then
-            if getgenv().TeamCheckEnabled and player.Team == LocalPlayer.Team then
+        if ESPEnabled and char and head and hrp and humanoid and humanoid.Health > 0 then
+            if TeamCheckEnabled and player.Team == LocalPlayer.Team then
                 local highlight = char:FindFirstChild("hooksenseHighlight")
                 if highlight then highlight.Enabled = false end
                 v.BillboardGui.Enabled = false
                 continue
             end
             local highlight = char:FindFirstChild("hooksenseHighlight")
-            if getgenv().ESPHighlights then
+            if ESPHighlights then
                 if not highlight then
                     highlight = Instance.new("Highlight")
                     highlight.Name = "hooksenseHighlight"
                     highlight.Parent = char
                 end
-                highlight.FillColor = getgenv().ColorBox
+                highlight.FillColor = ColorBox
                 highlight.FillTransparency = 0.5
                 highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
                 highlight.OutlineTransparency = 0
@@ -1114,9 +1115,9 @@ RunService.RenderStepped:Connect(function()
                 v.BillboardGui.Enabled = true
                 local Distance = (Camera.CFrame.Position - hrp.Position).Magnitude
                 v.NameTag.Text = player.Name .. " [" .. math.floor(Distance) .. "m]"
-                v.NameTag.TextColor3 = getgenv().ColorName
-                v.NameTag.Visible = getgenv().ESPName
-                if getgenv().ESPHealth then
+                v.NameTag.TextColor3 = ColorName
+                v.NameTag.Visible = ESPName
+                if ESPHealth then
                     local currentHealth = math.floor(humanoid.Health)
                     local HealthPercentage = currentHealth / humanoid.MaxHealth
                     local healthColor = HealthPercentage > 0.6 and Color3.fromRGB(0, 255, 120) or (HealthPercentage > 0.3 and Color3.fromRGB(255, 215, 0) or Color3.fromRGB(255, 50, 50))
@@ -1139,7 +1140,7 @@ end)
 task.spawn(function()
     while true do
         task.wait()
-        if getgenv().BhopEnabled and LocalPlayer.Character then
+        if BhopEnabled and LocalPlayer.Character then
             local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
             local Root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
             if Humanoid and Root then
@@ -1148,7 +1149,7 @@ task.spawn(function()
                     if Humanoid.FloorMaterial ~= Enum.Material.Air then
                         Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
                     end
-                    Root.Velocity = Vector3.new(MoveDirection.X * (Humanoid.WalkSpeed * getgenv().BhopSpeedMultiplier), Root.Velocity.Y, MoveDirection.Z * (Humanoid.WalkSpeed * getgenv().BhopSpeedMultiplier))
+                    Root.Velocity = Vector3.new(MoveDirection.X * (Humanoid.WalkSpeed * BhopSpeedMultiplier), Root.Velocity.Y, MoveDirection.Z * (Humanoid.WalkSpeed * BhopSpeedMultiplier))
                 end
             end
         end
@@ -1166,12 +1167,12 @@ OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
         if Self and typeof(Self) == "Instance" then SelfClass = Self.ClassName end
     end)
 
-    if getgenv().SilentAimEnabled and CurrentAimTargetPosition then
+    if SilentAimEnabled and CurrentAimTargetPosition then
         if (Method == "ScreenPointToRay" or Method == "ViewportPointToRay") and SelfClass == "Camera" then
             return Ray.new(Camera.CFrame.Position, (CurrentAimTargetPosition - Camera.CFrame.Position).Unit)
         end
         if Method == "Raycast" and SelfClass == "Workspace" then
-            if getgenv().BulletTPEnabled then
+            if BulletTPEnabled then
                 Args[1] = CurrentAimTargetPosition - (Args[2].Unit * 1)
                 Args[2] = Args[2].Unit * 5
             else
@@ -1182,7 +1183,7 @@ OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
         if (Method == "FindPartOnRay" or Method == "FindPartOnRayWithIgnoreList" or Method == "FindPartOnRayWithWhitelist") and SelfClass == "Workspace" then
             local CurrentRay = Args[1]
             if CurrentRay and typeof(CurrentRay) == "Ray" then
-                if getgenv().BulletTPEnabled then
+                if BulletTPEnabled then
                     local NewOrigin = CurrentAimTargetPosition - (CurrentRay.Direction.Unit * 1)
                     Args[1] = Ray.new(NewOrigin, CurrentRay.Direction.Unit * 5)
                 else
@@ -1217,42 +1218,42 @@ MobileAimbotBox:AddToggle("MobileAimbotToggle", { Text = "Enable Aimbot", Defaul
     :AddKeyPicker("MobileAimbotKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Mobile Aimbot Bind" })
 
 Toggles.MobileAimbotToggle:OnChanged(function()
-    getgenv().MobileAimbotEnabled = Toggles.MobileAimbotToggle.Value
+    MobileAimbotEnabled = Toggles.MobileAimbotToggle.Value
 end)
 
 MobileAimbotBox:AddSlider("AimbotSmoothSlider", { Text = "Aimbot Smoothness", Default = 0.1, Min = 0.01, Max = 1, Rounding = 2 })
 Options.AimbotSmoothSlider:OnChanged(function()
-    getgenv().AimbotSmoothness = Options.AimbotSmoothSlider.Value
+    AimbotSmoothness = Options.AimbotSmoothSlider.Value
 end)
 
 MobileAimbotBox:AddSlider("JumpSmoothSlider", { Text = "Jump Smooth", Default = 1, Min = 1, Max = 100, Rounding = 0, Suffix = "%" })
 Options.JumpSmoothSlider:OnChanged(function()
-    getgenv().JumpSmooth = Options.JumpSmoothSlider.Value
+    JumpSmooth = Options.JumpSmoothSlider.Value
 end)
 
 MobileAimbotBox:AddSlider("SmoothXSlider", { Text = "Smooth X", Default = 1, Min = 1, Max = 100, Rounding = 0, Suffix = "%" })
 Options.SmoothXSlider:OnChanged(function()
-    getgenv().SmoothX = Options.SmoothXSlider.Value
+    SmoothX = Options.SmoothXSlider.Value
 end)
 
 MobileAimbotBox:AddSlider("SmoothZSlider", { Text = "Smooth Z", Default = 1, Min = 1, Max = 100, Rounding = 0, Suffix = "%" })
 Options.SmoothZSlider:OnChanged(function()
-    getgenv().SmoothZ = Options.SmoothZSlider.Value
+    SmoothZ = Options.SmoothZSlider.Value
 end)
 
 MobileAimbotBox:AddToggle("AutoPredictionToggle", { Text = "Enable Auto Prediction", Default = false })
 Toggles.AutoPredictionToggle:OnChanged(function()
-    getgenv().AutoPredictionEnabled = Toggles.AutoPredictionToggle.Value
+    AutoPredictionEnabled = Toggles.AutoPredictionToggle.Value
 end)
 
 MobileAimbotBox:AddSlider("PredictionSlider", { Text = "Prediction Multiplier", Default = 0.1, Min = 0.0, Max = 5.0, Rounding = 2 })
 Options.PredictionSlider:OnChanged(function()
-    getgenv().PredictionValue = Options.PredictionSlider.Value
+    PredictionValue = Options.PredictionSlider.Value
 end)
 
 MobileAimbotSettings:AddDropdown("MobileTargetPartDropdown", { Text = "Aimbot Target Part", Values = {"Head", "HumanoidRootPart"}, Default = 1, Multi = false })
 Options.MobileTargetPartDropdown:OnChanged(function()
-    getgenv().AimbotTargetPart = Options.MobileTargetPartDropdown.Value
+    AimbotTargetPart = Options.MobileTargetPartDropdown.Value
 end)
 
 -- [Main Tab Components]
@@ -1267,63 +1268,63 @@ LeftGroupBox:AddToggle("SilentAimToggle", { Text = "Enable Silent Aim", Default 
     :AddKeyPicker("SilentAimKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Silent Aim Bind" })
 
 Toggles.SilentAimToggle:OnChanged(function()
-    getgenv().SilentAimEnabled = Toggles.SilentAimToggle.Value
+    SilentAimEnabled = Toggles.SilentAimToggle.Value
 end)
 
 LeftGroupBox:AddToggle("ResolverToggle", { Text = "Enable Resolver", Default = false })
 Toggles.ResolverToggle:OnChanged(function()
-    getgenv().ResolverEnabled = Toggles.ResolverToggle.Value
+    ResolverEnabled = Toggles.ResolverToggle.Value
 end)
 
 LeftGroupBox:AddToggle("LookAtToggle", { Text = "Enable Look at Target", Default = false })
     :AddKeyPicker("LookAtKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Look At Bind" })
 
 Toggles.LookAtToggle:OnChanged(function()
-    getgenv().LookAtEnabled = Toggles.LookAtToggle.Value
+    LookAtEnabled = Toggles.LookAtToggle.Value
 end)
 
 LeftGroupBox:AddToggle("BulletTPToggle", { Text = "Enable Bullet TP", Default = false })
     :AddKeyPicker("BulletTPKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Bullet TP Bind" })
 
 Toggles.BulletTPToggle:OnChanged(function()
-    getgenv().BulletTPEnabled = Toggles.BulletTPToggle.Value
+    BulletTPEnabled = Toggles.BulletTPToggle.Value
 end)
 
 LeftGroupBox:AddToggle("WallCheckToggle", { Text = "Enable Wall Check", Default = false })
 Toggles.WallCheckToggle:OnChanged(function()
-    getgenv().WallCheckEnabled = Toggles.WallCheckToggle.Value
+    WallCheckEnabled = Toggles.WallCheckToggle.Value
 end)
 
 LeftGroupBox:AddToggle("TeamCheckToggle", { Text = "Enable Team Check", Default = false })
 Toggles.TeamCheckToggle:OnChanged(function()
-    getgenv().TeamCheckEnabled = Toggles.TeamCheckToggle.Value
+    TeamCheckEnabled = Toggles.TeamCheckToggle.Value
 end)
 
 PermLockGroupBox:AddToggle("PermLockToggle", { Text = "Enable Perm Lock-On", Default = false })
     :AddKeyPicker("PermLockKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Perm Lock Bind" })
 
 Toggles.PermLockToggle:OnChanged(function()
-    getgenv().PermLockEnabled = Toggles.PermLockToggle.Value
+    PermLockEnabled = Toggles.PermLockToggle.Value
 end)
 
 PermLockGroupBox:AddDropdown("PermTargetDropdown", { Text = "Targets Queue List", Values = {"No Targets Added"}, Default = 1, Multi = false })
 
 local function RefreshDropdownValues()
-    if #getgenv().PermTargetList == 0 then
+    if #PermTargetList == 0 then
         Options.PermTargetDropdown:SetValues({"No Targets Added"})
         Options.PermTargetDropdown:SetValue(1)
     else
-        for i = #getgenv().PermTargetList, 1, -1 do
-            if not Players:FindFirstChild(getgenv().PermTargetList[i]) then
-                table.remove(getgenv().PermTargetList, i)
+        for i = #PermTargetList, 1, -1 do
+            if not Players:FindFirstChild(PermTargetList[i]) then
+                table.remove(PermTargetList, i)
             end
         end
-        if #getgenv().PermTargetList == 0 then
+        if #PermTargetList == 0 then
             Options.PermTargetDropdown:SetValues({"No Targets Added"})
             Options.PermTargetDropdown:SetValue(1)
         else
-            Options.PermTargetDropdown:SetValues(getgenv().PermTargetList)
-            Options.PermTargetDropdown:SetValue(getgenv().PermTargetList[1])
+            Options.PermTargetDropdown:SetValues(PermTargetList)
+            Options.PermTargetDropdown:SetValue(PermTargetList[1])
         end
     end
 end
@@ -1338,7 +1339,7 @@ Players.PlayerAdded:Connect(function(player)
 end)
 
 PermLockGroupBox:AddButton({Text = "Clear All Targets", Func = function()
-    getgenv().PermTargetList = {}
+    PermTargetList = {}
     RefreshDropdownValues()
     Library:Notify("Permanent Target List Cleared!")
 end})
@@ -1358,8 +1359,8 @@ PermLockGroupBox:AddButton({Text = "Target Player", Func = function()
             end
         end
         if matchFound then
-            if not table.find(getgenv().PermTargetList, matchFound) then
-                table.insert(getgenv().PermTargetList, matchFound)
+            if not table.find(PermTargetList, matchFound) then
+                table.insert(PermTargetList, matchFound)
                 RefreshDropdownValues()
                 Options.PermTargetDropdown:SetValue(matchFound)
                 Library:Notify("Successfully Targeted: " .. matchFound)
@@ -1377,97 +1378,97 @@ end})
 
 TargetGroupBox:AddDropdown("TargetPartDropdown", { Text = "Target Lock Part", Values = {"Head", "HumanoidRootPart", "Root to Head", "Closet"}, Default = 1, Multi = false })
 Options.TargetPartDropdown:OnChanged(function()
-    getgenv().TargetPartMode = Options.TargetPartDropdown.Value
+    TargetPartMode = Options.TargetPartDropdown.Value
 end)
 
 TargetGroupBox:AddSlider("TransitionSpeedSlider", { Text = "Root Transfer Speed (Root to Head)", Default = 5, Min = 1, Max = 30, Rounding = 1 })
 Options.TransitionSpeedSlider:OnChanged(function()
-    getgenv().TransitionSpeed = Options.TransitionSpeedSlider.Value
+    TransitionSpeed = Options.TransitionSpeedSlider.Value
 end)
 
 TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Lock Distance (Studs)", Default = 10000, Min = 1, Max = 99999999, Rounding = 0 })
 Options.MaxDistanceSlider:OnChanged(function()
-    getgenv().MaxTargetDistance = Options.MaxDistanceSlider.Value
+    MaxTargetDistance = Options.MaxDistanceSlider.Value
 end)
 
 FOVGroupBox:AddToggle("FOVVisibleToggle", { Text = "Show FOV Circle", Default = true })
 Toggles.FOVVisibleToggle:OnChanged(function()
-    getgenv().FOVVisible = Toggles.FOVVisibleToggle.Value
+    FOVVisible = Toggles.FOVVisibleToggle.Value
 end)
 
 FOVGroupBox:AddSlider("FOVSlider", { Text = "FOV Size Radius", Default = 100, Min = 40, Max = 800, Rounding = 0 })
 Options.FOVSlider:OnChanged(function()
-    getgenv().FOVSize = Options.FOVSlider.Value
+    FOVSize = Options.FOVSlider.Value
 end)
 
 FOVGroupBox:AddLabel("FOV Line Color"):AddColorPicker("FOVCircleColorPicker", { Default = Color3.fromRGB(255, 255, 255) })
 Options.FOVCircleColorPicker:OnChanged(function()
-    getgenv().FOVCircleColor = Options.FOVCircleColorPicker.Value
+    FOVCircleColor = Options.FOVCircleColorPicker.Value
 end)
 
 FOVGroupBox:AddLabel("FOV Outline Color"):AddColorPicker("FOVCircleOutlineColorPicker", { Default = Color3.fromRGB(0, 0, 0) })
 Options.FOVCircleOutlineColorPicker:OnChanged(function()
-    getgenv().FOVCircleOutlineColor = Options.FOVCircleOutlineColorPicker.Value
+    FOVCircleOutlineColor = Options.FOVCircleOutlineColorPicker.Value
 end)
 
 FOVFillGroupBox:AddToggle("FOVFillToggle", { Text = "Enable FOV Fill", Default = false })
 Toggles.FOVFillToggle:OnChanged(function()
-    getgenv().FOVFillEnabled = Toggles.FOVFillToggle.Value
+    FOVFillEnabled = Toggles.FOVFillToggle.Value
 end)
 
 FOVFillGroupBox:AddSlider("FOVFillTransparencySlider", { Text = "FOV Fill Opacity", Default = 0.2, Min = 0, Max = 1, Rounding = 2 })
 Options.FOVFillTransparencySlider:OnChanged(function()
-    getgenv().FOVFillTransparency = Options.FOVFillTransparencySlider.Value
+    FOVFillTransparency = Options.FOVFillTransparencySlider.Value
 end)
 
 FOVFillGroupBox:AddLabel("Fill Color 1 (Top)"):AddColorPicker("FOVFillColor1Picker", { Default = Color3.fromRGB(255, 0, 0) })
 Options.FOVFillColor1Picker:OnChanged(function()
-    getgenv().FOVFillColor1 = Options.FOVFillColor1Picker.Value
+    FOVFillColor1 = Options.FOVFillColor1Picker.Value
 end)
 
 FOVFillGroupBox:AddLabel("Fill Color 2 (Mid)"):AddColorPicker("FOVFillColor2Picker", { Default = Color3.fromRGB(0, 255, 0) })
 Options.FOVFillColor2Picker:OnChanged(function()
-    getgenv().FOVFillColor2 = Options.FOVFillColor2Picker.Value
+    FOVFillColor2 = Options.FOVFillColor2Picker.Value
 end)
 
 FOVFillGroupBox:AddLabel("Fill Color 3 (Bottom)"):AddColorPicker("FOVFillColor3Picker", { Default = Color3.fromRGB(0, 0, 255) })
 Options.FOVFillColor3Picker:OnChanged(function()
-    getgenv().FOVFillColor3 = Options.FOVFillColor3Picker.Value
+    FOVFillColor3 = Options.FOVFillColor3Picker.Value
 end)
 
 FOVFillGroupBox:AddToggle("FOVFillRotateToggle", { Text = "Rotate FOV Gradient", Default = false })
 Toggles.FOVFillRotateToggle:OnChanged(function()
-    getgenv().FOVFillRotateEnabled = Toggles.FOVFillRotateToggle.Value
+    FOVFillRotateEnabled = Toggles.FOVFillRotateToggle.Value
 end)
 
 FOVFillGroupBox:AddSlider("FOVFillRotateSpeedSlider", { Text = "Gradient Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
 Options.FOVFillRotateSpeedSlider:OnChanged(function()
-    getgenv().FOVFillRotateSpeed = Options.FOVFillRotateSpeedSlider.Value
+    FOVFillRotateSpeed = Options.FOVFillRotateSpeedSlider.Value
 end)
 
 TracerGroupBox:AddToggle("TracerVisibleToggle", { Text = "Enable Tracer Line", Default = true })
 Toggles.TracerVisibleToggle:OnChanged(function()
-    getgenv().TracerEnabled = Toggles.TracerVisibleToggle.Value
+    TracerEnabled = Toggles.TracerVisibleToggle.Value
 end)
 
 TracerGroupBox:AddSlider("TracerThicknessSlider", { Text = "Tracer Line Thickness", Default = 1.0, Min = 0.5, Max = 5.0, Rounding = 1 })
 Options.TracerThicknessSlider:OnChanged(function()
-    getgenv().TracerThickness = Options.TracerThicknessSlider.Value
+    TracerThickness = Options.TracerThicknessSlider.Value
 end)
 
 TracerGroupBox:AddSlider("TracerOutlineThicknessSlider", { Text = "Tracer Outline Thickness", Default = 3.0, Min = 1.0, Max = 8.0, Rounding = 1 })
 Options.TracerOutlineThicknessSlider:OnChanged(function()
-    getgenv().TracerOutlineThickness = Options.TracerOutlineThicknessSlider.Value
+    TracerOutlineThickness = Options.TracerOutlineThicknessSlider.Value
 end)
 
 TracerGroupBox:AddLabel("Tracer Main Color"):AddColorPicker("TracerLineColorPicker", { Default = Color3.fromRGB(255, 0, 0) })
 Options.TracerLineColorPicker:OnChanged(function()
-    getgenv().TracerLineColor = Options.TracerLineColorPicker.Value
+    TracerLineColor = Options.TracerLineColorPicker.Value
 end)
 
 TracerGroupBox:AddLabel("Tracer Outline Color"):AddColorPicker("TracerLineOutlineColorPicker", { Default = Color3.fromRGB(0, 0, 0) })
 Options.TracerLineOutlineColorPicker:OnChanged(function()
-    getgenv().TracerLineOutlineColor = Options.TracerLineOutlineColorPicker.Value
+    TracerLineOutlineColor = Options.TracerLineOutlineColorPicker.Value
 end)
 
 -- [HitEffects Tab Components]
@@ -1477,63 +1478,63 @@ local NotifyRightBox = Tabs.HitEffects:AddRightGroupbox("Hit Notification Custom
 
 SoundLeftBox:AddDropdown("HitSoundDropdown", { Text = "Target Hit Sound", Values = {"None", "Spark", "Neverlose", "Rust", "Fatality", "Fatality 2", "Minecraft xp", "Minecraft", "Crack", "Skeet"}, Default = 1, Multi = false })
 Options.HitSoundDropdown:OnChanged(function()
-    getgenv().HitSoundMode = Options.HitSoundDropdown.Value
+    HitSoundMode = Options.HitSoundDropdown.Value
 end)
 
 SoundLeftBox:AddSlider("HitSoundVolumeSlider", { Text = "Hit Sound Volume Level", Default = 2.0, Min = 0.0, Max = 5.0, Rounding = 1 })
 Options.HitSoundVolumeSlider:OnChanged(function()
-    getgenv().HitSoundVolume = Options.HitSoundVolumeSlider.Value
+    HitSoundVolume = Options.HitSoundVolumeSlider.Value
 end)
 
 OverlayLeftBox:AddToggle("HitOverlayToggle", { Text = "Enable Hit Overlay", Default = false })
 Toggles.HitOverlayToggle:OnChanged(function()
-    getgenv().HitOverlayEnabled = Toggles.HitOverlayToggle.Value
+    HitOverlayEnabled = Toggles.HitOverlayToggle.Value
 end)
 
 OverlayLeftBox:AddLabel("Overlay Border Color"):AddColorPicker("HitOverlayColorPicker", { Default = Color3.fromRGB(255, 0, 0) })
 Options.HitOverlayColorPicker:OnChanged(function()
-    getgenv().HitOverlayColor = Options.HitOverlayColorPicker.Value
+    HitOverlayColor = Options.HitOverlayColorPicker.Value
 end)
 
 NotifyRightBox:AddToggle("HitNotifyToggle", { Text = "Enable Hit Notification", Default = false })
 Toggles.HitNotifyToggle:OnChanged(function()
-    getgenv().HitNotifyEnabled = Toggles.HitNotifyToggle.Value
+    HitNotifyEnabled = Toggles.HitNotifyToggle.Value
 end)
 
 NotifyRightBox:AddSlider("HitNotifyDurationSlider", { Text = "Notification Duration (s)", Default = 2.5, Min = 0.5, Max = 5.0, Rounding = 1 })
 Options.HitNotifyDurationSlider:OnChanged(function()
-    getgenv().HitNotifyDuration = Options.HitNotifyDurationSlider.Value
+    HitNotifyDuration = Options.HitNotifyDurationSlider.Value
 end)
 
 NotifyRightBox:AddSlider("HitNotifyTransparencySlider", { Text = "Notification Opacity/Transparency", Default = 0, Min = 0, Max = 1, Rounding = 2 })
 Options.HitNotifyTransparencySlider:OnChanged(function()
-    getgenv().HitNotifyTransparency = Options.HitNotifyTransparencySlider.Value
+    HitNotifyTransparency = Options.HitNotifyTransparencySlider.Value
 end)
 
 NotifyRightBox:AddSlider("HitNotifyPosXSlider", { Text = "Position X Offset (%)", Default = 50, Min = 1, Max = 100, Rounding = 0 })
 Options.HitNotifyPosXSlider:OnChanged(function()
-    getgenv().HitNotifyPosX = Options.HitNotifyPosXSlider.Value
-    CenterNotifyContainer.Position = UDim2.new(getgenv().HitNotifyPosX / 100, 0, getgenv().HitNotifyPosY / 100, 0)
+    HitNotifyPosX = Options.HitNotifyPosXSlider.Value
+    CenterNotifyContainer.Position = UDim2.new(HitNotifyPosX / 100, 0, HitNotifyPosY / 100, 0)
 end)
 
 NotifyRightBox:AddSlider("HitNotifyPosYSlider", { Text = "Position Y Offset (%)", Default = 65, Min = 1, Max = 100, Rounding = 0 })
 Options.HitNotifyPosYSlider:OnChanged(function()
-    getgenv().HitNotifyPosY = Options.HitNotifyPosYSlider.Value
-    CenterNotifyContainer.Position = UDim2.new(getgenv().HitNotifyPosX / 100, 0, getgenv().HitNotifyPosY / 100, 0)
+    HitNotifyPosY = Options.HitNotifyPosYSlider.Value
+    CenterNotifyContainer.Position = UDim2.new(HitNotifyPosX / 100, 0, HitNotifyPosY / 100, 0)
 end)
 
 NotifyRightBox:AddDropdown("HitNotifyFontDropdown", { Text = "Hit Notify Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "Cartoon") or 1, Multi = false })
 Options.HitNotifyFontDropdown:OnChanged(function()
     local SelectedFont = Enum.Font[Options.HitNotifyFontDropdown.Value]
     if SelectedFont then
-        getgenv().HitNotifyFont = SelectedFont
+        HitNotifyFont = SelectedFont
     end
 end)
 
 NotifyRightBox:AddInput("CustomHitNotifyInput", { Placeholder = "Format: {name} | {part} | {dmg} | {weapon}", Text = "Hit {name} in the {part} for {dmg} dmg with {weapon}", Numeric = false, Finished = true })
 Options.CustomHitNotifyInput:OnChanged(function()
     if Options.CustomHitNotifyInput.Value and Options.CustomHitNotifyInput.Value ~= "" then
-        getgenv().HitNotifyTemplate = Options.CustomHitNotifyInput.Value
+        HitNotifyTemplate = Options.CustomHitNotifyInput.Value
     end
 end)
 
@@ -1545,32 +1546,32 @@ EspLeftBox:AddToggle("MasterESPToggle", { Text = "Enable ESP", Default = false }
     :AddKeyPicker("MasterESPKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Master ESP Bind" })
 
 Toggles.MasterESPToggle:OnChanged(function()
-    getgenv().ESPEnabled = Toggles.MasterESPToggle.Value
+    ESPEnabled = Toggles.MasterESPToggle.Value
 end)
 
 EspLeftBox:AddToggle("NameESPToggle", { Text = "Player Name ESP", Default = false })
 Toggles.NameESPToggle:OnChanged(function()
-    getgenv().ESPName = Toggles.NameESPToggle.Value
+    ESPName = Toggles.NameESPToggle.Value
 end)
 
 EspLeftBox:AddToggle("ChamsESPToggle", { Text = "Chams / Highlights ESP", Default = false })
 Toggles.ChamsESPToggle:OnChanged(function()
-    getgenv().ESPHighlights = Toggles.ChamsESPToggle.Value
+    ESPHighlights = Toggles.ChamsESPToggle.Value
 end)
 
 EspLeftBox:AddToggle("HealthESPToggle", { Text = "Health Text ESP", Default = false })
 Toggles.HealthESPToggle:OnChanged(function()
-    getgenv().ESPHealth = Toggles.HealthESPToggle.Value
+    ESPHealth = Toggles.HealthESPToggle.Value
 end)
 
 EspRightBox:AddLabel("Highlight Glow Color"):AddColorPicker("GlowColorPicker", { Default = Color3.fromRGB(0, 255, 255) })
 Options.GlowColorPicker:OnChanged(function()
-    getgenv().ColorBox = Options.GlowColorPicker.Value
+    ColorBox = Options.GlowColorPicker.Value
 end)
 
 EspRightBox:AddLabel("Name Text Color"):AddColorPicker("NameColorPicker", { Default = Color3.fromRGB(255, 255, 255) })
 Options.NameColorPicker:OnChanged(function()
-    getgenv().ColorName = Options.NameColorPicker.Value
+    ColorName = Options.NameColorPicker.Value
 end)
 
 -- [Movement Tab Components]
@@ -1581,46 +1582,46 @@ MoveLeftBox:AddToggle("AntiAimToggle", { Text = "Enable Anti Aim", Default = fal
     :AddKeyPicker("AntiAimKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Anti Aim Bind" })
 
 Toggles.AntiAimToggle:OnChanged(function()
-    getgenv().AntiAimEnabled = Toggles.AntiAimToggle.Value
+    AntiAimEnabled = Toggles.AntiAimToggle.Value
 end)
 
 MoveLeftBox:AddDropdown("AntiAimModeDropdown", { Text = "Anti Aim Stance Type", Values = {"Spin", "Jitter"}, Default = 1, Multi = false })
 Options.AntiAimModeDropdown:OnChanged(function()
-    getgenv().AntiAimMode = Options.AntiAimModeDropdown.Value
+    AntiAimMode = Options.AntiAimModeDropdown.Value
 end)
 
 MoveLeftBox:AddDropdown("JitterSettingDropdown", { Text = "Jitter Core Settings", Values = {"Multi", "5x always", "3x always", "2x always", "random"}, Default = 1, Multi = false })
 Options.JitterSettingDropdown:OnChanged(function()
-    getgenv().JitterMode = Options.JitterSettingDropdown.Value
+    JitterMode = Options.JitterSettingDropdown.Value
 end)
 
 MoveLeftBox:AddSlider("SpinSpeedSlider", { Text = "Rotation Spin Speed", Default = 15, Min = 5, Max = 50, Rounding = 0 })
 Options.SpinSpeedSlider:OnChanged(function()
-    getgenv().AntiAimSpeed = Options.SpinSpeedSlider.Value
+    AntiAimSpeed = Options.SpinSpeedSlider.Value
 end)
 
 MoveRightBox:AddToggle("ThirdPersonToggle", { Text = "Enable Third Person View", Default = false })
     :AddKeyPicker("ThirdPersonKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Third Person Bind" })
 
 Toggles.ThirdPersonToggle:OnChanged(function()
-    getgenv().ThirdPersonEnabled = Toggles.ThirdPersonToggle.Value
+    ThirdPersonEnabled = Toggles.ThirdPersonToggle.Value
 end)
 
 MoveRightBox:AddSlider("ThirdPersonDistanceSlider", { Text = "Third Person Distance Modifier", Default = 12, Min = 5, Max = 30, Rounding = 0 })
 Options.ThirdPersonDistanceSlider:OnChanged(function()
-    getgenv().ThirdPersonDistance = Options.ThirdPersonDistanceSlider.Value
+    ThirdPersonDistance = Options.ThirdPersonDistanceSlider.Value
 end)
 
 MoveRightBox:AddToggle("BhopToggle", { Text = "Enable Auto Bunny Hop", Default = false })
     :AddKeyPicker("BhopKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Bhop Bind" })
 
 Toggles.BhopToggle:OnChanged(function()
-    getgenv().BhopEnabled = Toggles.BhopToggle.Value
+    BhopEnabled = Toggles.BhopToggle.Value
 end)
 
 MoveRightBox:AddSlider("BhopMultiplierSlider", { Text = "Bhop Velocity Speed Multiplier", Default = 1.5, Min = 1, Max = 5, Rounding = 1 })
 Options.BhopMultiplierSlider:OnChanged(function()
-    getgenv().BhopSpeedMultiplier = Options.BhopMultiplierSlider.Value
+    BhopSpeedMultiplier = Options.BhopMultiplierSlider.Value
 end)
 
 -- [World Tab Components]
@@ -1657,13 +1658,13 @@ end)
 
 WorldSkyboxBox:AddToggle("SkyboxToggle", { Text = "Enable Custom Skybox", Default = false })
 Toggles.SkyboxToggle:OnChanged(function()
-    getgenv().SkyboxEnabled = Toggles.SkyboxToggle.Value
+    SkyboxEnabled = Toggles.SkyboxToggle.Value
     UpdateSkybox()
 end)
 
 WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox", Values = {"Minecraft", "Minecraft 2", "Skyblox 1", "Skyblox 2", "Skyblox 3", "Skyblox 4", "Skyblox 5"}, Default = 1, Multi = false })
 Options.SkyboxDropdown:OnChanged(function()
-    getgenv().SelectedSkybox = Options.SkyboxDropdown.Value
+    SelectedSkybox = Options.SkyboxDropdown.Value
     UpdateSkybox()
 end)
 
@@ -1684,55 +1685,55 @@ end)
 
 WorldAtmosphereBox:AddToggle("AtmosphereToggle", { Text = "Enable Atmosphere", Default = false })
 Toggles.AtmosphereToggle:OnChanged(function()
-    getgenv().AtmosphereEnabled = Toggles.AtmosphereToggle.Value
+    AtmosphereEnabled = Toggles.AtmosphereToggle.Value
     UpdateAtmosphere()
 end)
 
-WorldAtmosphereBox:AddLabel("Tint Color"):AddColorPicker("AtmosColorPicker", { Default = getgenv().AtmosphereColor })
+WorldAtmosphereBox:AddLabel("Tint Color"):AddColorPicker("AtmosColorPicker", { Default = AtmosphereColor })
 Options.AtmosColorPicker:OnChanged(function()
-    getgenv().AtmosphereColor = Options.AtmosColorPicker.Value
+    AtmosphereColor = Options.AtmosColorPicker.Value
     UpdateAtmosphere()
 end)
 
-WorldAtmosphereBox:AddLabel("Decay Color"):AddColorPicker("AtmosDecayPicker", { Default = getgenv().AtmosphereDecay })
+WorldAtmosphereBox:AddLabel("Decay Color"):AddColorPicker("AtmosDecayPicker", { Default = AtmosphereDecay })
 Options.AtmosDecayPicker:OnChanged(function()
-    getgenv().AtmosphereDecay = Options.AtmosDecayPicker.Value
+    AtmosphereDecay = Options.AtmosDecayPicker.Value
     UpdateAtmosphere()
 end)
 
-WorldAtmosphereBox:AddSlider("AtmosGlareSlider", { Text = "Glare Intensity", Default = getgenv().AtmosphereGlare, Min = 0.1, Max = 10, Rounding = 1 })
+WorldAtmosphereBox:AddSlider("AtmosGlareSlider", { Text = "Glare Intensity", Default = AtmosphereGlare, Min = 0.1, Max = 10, Rounding = 1 })
 Options.AtmosGlareSlider:OnChanged(function()
-    getgenv().AtmosphereGlare = Options.AtmosGlareSlider.Value
+    AtmosphereGlare = Options.AtmosGlareSlider.Value
     UpdateAtmosphere()
 end)
 
-WorldAtmosphereBox:AddSlider("AtmosHazeSlider", { Text = "Haze Density", Default = getgenv().AtmosphereHaze, Min = 0.1, Max = 10, Rounding = 1 })
+WorldAtmosphereBox:AddSlider("AtmosHazeSlider", { Text = "Haze Density", Default = AtmosphereHaze, Min = 0.1, Max = 10, Rounding = 1 })
 Options.AtmosHazeSlider:OnChanged(function()
-    getgenv().AtmosphereHaze = Options.AtmosHazeSlider.Value
+    AtmosphereHaze = Options.AtmosHazeSlider.Value
     UpdateAtmosphere()
 end)
 
-WorldAtmosphereBox:AddSlider("AtmosOffsetSlider", { Text = "Horizon Offset", Default = getgenv().AtmosphereOffset, Min = 0.01, Max = 1, Rounding = 2 })
+WorldAtmosphereBox:AddSlider("AtmosOffsetSlider", { Text = "Horizon Offset", Default = AtmosphereOffset, Min = 0.01, Max = 1, Rounding = 2 })
 Options.AtmosOffsetSlider:OnChanged(function()
-    getgenv().AtmosphereOffset = Options.AtmosOffsetSlider.Value
+    AtmosphereOffset = Options.AtmosOffsetSlider.Value
     UpdateAtmosphere()
 end)
 
-WorldAtmosphereBox:AddSlider("AtmosDensitySlider", { Text = "Atmosphere Density", Default = getgenv().AtmosphereDensity, Min = 0.01, Max = 1, Rounding = 2 })
+WorldAtmosphereBox:AddSlider("AtmosDensitySlider", { Text = "Atmosphere Density", Default = AtmosphereDensity, Min = 0.01, Max = 1, Rounding = 2 })
 Options.AtmosDensitySlider:OnChanged(function()
-    getgenv().AtmosphereDensity = Options.AtmosDensitySlider.Value
+    AtmosphereDensity = Options.AtmosDensitySlider.Value
     UpdateAtmosphere()
 end)
 
 CameraDisplayBox:AddSlider("CustomFovSlider", { Text = "Custom FOV", Default = 70, Min = 70, Max = 120, Rounding = 0 })
 Options.CustomFovSlider:OnChanged(function()
-    getgenv().CustomFOVValue = Options.CustomFovSlider.Value
-    Camera.FieldOfView = getgenv().CustomFOVValue
+    CustomFOVValue = Options.CustomFovSlider.Value
+    Camera.FieldOfView = CustomFOVValue
 end)
 
 Camera:GetPropertyChangedSignal("FieldOfView"):Connect(function()
-    if Camera.FieldOfView ~= getgenv().CustomFOVValue then
-        Camera.FieldOfView = getgenv().CustomFOVValue
+    if Camera.FieldOfView ~= CustomFOVValue then
+        Camera.FieldOfView = CustomFOVValue
     end
 end)
 
@@ -1754,12 +1755,12 @@ end)
 
 CameraDisplayBox:AddToggle("MotionBlurToggle", { Text = "Enable Motion Blur", Default = false })
 Toggles.MotionBlurToggle:OnChanged(function()
-    getgenv().MotionBlurEnabled = Toggles.MotionBlurToggle.Value
+    MotionBlurEnabled = Toggles.MotionBlurToggle.Value
 end)
 
 CameraDisplayBox:AddSlider("MotionBlurIntensitySlider", { Text = "Motion Blur Intensity", Default = 1.5, Min = 0.5, Max = 5.0, Rounding = 1 })
 Options.MotionBlurIntensitySlider:OnChanged(function()
-    getgenv().MotionBlurIntensity = Options.MotionBlurIntensitySlider.Value
+    MotionBlurIntensity = Options.MotionBlurIntensitySlider.Value
 end)
 
 CameraDisplayBox:AddSlider("FpsCapSlider", { Text = "FPS Cap Limit", Default = 60, Min = 60, Max = 999, Rounding = 0 })
@@ -1773,50 +1774,50 @@ local TargetHudConfigGroup = Tabs.Addons:AddRightGroupbox("Target HUD Settings")
 
 TargetHudConfigGroup:AddToggle("TargetHudMasterToggle", { Text = "Enable Target HUD", Default = false })
 Toggles.TargetHudMasterToggle:OnChanged(function()
-    getgenv().TargetHudToggle = Toggles.TargetHudMasterToggle.Value
+    TargetHudToggle = Toggles.TargetHudMasterToggle.Value
 end)
 
 TargetHudConfigGroup:AddSlider("TargetHudPosXSlider", { Text = "Position X Offset", Default = 0, Min = -1000, Max = 1000, Rounding = 0 })
 Options.TargetHudPosXSlider:OnChanged(function()
-    getgenv().TargetHudPosX = Options.TargetHudPosXSlider.Value
+    TargetHudPosX = Options.TargetHudPosXSlider.Value
 end)
 
 TargetHudConfigGroup:AddSlider("TargetHudPosYSlider", { Text = "Position Y Offset", Default = 0, Min = -1000, Max = 1000, Rounding = 0 })
 Options.TargetHudPosYSlider:OnChanged(function()
-    getgenv().TargetHudPosY = Options.TargetHudPosYSlider.Value
+    TargetHudPosY = Options.TargetHudPosYSlider.Value
 end)
 
 TargetHudConfigGroup:AddLabel("Border Color 1"):AddColorPicker("HudBorderColor1Picker", { Default = Color3.fromRGB(0, 255, 100) })
 Options.HudBorderColor1Picker:OnChanged(function()
-    getgenv().TargetHudBorderColor1 = Options.HudBorderColor1Picker.Value
+    TargetHudBorderColor1 = Options.HudBorderColor1Picker.Value
     BorderGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, getgenv().TargetHudBorderColor1),
-        ColorSequenceKeypoint.new(1, getgenv().TargetHudBorderColor2)
+        ColorSequenceKeypoint.new(0, TargetHudBorderColor1),
+        ColorSequenceKeypoint.new(1, TargetHudBorderColor2)
     })
 end)
 
 TargetHudConfigGroup:AddLabel("Border Color 2"):AddColorPicker("HudBorderColor2Picker", { Default = Color3.fromRGB(0, 150, 0) })
 Options.HudBorderColor2Picker:OnChanged(function()
-    getgenv().TargetHudBorderColor2 = Options.HudBorderColor2Picker.Value
+    TargetHudBorderColor2 = Options.HudBorderColor2Picker.Value
     BorderGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, getgenv().TargetHudBorderColor1),
-        ColorSequenceKeypoint.new(1, getgenv().TargetHudBorderColor2)
+        ColorSequenceKeypoint.new(0, TargetHudBorderColor1),
+        ColorSequenceKeypoint.new(1, TargetHudBorderColor2)
     })
 end)
 
 TargetHudConfigGroup:AddLabel("Health Color: High (>60%)"):AddColorPicker("HudHealthHighPicker", { Default = Color3.fromRGB(0, 255, 100) })
 Options.HudHealthHighPicker:OnChanged(function()
-    getgenv().TargetHudHealthHigh = Options.HudHealthHighPicker.Value
+    TargetHudHealthHigh = Options.HudHealthHighPicker.Value
 end)
 
 TargetHudConfigGroup:AddLabel("Health Color: Medium (30%-60%)"):AddColorPicker("HudHealthMidPicker", { Default = Color3.fromRGB(255, 200, 0) })
 Options.HudHealthMidPicker:OnChanged(function() 
-    getgenv().TargetHudHealthMid = Options.HudHealthMidPicker.Value
+    TargetHudHealthMid = Options.HudHealthMidPicker.Value
 end)
 
 TargetHudConfigGroup:AddLabel("Health Color: Low (<30%)"):AddColorPicker("HudHealthLowPicker", { Default = Color3.fromRGB(255, 50, 50) })
 Options.HudHealthLowPicker:OnChanged(function()
-    getgenv().TargetHudHealthLow = Options.HudHealthLowPicker.Value
+    TargetHudHealthLow = Options.HudHealthLowPicker.Value
 end)
 
 BlacklistPlayersGroup:AddButton({ Text = "walkspeed", Func = function()
