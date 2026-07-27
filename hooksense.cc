@@ -16,12 +16,22 @@ for k, v in pairs(getgc(true)) do
         }
     end
 end
+task.wait(8)
 
 -- BYPASS 2: Adonis Cries Anti-Kick (Optional)
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
+task.spawn(function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
+    end)
+end)
+task.wait(5)
 
 -- BYPASS 3: MEGGD Anti-Kick (Optional)
-loadstring(game:HttpGet('https://raw.githubusercontent.com/SUUUUUS00000/MEGGD-Anti-kick/refs/heads/main/MEGGD%20Best%20Anti-kick.lua'))()
+task.spawn(function()
+    pcall(function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/SUUUUUS00000/MEGGD-Anti-kick/refs/heads/main/MEGGD%20Best%20Anti-kick.lua'))()
+    end)
+end)
 
 -- ==========================================
 -- STEP 2: WAIT 15 SECONDS
