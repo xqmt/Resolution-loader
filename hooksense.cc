@@ -565,6 +565,14 @@ FOVFillCorner.Parent = FOVFillFrame
 local FOVFillGradient = Instance.new("UIGradient")
 FOVFillGradient.Parent = FOVFillFrame
 
+-- [Box Fill ESP Gradient GUI Setup]
+local BoxFillGui = Instance.new("ScreenGui")
+BoxFillGui.Name = "hooksense_BoxFillGui"
+BoxFillGui.ResetOnSpawn = false
+BoxFillGui.IgnoreGuiInset = true
+BoxFillGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+BoxFillGui.Parent = TargetGuiParent
+
 -- [External-like Premium FOV Draw]
 local FOVCircleOutline = Drawing.new("Circle")
 FOVCircleOutline.Thickness = 2.0
@@ -1486,6 +1494,18 @@ end
 local ESP_Drawing_Storage = {}
 local function ImplementESPSetup(holder)
     pcall(function()
+        holder.BoxFillFrame = Instance.new("Frame")
+        holder.BoxFillFrame.Name = "BoxFill"
+        holder.BoxFillFrame.AnchorPoint = Vector2.new(0, 0)
+        holder.BoxFillFrame.BorderSizePixel = 0
+        holder.BoxFillFrame.BackgroundTransparency = 1
+        holder.BoxFillFrame.Visible = false
+        holder.BoxFillFrame.Parent = BoxFillGui
+
+        holder.BoxFillGradient = Instance.new("UIGradient")
+        holder.BoxFillGradient.Parent = holder.BoxFillFrame
+        holder.BoxFillRotationAngle = 0
+
         holder.BoxLines = {CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1)}
         holder.BoxOutlines = {
             CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1),
@@ -1527,6 +1547,9 @@ end
 local function RemoveDrawingESP(player)
     if ESP_Drawing_Storage[player] then
         pcall(function()
+            if ESP_Drawing_Storage[player].BoxFillFrame then
+                ESP_Drawing_Storage[player].BoxFillFrame:Destroy()
+            end
             for _, obj in pairs(ESP_Drawing_Storage[player]) do
                 if type(obj) == "table" then
                     for _, subObj in pairs(obj) do
@@ -1547,6 +1570,7 @@ Players.PlayerRemoving:Connect(RemoveDrawingESP)
 
 local function SetVisibilityFalse(esp)
     pcall(function()
+        if esp.BoxFillFrame then esp.BoxFillFrame.Visible = false end
         if esp.BoxLines then for i = 1, 4 do esp.BoxLines[i].Visible = false end end
         if esp.BoxOutlines then for i = 1, 8 do esp.BoxOutlines[i].Visible = false end end
         if esp.CornerLines then for i = 1, 8 do esp.CornerLines[i].Visible = false end end
@@ -1584,6 +1608,14 @@ RunService.RenderStepped:Connect(function()
         local hpHalfColor = GetColor("HPHalfColor", Color3.fromRGB(255, 170, 0))
         local hpLowColor = GetColor("HPLowColor", Color3.fromRGB(255, 0, 0))
         local lerpAlpha = Options.HealthLerpSlider and Options.HealthLerpSlider.Value or 0.2
+
+        local boxFillEnabled = Toggles.EspBoxFill and Toggles.EspBoxFill.Value
+        local boxFillTrans = Options.EspBoxFillTransparency and Options.EspBoxFillTransparency.Value or 0.5
+        local fillCol1 = GetColor("EspBoxFillColor1", Color3.fromRGB(255, 0, 0))
+        local fillCol2 = GetColor("EspBoxFillColor2", Color3.fromRGB(0, 255, 0))
+        local fillCol3 = GetColor("EspBoxFillColor3", Color3.fromRGB(0, 0, 255))
+        local fillRotateEnabled = Toggles.EspBoxFillRotate and Toggles.EspBoxFillRotate.Value
+        local fillRotateSpeed = Options.EspBoxFillRotateSpeed and Options.EspBoxFillRotateSpeed.Value or 1
 
         for player, esp in pairs(ESP_Drawing_Storage) do
             pcall(function()
@@ -1631,6 +1663,27 @@ RunService.RenderStepped:Connect(function()
                         if esp.Name then esp.Name.Font = currentDrawingFont; esp.Name.Size = textSize end
                         if esp.Distance then esp.Distance.Font = currentDrawingFont; esp.Distance.Size = textSize end
                         if esp.HealthText then esp.HealthText.Font = currentDrawingFont; esp.HealthText.Size = hpTextSize end
+
+                        -- Box Fill Gradient
+                        if boxFillEnabled and esp.BoxFillFrame then
+                            esp.BoxFillFrame.Position = UDim2.new(0, boxX, 0, boxY)
+                            esp.BoxFillFrame.Size = UDim2.new(0, mathWidth, 0, mathHeight)
+                            esp.BoxFillFrame.BackgroundTransparency = boxFillTrans
+                            
+                            esp.BoxFillGradient.Color = ColorSequence.new({
+                                ColorSequenceKeypoint.new(0, fillCol1),
+                                ColorSequenceKeypoint.new(0.5, fillCol2),
+                                ColorSequenceKeypoint.new(1, fillCol3)
+                            })
+                            
+                            if fillRotateEnabled then
+                                esp.BoxFillRotationAngle = (esp.BoxFillRotationAngle + (0.5 * fillRotateSpeed)) % 360
+                            end
+                            esp.BoxFillGradient.Rotation = esp.BoxFillRotationAngle
+                            esp.BoxFillFrame.Visible = true
+                        else
+                            if esp.BoxFillFrame then esp.BoxFillFrame.Visible = false end
+                        end
 
                         -- Corner Box
                         local corner = esp.CornerLines
@@ -1784,6 +1837,15 @@ EspVisualsGroup:AddDropdown("EspFontDropdown", { Text = "ESP Font", Values = Dra
 
 EspVisualsGroup:AddToggle("EspBox", { Text = "Draw Box", Default = false }):AddColorPicker("BoxColor", { Default = Color3.fromRGB(255, 255, 255) })
 EspVisualsGroup:AddToggle("EspCornerBox", { Text = "Corner Box", Default = false }):AddColorPicker("CornerColor", { Default = Color3.fromRGB(255, 255, 255) })
+
+-- [Box Fill ESP Gradient Controls Added Here]
+EspVisualsGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill Gradient", Default = false })
+EspVisualsGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.5, Min = 0, Max = 1, Rounding = 2 })
+EspVisualsGroup:AddLabel("Fill Color 1 (Top)"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 0, 0) })
+EspVisualsGroup:AddLabel("Fill Color 2 (Mid)"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(0, 255, 0) })
+EspVisualsGroup:AddLabel("Fill Color 3 (Bottom)"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(0, 0, 255) })
+EspVisualsGroup:AddToggle("EspBoxFillRotate", { Text = "Rotate Box Fill Gradient", Default = false })
+EspVisualsGroup:AddSlider("EspBoxFillRotateSpeed", { Text = "Box Fill Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
 
 EspVisualsGroup:AddToggle("EspName", { Text = "Draw Name", Default = false }):AddColorPicker("NameColor", { Default = Color3.fromRGB(255, 255, 255) })
 EspVisualsGroup:AddDropdown("NameStyleDropdown", { Text = "Name Style", Values = {"Username", "Display Name"}, Default = 1, Multi = false })
@@ -2095,6 +2157,7 @@ Library:OnUnload(function()
         RemoveDrawingESP(player)
     end
     table.clear(ESP_Drawing_Storage)
+    if BoxFillGui then BoxFillGui:Destroy() end
     
     Library.Unloaded = true
 end)
