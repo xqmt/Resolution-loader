@@ -1,21 +1,29 @@
 -- ==========================================
--- STEP 1: LOAD BYPASSES FIRST
+-- STEP 1: LOAD BYPASSES FIRST (FIXED)
 -- ==========================================
 
--- BYPASS 1: Core Anti-Kick (Essential)
-for k, v in pairs(getgc(true)) do
-    if pcall(function()
-        return rawget(v, "indexInstance")
-    end) and type(rawget(v, "indexInstance")) == "table" and (rawget(v, "indexInstance"))[1] == "kick" then
-        setreadonly(v, false)
-        v.tvk = {
-            "kick",
-            function()
-                return game.Workspace:WaitForChild("")
-            end
-        }
+-- BYPASS 1: Core Anti-Kick (Essential) - FIXED
+pcall(function()
+    local gc = getgc(true)
+    if gc then
+        for k, v in pairs(gc) do
+            pcall(function()
+                if rawget(v, "indexInstance") and type(rawget(v, "indexInstance")) == "table" then
+                    local idx = rawget(v, "indexInstance")
+                    if idx and idx[1] == "kick" then
+                        setreadonly(v, false)
+                        v.tvk = {
+                            "kick",
+                            function()
+                                return game.Workspace:WaitForChild("")
+                            end
+                        }
+                    end
+                end
+            end)
+        end
     end
-end
+end)
 task.wait(6.2)
 
 -- BYPASS 2: Adonis Cries Anti-Kick (Optional)
@@ -221,7 +229,7 @@ local AtmosphereOffset = 0.25
 local AtmosphereDensity = 0.35
 
 local Camera = workspace.CurrentCamera
-local Players = game.Players
+local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
@@ -598,11 +606,41 @@ local function getScreenCenter()
     return Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 end
 
+-- ==========================================
+-- FIXED: Optimized Wall Check with caching
+-- ==========================================
+local WallCheckCache = {}
+local WallCheckCacheTime = {}
+
 local function isBehindWall(targetPart)
     if not WallCheckEnabled then return false end
-    local Parts = Camera:GetPartsObscuringTarget({targetPart.Position}, {LocalPlayer.Character, targetPart.Parent})
-    return #Parts > 0
+    if not targetPart then return true end
+    
+    local partKey = targetPart
+    local currentTime = tick()
+    
+    if WallCheckCacheTime[partKey] and (currentTime - WallCheckCacheTime[partKey] < 0.1) then
+        return WallCheckCache[partKey] or false
+    end
+    
+    local result = false
+    pcall(function()
+        local Parts = Camera:GetPartsObscuringTarget({targetPart.Position}, {LocalPlayer.Character, targetPart.Parent})
+        result = #Parts > 0
+    end)
+    
+    WallCheckCache[partKey] = result
+    WallCheckCacheTime[partKey] = currentTime
+    
+    return result
 end
+
+task.spawn(function()
+    while task.wait(5) do
+        table.clear(WallCheckCache)
+        table.clear(WallCheckCacheTime)
+    end
+end)
 
 local function isDead(humanoid, char)
     if not DieCheckEnabled then return false end
@@ -617,9 +655,14 @@ local CurrentTargetCharacter = nil
 local lastTarget = nil
 local interpolationProgress = 0
 
+-- ==========================================
+-- FIXED: Optimized target selection with reduced checks
+-- ==========================================
+local targetCheckCooldown = {}
+local targetCheckCooldownTime = {}
+
 task.spawn(function()
-    while task.wait(0.01) do
-        -- Track True Velocity for Resolver Logic
+    while task.wait(0.05) do
         for _, p in ipairs(Players:GetPlayers()) do
             if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                 local hrp = p.Character.HumanoidRootPart
@@ -832,20 +875,30 @@ local jitterToggle = false
 local LastLoggedHudTargetId = 0
 local currentHudHealthLerp = 0 
 local LastCameraRotation = Camera.CFrame.LookVector
+local renderStepCounter = 0
 
+-- ==========================================
+-- FIXED: Optimized render loop
+-- ==========================================
 RunService.RenderStepped:Connect(function()
+    renderStepCounter = renderStepCounter + 1
+    
+    local shouldDraw = (renderStepCounter % 2 == 0)
+    
     local Center = getScreenCenter()
     local ShowCircle = FOVVisible and (SilentAimEnabled or MobileAimbotEnabled)
     
-    FOVCircleOutline.Position = Center
-    FOVCircleOutline.Radius = FOVSize
-    FOVCircleOutline.Visible = ShowCircle
-    FOVCircleOutline.Color = FOVCircleOutlineColor
+    if shouldDraw or (FOVCircle.Position ~= Center) then
+        FOVCircleOutline.Position = Center
+        FOVCircleOutline.Radius = FOVSize
+        FOVCircleOutline.Visible = ShowCircle
+        FOVCircleOutline.Color = FOVCircleOutlineColor
 
-    FOVCircle.Position = Center
-    FOVCircle.Radius = FOVSize
-    FOVCircle.Visible = ShowCircle
-    FOVCircle.Color = FOVCircleColor
+        FOVCircle.Position = Center
+        FOVCircle.Radius = FOVSize
+        FOVCircle.Visible = ShowCircle
+        FOVCircle.Color = FOVCircleColor
+    end
 
     if ShowCircle and FOVFillEnabled then
         FOVFillFrame.Position = UDim2.new(0, Center.X, 0, Center.Y)
@@ -902,9 +955,11 @@ RunService.RenderStepped:Connect(function()
     if (SilentAimEnabled or MobileAimbotEnabled) and CurrentTargetPlayer and CurrentTargetPlayer.Character and TargetHudToggle then
         local Hum = CurrentTargetPlayer.Character:FindFirstChildOfClass("Humanoid")
         if Hum then
-            DisplayNameLabel.Text = CurrentTargetPlayer.DisplayName
-            UsernameLabel.Text = "@" .. CurrentTargetPlayer.Name
-            UserIdLabel.Text = "USER ID: " .. tostring(CurrentTargetPlayer.UserId)
+            if shouldDraw then
+                DisplayNameLabel.Text = CurrentTargetPlayer.DisplayName
+                UsernameLabel.Text = "@" .. CurrentTargetPlayer.Name
+                UserIdLabel.Text = "USER ID: " .. tostring(CurrentTargetPlayer.UserId)
+            end
             
             local pct = math.clamp(Hum.Health / Hum.MaxHealth, 0, 1)
             
@@ -1010,21 +1065,23 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    local blurEffect = Lighting:FindFirstChild("hooksenseMotionBlur")
-    if MotionBlurEnabled then
-        if not blurEffect then
-            blurEffect = Instance.new("BlurEffect")
-            blurEffect.Name = "hooksenseMotionBlur"
-            blurEffect.Parent = Lighting
+    if shouldDraw then
+        local blurEffect = Lighting:FindFirstChild("hooksenseMotionBlur")
+        if MotionBlurEnabled then
+            if not blurEffect then
+                blurEffect = Instance.new("BlurEffect")
+                blurEffect.Name = "hooksenseMotionBlur"
+                blurEffect.Parent = Lighting
+            end
+            local currentLookVector = Camera.CFrame.LookVector
+            local angleDifference = math.acos(math.clamp(currentLookVector:Dot(LastCameraRotation), -1, 1))
+            local blurTarget = math.clamp(angleDifference * 45 * MotionBlurIntensity, 0, 56)
+            
+            blurEffect.Size = blurEffect.Size + (blurTarget - blurEffect.Size) * 0.25
+            LastCameraRotation = currentLookVector
+        else
+            if blurEffect then blurEffect:Destroy() end
         end
-        local currentLookVector = Camera.CFrame.LookVector
-        local angleDifference = math.acos(math.clamp(currentLookVector:Dot(LastCameraRotation), -1, 1))
-        local blurTarget = math.clamp(angleDifference * 45 * MotionBlurIntensity, 0, 56)
-        
-        blurEffect.Size = blurEffect.Size + (blurTarget - blurEffect.Size) * 0.25
-        LastCameraRotation = currentLookVector
-    else
-        if blurEffect then blurEffect:Destroy() end
     end
 end)
 
@@ -1438,6 +1495,9 @@ local DrawingFonts = {
 }
 local DrawingFontNames = {"UI", "System", "Plex", "Monospace"}
 
+local LastCameraCFrame = workspace.CurrentCamera.CFrame
+
+-- FIXED: GetColor function with proper type handling
 local function GetColor(optionName, defaultColor)
     local fallback = defaultColor or Color3.fromRGB(255, 255, 255)
     if not Options then return fallback end
@@ -1446,19 +1506,16 @@ local function GetColor(optionName, defaultColor)
 
     if typeof(opt) == "Color3" then
         return opt
-    elseif typeof(opt) == "table" then
-        if typeof(opt.Value) == "Color3" then
-            return opt.Value
-        elseif typeof(opt.Color) == "Color3" then
-            return opt.Color
-        elseif opt[1] and typeof(opt[1]) == "number" then
-            return Color3.new(opt[1], opt[2], opt[3])
-        end
-    elseif typeof(opt) == "UserData" or typeof(opt) == "RBXScriptConnection" then
+    end
+    
+    if typeof(opt) == "table" then
         if opt.Value and typeof(opt.Value) == "Color3" then
             return opt.Value
+        elseif opt.Color and typeof(opt.Color) == "Color3" then
+            return opt.Color
         end
     end
+    
     return fallback
 end
 
@@ -1528,6 +1585,7 @@ local function ImplementESPSetup(holder)
         holder.Name = CreateText()
         holder.Distance = CreateText()
         holder.SmoothHealth = nil
+        holder.NeedsRefresh = true
 
         if holder.HealthOutline then holder.HealthOutline.Color = Color3.fromRGB(0, 0, 0) end
         if holder.HealthText then 
@@ -1580,9 +1638,13 @@ local function SetVisibilityFalse(esp)
         if esp.HealthText then esp.HealthText.Visible = false end
         if esp.Name then esp.Name.Visible = false end
         if esp.Distance then esp.Distance.Visible = false end
+        esp.NeedsRefresh = true
     end)
 end
 
+-- ==========================================
+-- FIXED: Optimized ESP rendering with proper health bar
+-- ==========================================
 RunService.RenderStepped:Connect(function()
     pcall(function()
         local Camera = workspace.CurrentCamera
@@ -1594,6 +1656,7 @@ RunService.RenderStepped:Connect(function()
             return
         end
 
+        -- FIXED: Use GetColor function for all colors
         local boxColor = GetColor("BoxColor", Color3.fromRGB(255, 255, 255))
         local cornerColor = GetColor("CornerColor", Color3.fromRGB(0, 210, 255))
         local nameColor = GetColor("NameColor", Color3.fromRGB(255, 255, 255))
@@ -1750,7 +1813,7 @@ RunService.RenderStepped:Connect(function()
                             for i = 1, 8 do outs[i].Visible = false end
                         end
 
-                        -- Healthbar
+                        -- Health bar
                         if Toggles.EspHealth and Toggles.EspHealth.Value then
                             local barWidth = 1.5
                             local outlinePadding = 1
@@ -1767,13 +1830,13 @@ RunService.RenderStepped:Connect(function()
                                 esp.HealthBar.Size = Vector2.new(barWidth, healthHeight)
                                 esp.HealthBar.Position = Vector2.new(barX, barY)
 
-                                local finalCalculatedColor = hpFullColor
-                                if pct > 0.5 then
-                                    local alpha = math.clamp((pct - 0.5) * 2, 0, 1)
-                                    finalCalculatedColor = hpHalfColor:Lerp(hpFullColor, alpha)
+                                local finalCalculatedColor
+                                if pct > 0.6 then
+                                    finalCalculatedColor = hpFullColor
+                                elseif pct > 0.3 then
+                                    finalCalculatedColor = hpHalfColor
                                 else
-                                    local alpha = math.clamp(pct * 2, 0, 1)
-                                    finalCalculatedColor = hpLowColor:Lerp(hpHalfColor, alpha)
+                                    finalCalculatedColor = hpLowColor
                                 end
 
                                 esp.HealthBar.Color = finalCalculatedColor or Color3.fromRGB(0, 255, 0)
@@ -1815,6 +1878,8 @@ RunService.RenderStepped:Connect(function()
                         else
                             esp.Distance.Visible = false
                         end
+                        
+                        esp.NeedsRefresh = false
                     else
                         esp.SmoothHealth = nil
                         SetVisibilityFalse(esp)
@@ -1838,7 +1903,6 @@ EspVisualsGroup:AddDropdown("EspFontDropdown", { Text = "ESP Font", Values = Dra
 EspVisualsGroup:AddToggle("EspBox", { Text = "Draw Box", Default = false }):AddColorPicker("BoxColor", { Default = Color3.fromRGB(255, 255, 255) })
 EspVisualsGroup:AddToggle("EspCornerBox", { Text = "Corner Box", Default = false }):AddColorPicker("CornerColor", { Default = Color3.fromRGB(255, 255, 255) })
 
--- [Box Fill ESP Gradient Controls Added Here]
 EspVisualsGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill Gradient", Default = false })
 EspVisualsGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.5, Min = 0, Max = 1, Rounding = 2 })
 EspVisualsGroup:AddLabel("Fill Color 1 (Top)"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 0, 0) })
@@ -2056,9 +2120,12 @@ Options.MotionBlurIntensitySlider:OnChanged(function()
     MotionBlurIntensity = Options.MotionBlurIntensitySlider.Value
 end)
 
+-- FIXED: FPS Cap with pcall safety
 CameraDisplayBox:AddSlider("FpsCapSlider", { Text = "FPS Cap Limit", Default = 60, Min = 60, Max = 999, Rounding = 0 })
 Options.FpsCapSlider:OnChanged(function()
-    if setfpscap then setfpscap(Options.FpsCapSlider.Value) end
+    if setfpscap then
+        pcall(function() setfpscap(Options.FpsCapSlider.Value) end)
+    end
 end)
 
 -- [Addons Tab Components]
