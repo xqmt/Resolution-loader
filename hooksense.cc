@@ -24,7 +24,7 @@ task.spawn(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
     end)
 end)
-task.wait(4.1)
+task.wait(2.1)
 
 -- BYPASS 3: MEGGD Anti-Kick (Optional)
 task.spawn(function()
@@ -34,9 +34,9 @@ task.spawn(function()
 end)
 
 -- ==========================================
--- STEP 2: WAIT 15 SECONDS
+-- STEP 2: WAIT 6 SECONDS
 -- ==========================================
-task.wait(8.5)
+task.wait(6.2)
 
 -- ==========================================
 -- STEP 3: LOAD LIBRARY & CREATE MENU
