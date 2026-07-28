@@ -16,7 +16,7 @@ for k, v in pairs(getgc(true)) do
         }
     end
 end
-task.wait(8)
+task.wait(6.2)
 
 -- BYPASS 2: Adonis Cries Anti-Kick (Optional)
 task.spawn(function()
@@ -24,7 +24,7 @@ task.spawn(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
     end)
 end)
-task.wait(5)
+task.wait(4.1)
 
 -- BYPASS 3: MEGGD Anti-Kick (Optional)
 task.spawn(function()
@@ -36,7 +36,7 @@ end)
 -- ==========================================
 -- STEP 2: WAIT 15 SECONDS
 -- ==========================================
-task.wait(12)
+task.wait(8.5)
 
 -- ==========================================
 -- STEP 3: LOAD LIBRARY & CREATE MENU
