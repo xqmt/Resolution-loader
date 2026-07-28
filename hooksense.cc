@@ -1082,12 +1082,12 @@ end))
 local Tabs = {
     Main = Window:AddTab("Main"),
     Aimbot = Window:AddTab("Aimbot"),
-    HitEffects = Window:AddTab("Hits"),
+    HitEffects = Window:AddTab("Visual"),
     ESP = Window:AddTab("Esp"),
     Movement = Window:AddTab("Character"),
     World = Window:AddTab("World"),
     Addons = Window:AddTab("Misc"),
-    ['UI'] = Window:AddTab("UI setting")
+    ['UI'] = Window:AddTab("Setting")
 }
 
 local Options = getgenv().Options
