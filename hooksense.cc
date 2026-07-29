@@ -575,7 +575,7 @@ BoxFillGui.Parent = TargetGuiParent
 
 -- [External-like Premium FOV Draw]
 local FOVCircleOutline = Drawing.new("Circle")
-FOVCircleOutline.Thickness = 1.2
+FOVCircleOutline.Thickness = 1.0
 FOVCircleOutline.NumSides = 144
 FOVCircleOutline.Filled = false
 FOVCircleOutline.Visible = FOVVisible
