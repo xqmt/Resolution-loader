@@ -575,7 +575,7 @@ BoxFillGui.Parent = TargetGuiParent
 
 -- [External-like Premium FOV Draw]
 local FOVCircleOutline = Drawing.new("Circle")
-FOVCircleOutline.Thickness = 1.0
+FOVCircleOutline.Thickness = 1.5
 FOVCircleOutline.NumSides = 144
 FOVCircleOutline.Filled = false
 FOVCircleOutline.Visible = FOVVisible
@@ -1312,17 +1312,17 @@ Options.FOVFillTransparencySlider:OnChanged(function()
     FOVFillTransparency = Options.FOVFillTransparencySlider.Value
 end)
 
-FOVFillGroupBox:AddLabel("Fill Color 1 (Top)"):AddColorPicker("FOVFillColor1Picker", { Default = Color3.fromRGB(255, 0, 0) })
+FOVFillGroupBox:AddLabel("Fill Color 1"):AddColorPicker("FOVFillColor1Picker", { Default = Color3.fromRGB(255, 0, 0) })
 Options.FOVFillColor1Picker:OnChanged(function()
     FOVFillColor1 = Options.FOVFillColor1Picker.Value
 end)
 
-FOVFillGroupBox:AddLabel("Fill Color 2 (Mid)"):AddColorPicker("FOVFillColor2Picker", { Default = Color3.fromRGB(0, 255, 0) })
+FOVFillGroupBox:AddLabel("Fill Color 2"):AddColorPicker("FOVFillColor2Picker", { Default = Color3.fromRGB(0, 255, 0) })
 Options.FOVFillColor2Picker:OnChanged(function()
     FOVFillColor2 = Options.FOVFillColor2Picker.Value
 end)
 
-FOVFillGroupBox:AddLabel("Fill Color 3 (Bottom)"):AddColorPicker("FOVFillColor3Picker", { Default = Color3.fromRGB(0, 0, 255) })
+FOVFillGroupBox:AddLabel("Fill Color 3"):AddColorPicker("FOVFillColor3Picker", { Default = Color3.fromRGB(0, 0, 255) })
 Options.FOVFillColor3Picker:OnChanged(function()
     FOVFillColor3 = Options.FOVFillColor3Picker.Value
 end)
@@ -1476,7 +1476,7 @@ end
 
 local function CreateText()
     local text = Drawing.new("Text")
-    text.Size = 13
+    text.Size = 11
     text.Center = true
     text.Outline = true
     text.OutlineColor = Color3.fromRGB(0, 0, 0)
@@ -1858,9 +1858,9 @@ EspVisualsGroup:AddToggle("EspCornerBox", { Text = "Corner Box", Default = false
 -- [Box Fill ESP Gradient Controls Added Here]
 EspVisualsGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill Gradient", Default = false })
 EspVisualsGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.5, Min = 0, Max = 1, Rounding = 2 })
-EspVisualsGroup:AddLabel("Fill Color 1 (Top)"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 0, 0) })
-EspVisualsGroup:AddLabel("Fill Color 2 (Mid)"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(0, 255, 0) })
-EspVisualsGroup:AddLabel("Fill Color 3 (Bottom)"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(0, 0, 255) })
+EspVisualsGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 0, 0) })
+EspVisualsGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(0, 255, 0) })
+EspVisualsGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(0, 0, 255) })
 EspVisualsGroup:AddToggle("EspBoxFillRotate", { Text = "Rotate Box Fill Gradient", Default = false })
 EspVisualsGroup:AddSlider("EspBoxFillRotateSpeed", { Text = "Box Fill Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
 
@@ -1873,7 +1873,7 @@ EspHealthToggle:AddColorPicker("HPHalfColor", { Default = Color3.fromRGB(255, 17
 EspHealthToggle:AddColorPicker("HPLowColor", { Default = Color3.fromRGB(255, 0, 0), Title = "Low HP Color" })
 
 EspVisualsGroup:AddSlider("HealthLerpSlider", {
-    Text = "Health Lerp Speed",
+    Text = "Health Lerp",
     Default = 0.2,
     Min = 0.1,
     Max = 1.0,
