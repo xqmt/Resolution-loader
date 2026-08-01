@@ -565,7 +565,7 @@ FOVFillCorner.Parent = FOVFillFrame
 local FOVFillGradient = Instance.new("UIGradient")
 FOVFillGradient.Parent = FOVFillFrame
 
--- [Box Fill ESP Gradient GUI Setup]
+-- [Box Fill & Health Bar Gradient ESP GUI Setup]
 local BoxFillGui = Instance.new("ScreenGui")
 BoxFillGui.Name = "hooksense_BoxFillGui"
 BoxFillGui.ResetOnSpawn = false
@@ -598,10 +598,25 @@ local function getScreenCenter()
     return Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 end
 
+-- ==========================================
+-- OPTIMIZED WALL CHECK (RAYCASTING METHOD)
+-- ==========================================
+local wallCheckParams = RaycastParams.new()
+wallCheckParams.FilterType = Enum.RaycastFilterType.Exclude
+wallCheckParams.IgnoreWater = true
+
 local function isBehindWall(targetPart)
     if not WallCheckEnabled then return false end
-    local Parts = Camera:GetPartsObscuringTarget({targetPart.Position}, {LocalPlayer.Character, targetPart.Parent})
-    return #Parts > 0
+    if not targetPart or not LocalPlayer.Character then return false end
+
+    local origin = Camera.CFrame.Position
+    local destination = targetPart.Position
+    local direction = destination - origin
+
+    wallCheckParams.FilterDescendantsInstances = {LocalPlayer.Character, targetPart.Parent}
+    local raycastResult = workspace:Raycast(origin, direction, wallCheckParams)
+
+    return raycastResult ~= nil
 end
 
 local function isDead(humanoid, char)
@@ -617,8 +632,9 @@ local CurrentTargetCharacter = nil
 local lastTarget = nil
 local interpolationProgress = 0
 
+-- Optimized Main Loop (~30Hz)
 task.spawn(function()
-    while task.wait(0.01) do
+    while task.wait(0.03) do
         -- Track True Velocity for Resolver Logic
         for _, p in ipairs(Players:GetPlayers()) do
             if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
@@ -1429,7 +1445,7 @@ Options.CustomHitNotifyInput:OnChanged(function()
     end
 end)
 
--- [ESP Tab Components - Integrated UELinoriaLib Drawing ESP]
+-- [ESP Tab Components - Integrated GUI Gradient Health Bar]
 local DrawingFonts = {
     ["UI"] = 0,
     ["System"] = 1,
@@ -1438,7 +1454,6 @@ local DrawingFonts = {
 }
 local DrawingFontNames = {"UI", "System", "Plex", "Monospace"}
 
--- Force refresh ESP on camera movement
 local LastCameraCFrame = workspace.CurrentCamera.CFrame
 
 local function GetColor(optionName, defaultColor)
@@ -1476,7 +1491,7 @@ end
 
 local function CreateText()
     local text = Drawing.new("Text")
-    text.Size = 11
+    text.Size = 12
     text.Center = true
     text.Outline = true
     text.OutlineColor = Color3.fromRGB(0, 0, 0)
@@ -1509,6 +1524,24 @@ local function ImplementESPSetup(holder)
         holder.BoxFillGradient.Parent = holder.BoxFillFrame
         holder.BoxFillRotationAngle = 0
 
+        -- GUI Based Gradient HealthBar Component
+        holder.GuiHealthBg = Instance.new("Frame")
+        holder.GuiHealthBg.Name = "HealthBg"
+        holder.GuiHealthBg.BorderSizePixel = 0
+        holder.GuiHealthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        holder.GuiHealthBg.Visible = false
+        holder.GuiHealthBg.Parent = BoxFillGui
+
+        holder.GuiHealthBar = Instance.new("Frame")
+        holder.GuiHealthBar.Name = "HealthBar"
+        holder.GuiHealthBar.BorderSizePixel = 0
+        holder.GuiHealthBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        holder.GuiHealthBar.Parent = holder.GuiHealthBg
+
+        holder.GuiHealthGradient = Instance.new("UIGradient")
+        holder.GuiHealthGradient.Rotation = 90 -- Vertical Gradient
+        holder.GuiHealthGradient.Parent = holder.GuiHealthBar
+
         holder.BoxLines = {CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1)}
         holder.BoxOutlines = {
             CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1),
@@ -1525,18 +1558,14 @@ local function ImplementESPSetup(holder)
             CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1)
         }
 
-        holder.HealthOutline = CreateSquare(true)
-        holder.HealthBar = CreateSquare(true)
         holder.HealthText = CreateText()
         holder.Name = CreateText()
         holder.Distance = CreateText()
         holder.SmoothHealth = nil
-        -- Force refresh flag
         holder.NeedsRefresh = true
 
-        if holder.HealthOutline then holder.HealthOutline.Color = Color3.fromRGB(0, 0, 0) end
         if holder.HealthText then 
-            holder.HealthText.Size = 11 
+            holder.HealthText.Size = 10 
             holder.HealthText.Center = true 
         end
     end)
@@ -1554,6 +1583,9 @@ local function RemoveDrawingESP(player)
         pcall(function()
             if ESP_Drawing_Storage[player].BoxFillFrame then
                 ESP_Drawing_Storage[player].BoxFillFrame:Destroy()
+            end
+            if ESP_Drawing_Storage[player].GuiHealthBg then
+                ESP_Drawing_Storage[player].GuiHealthBg:Destroy()
             end
             for _, obj in pairs(ESP_Drawing_Storage[player]) do
                 if type(obj) == "table" then
@@ -1576,12 +1608,11 @@ Players.PlayerRemoving:Connect(RemoveDrawingESP)
 local function SetVisibilityFalse(esp)
     pcall(function()
         if esp.BoxFillFrame then esp.BoxFillFrame.Visible = false end
+        if esp.GuiHealthBg then esp.GuiHealthBg.Visible = false end
         if esp.BoxLines then for i = 1, 4 do esp.BoxLines[i].Visible = false end end
         if esp.BoxOutlines then for i = 1, 8 do esp.BoxOutlines[i].Visible = false end end
         if esp.CornerLines then for i = 1, 8 do esp.CornerLines[i].Visible = false end end
         if esp.CornerOutlines then for i = 1, 16 do esp.CornerOutlines[i].Visible = false end end
-        if esp.HealthBar then esp.HealthBar.Visible = false end
-        if esp.HealthOutline then esp.HealthOutline.Visible = false end
         if esp.HealthText then esp.HealthText.Visible = false end
         if esp.Name then esp.Name.Visible = false end
         if esp.Distance then esp.Distance.Visible = false end
@@ -1594,7 +1625,6 @@ RunService.RenderStepped:Connect(function()
         local Camera = workspace.CurrentCamera
         if not Camera then return end
 
-        -- Force refresh on camera movement
         local currentCFrame = Camera.CFrame
         if currentCFrame ~= LastCameraCFrame then
             LastCameraCFrame = currentCFrame
@@ -1672,8 +1702,8 @@ RunService.RenderStepped:Connect(function()
                         local pct = math.clamp(esp.SmoothHealth / maxHp, 0, 1)
                         local mathWidth, mathHeight = math.round(width), math.round(height)
 
-                        local textSize = math.clamp(math.round(mathHeight * 0.28), 9, 14)
-                        local hpTextSize = math.clamp(math.round(mathHeight * 0.22), 8, 12)
+                        local textSize = math.clamp(math.round(mathHeight * 0.16), 9, 14)
+                        local hpTextSize = math.clamp(math.round(mathHeight * 0.13), 8, 12)
 
                         if esp.Name then esp.Name.Font = currentDrawingFont; esp.Name.Size = textSize end
                         if esp.Distance then esp.Distance.Font = currentDrawingFont; esp.Distance.Size = textSize end
@@ -1765,56 +1795,44 @@ RunService.RenderStepped:Connect(function()
                             for i = 1, 8 do outs[i].Visible = false end
                         end
 
-                        -- Healthbar
+                        -- Gradient Health Bar System
                         if Toggles.EspHealth and Toggles.EspHealth.Value then
-                            local barWidth = 1.5
+                            local barWidth = 3
                             local outlinePadding = 1
-                            local barX = boxX - 5
-                            
-                            esp.HealthOutline.Size = Vector2.new(barWidth + (outlinePadding * 2), mathHeight + (outlinePadding * 2))
-                            esp.HealthOutline.Position = Vector2.new(barX - outlinePadding, boxY - outlinePadding)
-                            esp.HealthOutline.Visible = true
+                            local barX = boxX - 6
+                            local barY = boxY
+
+                            esp.GuiHealthBg.Position = UDim2.new(0, barX - outlinePadding, 0, barY - outlinePadding)
+                            esp.GuiHealthBg.Size = UDim2.new(0, barWidth + (outlinePadding * 2), 0, mathHeight + (outlinePadding * 2))
+                            esp.GuiHealthBg.Visible = true
 
                             local healthHeight = math.clamp(math.round(mathHeight * pct), 0, mathHeight)
-                            local barY = boxY + (mathHeight - healthHeight)
+                            
+                            esp.GuiHealthBar.Position = UDim2.new(0, outlinePadding, 0, outlinePadding + (mathHeight - healthHeight))
+                            esp.GuiHealthBar.Size = UDim2.new(0, barWidth, 0, healthHeight)
 
-                            if healthHeight > 0 then
-                                esp.HealthBar.Size = Vector2.new(barWidth, healthHeight)
-                                esp.HealthBar.Position = Vector2.new(barX, barY)
-
-                                local finalCalculatedColor = hpFullColor
-                                if pct > 0.5 then
-                                    local alpha = math.clamp((pct - 0.5) * 2, 0, 1)
-                                    finalCalculatedColor = hpHalfColor:Lerp(hpFullColor, alpha)
-                                else
-                                    local alpha = math.clamp(pct * 2, 0, 1)
-                                    finalCalculatedColor = hpLowColor:Lerp(hpHalfColor, alpha)
-                                end
-
-                                esp.HealthBar.Color = finalCalculatedColor or Color3.fromRGB(0, 255, 0)
-                                esp.HealthBar.Visible = true
-                            else
-                                esp.HealthBar.Visible = false
-                            end
+                            esp.GuiHealthGradient.Color = ColorSequence.new({
+                                ColorSequenceKeypoint.new(0, hpFullColor),
+                                ColorSequenceKeypoint.new(0.5, hpHalfColor),
+                                ColorSequenceKeypoint.new(1, hpLowColor)
+                            })
 
                             if Toggles.EspHealthText and Toggles.EspHealthText.Value then
                                 esp.HealthText.Text = tostring(math.round(targetHp))
-                                esp.HealthText.Position = Vector2.new(barX - (hpTextSize + 2), math.clamp(barY - 4, boxY - 4, boxY + mathHeight - 10))
+                                esp.HealthText.Position = Vector2.new(barX - (hpTextSize + 4), math.clamp(barY + (mathHeight - healthHeight) - 4, boxY - 4, boxY + mathHeight - 10))
                                 esp.HealthText.Color = hpTextColor
                                 esp.HealthText.Visible = true
                             else
                                 esp.HealthText.Visible = false
                             end
                         else
-                            esp.HealthOutline.Visible = false
-                            esp.HealthBar.Visible = false
+                            esp.GuiHealthBg.Visible = false
                             esp.HealthText.Visible = false
                         end
 
-                        -- Name & Distance - Force update with refresh
                         if Toggles.EspName and Toggles.EspName.Value then
                             esp.Name.Text = selectedName
-                            esp.Name.Position = Vector2.new(boxX + (mathWidth / 2), boxY - (textSize + 2))
+                            esp.Name.Position = Vector2.new(boxX + (mathWidth / 2), boxY - (textSize + 3))
                             esp.Name.Color = nameColor
                             esp.Name.Visible = true
                         else
@@ -1824,7 +1842,7 @@ RunService.RenderStepped:Connect(function()
                         if Toggles.EspDistance and Toggles.EspDistance.Value then
                             local dist = math.floor((Camera.CFrame.Position - rootPart.Position).Magnitude)
                             esp.Distance.Text = "[" .. tostring(dist) .. "m]"
-                            esp.Distance.Position = Vector2.new(boxX + (mathWidth / 2), boxY + mathHeight + 2)
+                            esp.Distance.Position = Vector2.new(boxX + (mathWidth / 2), boxY + mathHeight + 3)
                             esp.Distance.Color = distColor
                             esp.Distance.Visible = true
                         else
@@ -1855,7 +1873,6 @@ EspVisualsGroup:AddDropdown("EspFontDropdown", { Text = "ESP Font", Values = Dra
 EspVisualsGroup:AddToggle("EspBox", { Text = "Draw Box", Default = false }):AddColorPicker("BoxColor", { Default = Color3.fromRGB(255, 255, 255) })
 EspVisualsGroup:AddToggle("EspCornerBox", { Text = "Corner Box", Default = false }):AddColorPicker("CornerColor", { Default = Color3.fromRGB(255, 255, 255) })
 
--- [Box Fill ESP Gradient Controls Added Here]
 EspVisualsGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill Gradient", Default = false })
 EspVisualsGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.5, Min = 0, Max = 1, Rounding = 2 })
 EspVisualsGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 0, 0) })
