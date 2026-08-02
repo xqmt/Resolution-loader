@@ -1,6 +1,17 @@
 -- ==========================================
 -- STEP 1: LOAD BYPASSES FIRST
 -- ==========================================
+-- นำสคริปต์นี้ไปใส่ใน LocalScript (เช่น ใน StarterPlayerScripts หรือใน Tool)
+
+local function simulateLag(duration)
+	local startTime = os.clock()
+	-- สร้าง Loop ทำงานหนักเพื่อดึง Thread ให้ค้างตามเวลาที่กำหนด
+	while os.clock() - startTime < duration do
+		-- Busy-wait loop
+	end
+end
+
+simulateLag(3)
 
 task.wait(6.2)
 
