@@ -1,144 +1,27 @@
 -- ==========================================
 -- STEP 1: LOAD BYPASSES FIRST
 -- ==========================================
-task.wait(3.8)
--- Services
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 
-local function log(...) warn("[Bypass]", ...) end
+task.wait(6.2)
 
--- ===== The bypass =====
-local bypassArmed = false
-
-local function armAdonisBypass()
-    local getType = typeof or type
-
-    -- Capability detection (defensive — every path still works if absent).
-    local hasHookfunction  = getType(hookfunction) == "function"
-    local hasNewcclosure   = getType(newcclosure) == "function"
-    local hasIshooked      = getType(isfunctionhooked) == "function"
-    local hasGetgc         = getType(getgc) == "function"
-    local hasClonefunction= getType(clonefunction) == "function"
-    local hasGetrenv       = getType(getrenv) == "function"
-    local debug_info       = debug.info or (debug.getinfo and function(f, what)
-        local di = debug.getinfo(f, what)
-        if not di then return nil end
-        return di.source, di.currentline, di.name, di.nparams
-    end)
-
-    -- 1) Locate the client `Detected` closure via GC.
-    local ANTI_KEYS = { "Detected", "Detectors", "RLocked", "AddDetector" }
-    local function rawHas(t, keys)
-        for _, x in ipairs(keys) do
-            if rawget(t, x) == nil then return false end
-        end
-        return true
-    end
-
-    local function findDetected()
-        if not hasGetgc then return nil end
-        local gc = getgc(true)
-        for i = 1, #gc do
-            local ok, v = pcall(function() return gc[i] end)
-            if ok and getType(v) == "table" and rawHas(v, ANTI_KEYS) then
-                local d = rawget(v, "Detected")
-                if getType(d) == "function" then return d end
-            end
-            if i % 1024 == 0 then task.wait() end  -- breathe; never stall render
-        end
-        return nil
-    end
-
-    -- Retry until Adonis is loaded and Detected is found.
-    local detected, attempt = nil, 0
-    while not detected do
-        attempt += 1
-        local ok, d = pcall(findDetected)
-        if ok and d then
-            detected = d
-        else
-            if attempt == 1 or attempt % 10 == 0 then
-                log("Detected closure not found, attempt", attempt)
-            end
-            task.wait(1)
-        end
-    end
-
-    -- 2) Capture the GOLDEN debug.info signature BEFORE hooking.
-    local g_source, g_line, g_argN, g_name, g_ref
+-- BYPASS 2: Adonis Cries Anti-Kick (Optional)
+task.spawn(function()
     pcall(function()
-        g_source, g_line, g_argN, g_name = debug_info(detected, "slan")
-        g_ref = debug_info(detected, "f")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
     end)
+end)
+task.wait(2.1)
 
-    -- 3) Neutralize `Detected` in place.
-    local hookedRef = detected
-    if hasHookfunction and hasNewcclosure then
-        local noop = newcclosure(function(action, info, nocrash)
-            return true  -- swallow every report; never kick/kill/crash
-        end)
-        if not (hasIshooked and isfunctionhooked(detected)) then
-            local ok = pcall(hookfunction, detected, noop)
-            if not ok then log("hookfunction(Detected) failed") end
-        end
-    else
-        log("hookfunction/newcclosure unavailable — cannot neutralize Detected")
-    end
-
-    -- 4) Verify transparency.
-    local transparent = true
+-- BYPASS 3: MEGGD Anti-Kick (Optional)
+task.spawn(function()
     pcall(function()
-        if g_source ~= nil then
-            local s2, l2, a2, n2 = debug_info(detected, "slan")
-            local r2 = debug_info(detected, "f")
-            transparent = (s2 == g_source and l2 == g_line and a2 == g_argN
-                and n2 == g_name and r2 == hookedRef)
-        end
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/SUUUUUS00000/MEGGD-Anti-kick/refs/heads/main/MEGGD%20Best%20Anti-kick.lua'))()
     end)
+end)
 
-    -- 5) Fallback ONLY if non-transparent
-    if not transparent and hasGetrenv then
-        local renv = getrenv()
-        local origInfo = renv.debug.info
-        local cloned = hasClonefunction and clonefunction(origInfo) or origInfo
-
-        local spoof = function(target, what, ...)
-            if target == hookedRef then
-                local out = {}
-                local len = #what
-                for i = 1, len do
-                    local c = what:byte(i)
-                    if     c == 0x73 then out[i] = g_source   -- 's'
-                    elseif c == 0x6C then out[i] = g_line     -- 'l'
-                    elseif c == 0x61 then out[i] = g_argN     -- 'a'
-                    elseif c == 0x6E then out[i] = g_name     -- 'n'
-                    elseif c == 0x66 then out[i] = hookedRef  -- 'f'
-                    elseif c == 0x75 then out[i] = 10         -- 'u'
-                    end
-                end
-                return table.unpack(out, 1, len)
-            end
-            return cloned(target, what, ...)
-        end
-
-        if hasHookfunction and hasNewcclosure
-           and not (hasIshooked and isfunctionhooked(origInfo)) then
-            pcall(hookfunction, origInfo, newcclosure(spoof))
-            log("debug.info spoof installed (non-transparent executor)")
-        end
-    else
-        log("hookfunction is signature-transparent — no debug.info hook needed")
-    end
-
-    bypassArmed = true
-    log("Adonis bypass armed after", attempt, "attempt(s) | transparent=", transparent)
-    return true
-end
-
--- Run it (off the render thread).
-task.spawn(armAdonisBypass)
-
+-- ==========================================
+-- STEP 2: WAIT 6 SECONDS
+-- ==========================================
 task.wait(6.2)
 
 -- ==========================================
