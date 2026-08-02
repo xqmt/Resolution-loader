@@ -1,6 +1,7 @@
 -- ==========================================
 -- STEP 1: LOAD BYPASSES FIRST
 -- ==========================================
+task.wait(3.8)
 -- Services
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
