@@ -1197,8 +1197,9 @@ LeftGroupBox:AddToggle("BulletTPToggle", { Text = "Enable BulletTp", Default = f
     :AddKeyPicker("BulletTPKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "BulletTp Bind" })
 
 Toggles.BulletTPToggle:OnChanged(function()
-    BulletTPEnabled = Toggles.BulletTpToggle.Value
+    BulletTPEnabled = Toggles.BulletTPToggle.Value -- แก้เป็น P ตัวใหญ่
 end)
+
 
 LeftGroupBox:AddToggle("WallCheckToggle", { Text = "Enable Wall Check", Default = false })
 Toggles.WallCheckToggle:OnChanged(function()
