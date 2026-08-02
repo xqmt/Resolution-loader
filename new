@@ -1193,8 +1193,8 @@ Toggles.LookAtToggle:OnChanged(function()
     LookAtEnabled = Toggles.LookAtToggle.Value
 end)
 
-LeftGroupBox:AddToggle("BulletTPToggle", { Text = "Enable Wallbang", Default = false })
-    :AddKeyPicker("BulletTPKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Wallbang Bind" })
+LeftGroupBox:AddToggle("BulletTPToggle", { Text = "Enable BulletTp", Default = false })
+    :AddKeyPicker("BulletTPKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "BulletTp Bind" })
 
 Toggles.BulletTPToggle:OnChanged(function()
     BulletTPEnabled = Toggles.BulletTpToggle.Value
