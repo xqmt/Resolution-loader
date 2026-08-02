@@ -51,7 +51,7 @@ Library.ShowCustomCursor = true
 Library.NotifySide = "Right" 
 
 local Window = Library:CreateWindow({
-    Title = "hooksenseใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…คใ…ค",
+    Title = "Lore",
     Center = true, 
     AutoShow = true,
     Resizable = true,
