@@ -1387,7 +1387,7 @@ local SoundLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Sound")
 local OverlayLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Overlay") 
 local NotifyRightBox = Tabs.HitEffects:AddRightGroupbox("Hit Notification Custom System")
 
-SoundLeftBox:AddDropdown("HitSoundDropdown", { Text = "Target Hit Sound", Values = {"None", "Spark", "Neverlose", "Rust", "Fatality", "Fatality 2", "Minecraft xp", "Minecraft", "Crack", "Pop", "Headshot", "Manbo", "Skeet"}, Default = 1, Multi = false })
+SoundLeftBox:AddDropdown("HitSoundDropdown", { Text = "Target Hit Sound", Values = {"None", "Spark", "Neverlose", "Rust", "Fatality", "Fatality 2", "Minecraft xp", "Minecraft", "Crack", "Headshot", "Pop", "Manbo", "Skeet"}, Default = 1, Multi = false })
 Options.HitSoundDropdown:OnChanged(function()
     HitSoundMode = Options.HitSoundDropdown.Value
 end)
