@@ -138,6 +138,8 @@ end
 -- Run it (off the render thread).
 task.spawn(armAdonisBypass)
 
+task.wait 6.2
+
 -- ==========================================
 -- STEP 3: LOAD LIBRARY & CREATE MENU
 -- ==========================================
