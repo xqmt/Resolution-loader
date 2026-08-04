@@ -144,8 +144,8 @@ local SoundIDs = {
     ["Minecraft xp"] = "rbxassetid://17148249625",
     ["Minecraft"] = "rbxassetid://135478009117226",
     ["Crack"] = "rbxassetid://126409451844008",
-    ["Pop"] = "rbxassetid://5764885315",
-    ["Headshot"] = "rbxassetid://140323850218372",
+    ["Pop"] = "rbxassetid://140323850218372",
+    ["Headshot"] = "rbxassetid://5764885315",
     ["Manbo"] = "rbxassetid://102257186883445",
     ["Skeet"] = "rbxassetid://80461265049096"
 }
