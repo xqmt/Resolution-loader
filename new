@@ -1,8 +1,3 @@
--- ==========================================
--- STEP 1: LOAD BYPASSES FIRST
--- ==========================================
-
--- BYPASS 1: Core Anti-Kick (Essential)
 for k, v in pairs(getgc(true)) do
     if pcall(function()
         return rawget(v, "indexInstance")
@@ -18,7 +13,6 @@ for k, v in pairs(getgc(true)) do
 end
 task.wait(6.2)
 
--- BYPASS 2: Adonis Cries Anti-Kick (Optional)
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
@@ -26,21 +20,14 @@ task.spawn(function()
 end)
 task.wait(2.1)
 
--- BYPASS 3: MEGGD Anti-Kick (Optional)
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet('https://raw.githubusercontent.com/SUUUUUS00000/MEGGD-Anti-kick/refs/heads/main/MEGGD%20Best%20Anti-kick.lua'))()
     end)
 end)
 
--- ==========================================
--- STEP 2: WAIT 6 SECONDS
--- ==========================================
 task.wait(6.2)
 
--- ==========================================
--- STEP 3: LOAD LIBRARY & CREATE MENU
--- ==========================================
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
