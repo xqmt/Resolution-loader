@@ -11,7 +11,7 @@ for k, v in pairs(getgc(true)) do
         }
     end
 end
-task.wait(6.2)
+task.wait(4.8)
 
 task.spawn(function()
     pcall(function()
@@ -26,7 +26,7 @@ task.spawn(function()
     end)
 end)
 
-task.wait(6.2)
+task.wait(2)
 
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
@@ -98,15 +98,9 @@ local FOVSize = 100
 local FOVVisible = true
 local TracerEnabled = true
 
-local MobileAimbotEnabled = false
-local AimbotSmoothness = 0.1
 local AutoPredictionEnabled = false
 local PredictionValue = 0.1
-local AimbotTargetPart = "Head"
 
-local JumpSmooth = 1
-local SmoothX = 1
-local SmoothZ = 1
 local PermLockEnabled = false
 local PermTargetList = {}
 local GlobalFontSetting = Enum.Font.Cartoon
@@ -645,7 +639,7 @@ task.spawn(function()
             end
         end
 
-        if not SilentAimEnabled and not MobileAimbotEnabled then
+        if not SilentAimEnabled then
             CurrentAimTargetPosition = nil
             CurrentTargetPlayer = nil
             CurrentTargetCharacter = nil
@@ -713,12 +707,11 @@ task.spawn(function()
             CurrentTargetCharacter = TempTargetChar
 
             if TempTargetChar then
-                local targetPartName = MobileAimbotEnabled and AimbotTargetPart or TargetPartMode
                 local head = TempTargetChar:FindFirstChild("Head")
                 local root = TempTargetChar:FindFirstChild("HumanoidRootPart")
                 
                 local targetPartObj = nil
-                if targetPartName == "Closet" then
+                if TargetPartMode == "Closet" then
                     local closestPart = nil
                     local minPartDist = math.huge
                     for _, part in ipairs(TempTargetChar:GetChildren()) do
@@ -735,7 +728,7 @@ task.spawn(function()
                     end
                     targetPartObj = closestPart or head or root
                 else
-                    targetPartObj = TempTargetChar:FindFirstChild(targetPartName) or head or root
+                    targetPartObj = TempTargetChar:FindFirstChild(TargetPartMode) or head or root
                 end
 
                 if targetPartObj then
@@ -762,7 +755,7 @@ task.spawn(function()
 
                         basePosition = basePosition + (targetedVelocity * ping * PredictionValue)
                     end
-                    if TargetPartMode == "Root to Head" and not MobileAimbotEnabled then
+                    if TargetPartMode == "Root to Head" then
                         if lastTarget ~= TempTargetChar then
                             lastTarget = TempTargetChar
                             interpolationProgress = 0
@@ -841,7 +834,7 @@ local LastCameraRotation = Camera.CFrame.LookVector
 
 RunService.RenderStepped:Connect(function()
     local Center = getScreenCenter()
-    local ShowCircle = FOVVisible and (SilentAimEnabled or MobileAimbotEnabled)
+    local ShowCircle = FOVVisible and SilentAimEnabled
     
     FOVCircleOutline.Position = Center
     FOVCircleOutline.Radius = FOVSize
@@ -874,7 +867,7 @@ RunService.RenderStepped:Connect(function()
         FOVFillFrame.Visible = false
     end
 
-    if (SilentAimEnabled or MobileAimbotEnabled) and TracerEnabled and CurrentAimTargetPosition then
+    if SilentAimEnabled and TracerEnabled and CurrentAimTargetPosition then
         local TargetPos, OnScreen = Camera:WorldToViewportPoint(CurrentAimTargetPosition)
         if OnScreen then
             local ToPos = Vector2.new(TargetPos.X, TargetPos.Y)
@@ -898,14 +891,9 @@ RunService.RenderStepped:Connect(function()
         TracerLine.Visible = false
     end
 
-    if MobileAimbotEnabled and CurrentAimTargetPosition then
-        local targetCFrame = CFrame.new(Camera.CFrame.Position, CurrentAimTargetPosition)
-        Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, AimbotSmoothness)
-    end
-
     MainCanvas.Position = UDim2.new(1, -20 + TargetHudPosX, 0, 20 + TargetHudPosY)
 
-    if (SilentAimEnabled or MobileAimbotEnabled) and CurrentTargetPlayer and CurrentTargetPlayer.Character and TargetHudToggle then
+    if SilentAimEnabled and CurrentTargetPlayer and CurrentTargetPlayer.Character and TargetHudToggle then
         local Hum = CurrentTargetPlayer.Character:FindFirstChildOfClass("Humanoid")
         if Hum then
             DisplayNameLabel.Text = CurrentTargetPlayer.DisplayName
@@ -1094,8 +1082,7 @@ OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
 end))
 
 local Tabs = {
-    Main = Window:AddTab("Main"),
-    Aimbot = Window:AddTab("Aimbot"),
+    Main = Window:AddTab("Silent-Aim"),
     HitEffects = Window:AddTab("Visual"),
     ESP = Window:AddTab("Esp"),
     Movement = Window:AddTab("Character"),
@@ -1106,52 +1093,6 @@ local Tabs = {
 
 local Options = getgenv().Options
 local Toggles = getgenv().Toggles
-
--- [Aimbot Tab Components]
-local MobileAimbotBox = Tabs.Aimbot:AddLeftGroupbox("Aimbot")
-local MobileAimbotSettings = Tabs.Aimbot:AddRightGroupbox("Aimbot Options")
-
-MobileAimbotBox:AddToggle("MobileAimbotToggle", { Text = "Enable Aimbot", Default = false })
-    :AddKeyPicker("MobileAimbotKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Mobile Aimbot Bind" })
-
-Toggles.MobileAimbotToggle:OnChanged(function()
-    MobileAimbotEnabled = Toggles.MobileAimbotToggle.Value
-end)
-
-MobileAimbotBox:AddSlider("AimbotSmoothSlider", { Text = "Aimbot Smoothness", Default = 0.1, Min = 0.01, Max = 1, Rounding = 2 })
-Options.AimbotSmoothSlider:OnChanged(function()
-    AimbotSmoothness = Options.AimbotSmoothSlider.Value
-end)
-
-MobileAimbotBox:AddSlider("JumpSmoothSlider", { Text = "Jump Smooth", Default = 1, Min = 1, Max = 100, Rounding = 0, Suffix = "%" })
-Options.JumpSmoothSlider:OnChanged(function()
-    JumpSmooth = Options.JumpSmoothSlider.Value
-end)
-
-MobileAimbotBox:AddSlider("SmoothXSlider", { Text = "Smooth X", Default = 1, Min = 1, Max = 100, Rounding = 0, Suffix = "%" })
-Options.SmoothXSlider:OnChanged(function()
-    SmoothX = Options.SmoothXSlider.Value
-end)
-
-MobileAimbotBox:AddSlider("SmoothZSlider", { Text = "Smooth Z", Default = 1, Min = 1, Max = 100, Rounding = 0, Suffix = "%" })
-Options.SmoothZSlider:OnChanged(function()
-    SmoothZ = Options.SmoothZSlider.Value
-end)
-
-MobileAimbotBox:AddToggle("AutoPredictionToggle", { Text = "Enable Auto Prediction", Default = false })
-Toggles.AutoPredictionToggle:OnChanged(function()
-    AutoPredictionEnabled = Toggles.AutoPredictionToggle.Value
-end)
-
-MobileAimbotBox:AddSlider("PredictionSlider", { Text = "Prediction Multiplier", Default = 0.1, Min = 0.0, Max = 5.0, Rounding = 2 })
-Options.PredictionSlider:OnChanged(function()
-    PredictionValue = Options.PredictionSlider.Value
-end)
-
-MobileAimbotSettings:AddDropdown("MobileTargetPartDropdown", { Text = "Aimbot Target Part", Values = {"Head", "HumanoidRootPart"}, Default = 1, Multi = false })
-Options.MobileTargetPartDropdown:OnChanged(function()
-    AimbotTargetPart = Options.MobileTargetPartDropdown.Value
-end)
 
 -- [Main Tab Components]
 local LeftGroupBox = Tabs.Main:AddLeftGroupbox("Silent Aim")
@@ -1184,9 +1125,8 @@ LeftGroupBox:AddToggle("BulletTPToggle", { Text = "Enable BulletTp", Default = f
     :AddKeyPicker("BulletTPKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "BulletTp Bind" })
 
 Toggles.BulletTPToggle:OnChanged(function()
-    BulletTPEnabled = Toggles.BulletTPToggle.Value -- เนเธเนเน€เธเนเธ P เธ•เธฑเธงเนเธซเธเน
+    BulletTPEnabled = Toggles.BulletTPToggle.Value
 end)
-
 
 LeftGroupBox:AddToggle("WallCheckToggle", { Text = "Enable Wall Check", Default = false })
 Toggles.WallCheckToggle:OnChanged(function()
@@ -1436,7 +1376,7 @@ Options.CustomHitNotifyInput:OnChanged(function()
     end
 end)
 
--- [ESP Tab Components - Integrated GUI Gradient Health Bar]
+-- [ESP Tab Components - Integrated GUI Gradient Health Bar & Highlight ESP]
 local DrawingFonts = {
     ["UI"] = 0,
     ["System"] = 1,
@@ -1533,6 +1473,13 @@ local function ImplementESPSetup(holder)
         holder.GuiHealthGradient.Rotation = 90 -- Vertical Gradient
         holder.GuiHealthGradient.Parent = holder.GuiHealthBar
 
+        -- Highlight ESP Instance
+        holder.Highlight = Instance.new("Highlight")
+        holder.Highlight.Name = "hooksense_Highlight"
+        holder.Highlight.Enabled = false
+        holder.Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        holder.Highlight.Parent = CoreGui
+
         holder.BoxLines = {CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1)}
         holder.BoxOutlines = {
             CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1),
@@ -1578,6 +1525,9 @@ local function RemoveDrawingESP(player)
             if ESP_Drawing_Storage[player].GuiHealthBg then
                 ESP_Drawing_Storage[player].GuiHealthBg:Destroy()
             end
+            if ESP_Drawing_Storage[player].Highlight then
+                ESP_Drawing_Storage[player].Highlight:Destroy()
+            end
             for _, obj in pairs(ESP_Drawing_Storage[player]) do
                 if type(obj) == "table" then
                     for _, subObj in pairs(obj) do
@@ -1600,6 +1550,7 @@ local function SetVisibilityFalse(esp)
     pcall(function()
         if esp.BoxFillFrame then esp.BoxFillFrame.Visible = false end
         if esp.GuiHealthBg then esp.GuiHealthBg.Visible = false end
+        if esp.Highlight then esp.Highlight.Enabled = false end
         if esp.BoxLines then for i = 1, 4 do esp.BoxLines[i].Visible = false end end
         if esp.BoxOutlines then for i = 1, 8 do esp.BoxOutlines[i].Visible = false end end
         if esp.CornerLines then for i = 1, 8 do esp.CornerLines[i].Visible = false end end
@@ -1653,6 +1604,13 @@ RunService.RenderStepped:Connect(function()
         local fillRotateEnabled = Toggles.EspBoxFillRotate and Toggles.EspBoxFillRotate.Value
         local fillRotateSpeed = Options.EspBoxFillRotateSpeed and Options.EspBoxFillRotateSpeed.Value or 1
 
+        -- Highlights ESP Config Options
+        local highlightEnabled = Toggles.EspHighlight and Toggles.EspHighlight.Value
+        local highlightMainColor = GetColor("HighlightMainColor", Color3.fromRGB(255, 0, 0))
+        local highlightOutlineColor = GetColor("HighlightOutlineColor", Color3.fromRGB(255, 255, 255))
+        local highlightFillTrans = Options.HighlightFillTransSlider and Options.HighlightFillTransSlider.Value or 0.5
+        local highlightOutlineTrans = Options.HighlightOutlineTransSlider and Options.HighlightOutlineTransSlider.Value or 0.0
+
         for player, esp in pairs(ESP_Drawing_Storage) do
             pcall(function()
                 local character = player.Character
@@ -1664,6 +1622,18 @@ RunService.RenderStepped:Connect(function()
                         esp.SmoothHealth = nil
                         SetVisibilityFalse(esp)
                         return
+                    end
+
+                    -- Highlight ESP Rendering
+                    if highlightEnabled and esp.Highlight then
+                        esp.Highlight.Adornee = character
+                        esp.Highlight.FillColor = highlightMainColor
+                        esp.Highlight.OutlineColor = highlightOutlineColor
+                        esp.Highlight.FillTransparency = highlightFillTrans
+                        esp.Highlight.OutlineTransparency = highlightOutlineTrans
+                        esp.Highlight.Enabled = true
+                    else
+                        if esp.Highlight then esp.Highlight.Enabled = false end
                     end
 
                     local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
@@ -1863,6 +1833,14 @@ EspVisualsGroup:AddDropdown("EspFontDropdown", { Text = "ESP Font", Values = Dra
 
 EspVisualsGroup:AddToggle("EspBox", { Text = "Draw Box", Default = false }):AddColorPicker("BoxColor", { Default = Color3.fromRGB(255, 255, 255) })
 EspVisualsGroup:AddToggle("EspCornerBox", { Text = "Corner Box", Default = false }):AddColorPicker("CornerColor", { Default = Color3.fromRGB(255, 255, 255) })
+
+-- Highlights ESP UI Setup
+local HighlightToggle = EspVisualsGroup:AddToggle("EspHighlight", { Text = "Enable Highlights ESP", Default = false })
+HighlightToggle:AddColorPicker("HighlightMainColor", { Default = Color3.fromRGB(255, 0, 0), Title = "Main Color" })
+HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Outline Color" })
+
+EspVisualsGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.5, Min = 0, Max = 1, Rounding = 2 })
+EspVisualsGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.0, Min = 0, Max = 1, Rounding = 2 })
 
 EspVisualsGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill Gradient", Default = false })
 EspVisualsGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.5, Min = 0, Max = 1, Rounding = 2 })
@@ -2178,7 +2156,7 @@ MenuGroup:AddButton("Unload", function() Library:Unload() end)
 
 Library.ToggleKeybind = Options.MenuKeybind
 
-Library:OnUnload(function()
+Library.OnUnload(function()
     for player, _ in pairs(ESP_Drawing_Storage) do
         RemoveDrawingESP(player)
     end
