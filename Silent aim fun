@@ -1,0 +1,387 @@
+--// Angel.LOL (Modern UI + Silent Aim Hook + Show FOV + Wall Check + Knock Check)
+local plrs = game:GetService("Players")
+local run = game:GetService("RunService")
+local uis = game:GetService("UserInputService")
+local tween = game:GetService("TweenService")
+
+local lp = plrs.LocalPlayer
+local gui = lp:WaitForChild("PlayerGui")
+local cam = workspace.CurrentCamera
+
+local locked = false
+local tgt = nil
+local savedKey = "ANGEL_UI_POS"
+
+-- Settings
+local smoothness = 0.5
+local wallCheckEnabled = true
+local knockCheckEnabled = true
+local fovEnabled = true
+local fovRadius = 120
+
+-- FOV Circle Setup
+local fovCircle = Drawing.new("Circle")
+fovCircle.Thickness = 1.5
+fovCircle.NumSides = 60
+fovCircle.Radius = fovRadius
+fovCircle.Filled = false
+fovCircle.Visible = fovEnabled
+fovCircle.Color = Color3.fromRGB(255, 255, 255)
+
+local function hsv(h, s, v)
+    local i = math.floor(h * 6)
+    local f = h * 6 - i
+    local p = v * (1 - s)
+    local q = v * (1 - f * s)
+    local t = v * (1 - (1 - f) * s)
+    i = i % 6
+    if i == 0 then return Color3.new(v, t, p)
+    elseif i == 1 then return Color3.new(q, v, p)
+    elseif i == 2 then return Color3.new(p, v, t)
+    elseif i == 3 then return Color3.new(p, q, v)
+    elseif i == 4 then return Color3.new(t, p, v)
+    else return Color3.new(v, p, q) end
+end
+
+local function alive(p)
+    if not p or not p.Character then return false end
+    local h = p.Character:FindFirstChildOfClass("Humanoid")
+    if not h or h.Health <= 0 then return false end
+    
+    if knockCheckEnabled then
+        local be = p.Character:FindFirstChild("BodyEffects")
+        if be then
+            local ko = be:FindFirstChild("K.O") or be:FindFirstChild("KO")
+            if ko and ko.Value then return false end
+        end
+    end
+    
+    return true
+end
+
+local function isVisible(part)
+    if not wallCheckEnabled then return true end
+    local origin = cam.CFrame.Position
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = RaycastFilterType.Exclude
+    raycastParams.FilterDescendantsInstances = {lp.Character, cam}
+    raycastParams.IgnoreWater = true
+
+    local result = workspace:Raycast(origin, part.Position - origin, raycastParams)
+    if result and result.Instance then
+        return result.Instance:IsDescendantOf(part.Parent)
+    end
+    return true
+end
+
+local function getClosest()
+    local closest, dist = nil, fovEnabled and fovRadius or math.huge
+    local mousePos = uis:GetMouseLocation()
+    
+    for _, p in pairs(plrs:GetPlayers()) do
+        if p ~= lp and alive(p) then
+            local part = p.Character:FindFirstChild("HumanoidRootPart") or p.Character:FindFirstChild("UpperTorso")
+            if part and isVisible(part) then
+                local pos, on = cam:WorldToViewportPoint(part.Position)
+                if on then
+                    local m = (Vector2.new(pos.X, pos.Y) - mousePos).Magnitude
+                    if m < dist then
+                        dist = m
+                        closest = p
+                    end
+                end
+            end
+        end
+    end
+    return closest
+end
+
+-- Silent Aim Hook System
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local args = {...}
+    local method = getnamecallmethod()
+
+    if locked and tgt and alive(tgt) then
+        local targetPart = tgt.Character:FindFirstChild("HumanoidRootPart") or tgt.Character:FindFirstChild("UpperTorso")
+        if targetPart and isVisible(targetPart) then
+            if method == "Raycast" then
+                args[2] = (targetPart.Position - args[1]).Unit * args[2].Magnitude
+                return oldNamecall(self, unpack(args))
+            elseif method == "FindPartOnRayWithIgnoreList" or method == "FindPartOnRay" then
+                local origin = args[1].Origin
+                args[1] = Ray.new(origin, (targetPart.Position - origin).Unit * args[1].Direction.Magnitude)
+                return oldNamecall(self, unpack(args))
+            end
+        end
+    end
+
+    return oldNamecall(self, ...)
+end)
+
+local function intro()
+    local scr = Instance.new("ScreenGui", gui)
+    scr.Name = "ANGEL_INTRO"
+    scr.ResetOnSpawn = false
+
+    local f = Instance.new("Frame", scr)
+    f.Size = UDim2.new(1, 0, 1, 0)
+    f.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+
+    local txt = Instance.new("TextLabel", f)
+    txt.AnchorPoint = Vector2.new(0.5, 0.5)
+    txt.Position = UDim2.new(0.5, 0, 0.5, 0)
+    txt.Size = UDim2.new(0.8, 0, 0.2, 0)
+    txt.Font = Enum.Font.GothamBold
+    txt.TextScaled = true
+    txt.BackgroundTransparency = 1
+    txt.TextTransparency = 1
+    txt.Text = "Angel.LOL"
+
+    local hue = 0
+    local conn = run.RenderStepped:Connect(function(dt)
+        hue = (hue + dt * 0.5) % 1
+        txt.TextColor3 = hsv(hue, 0.8, 1)
+    end)
+
+    tween:Create(txt, TweenInfo.new(0.8), {TextTransparency = 0}):Play()
+    task.wait(1.2)
+    tween:Create(txt, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+    tween:Create(f, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+    task.wait(0.5)
+
+    conn:Disconnect()
+    scr:Destroy()
+end
+
+local function makeUI()
+    local scr = Instance.new("ScreenGui", gui)
+    scr.Name = "ANGEL_UI"
+    scr.ResetOnSpawn = false
+
+    -- Main Container
+    local main = Instance.new("Frame", scr)
+    main.Size = UDim2.new(0, 220, 0, 225)
+    main.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+    
+    local corner = Instance.new("UICorner", main)
+    corner.CornerRadius = UDim.new(0, 12)
+
+    local stroke = Instance.new("UIStroke", main)
+    stroke.Thickness = 2
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+    -- Title
+    local title = Instance.new("TextLabel", main)
+    title.Size = UDim2.new(1, 0, 0, 25)
+    title.Position = UDim2.new(0, 0, 0, 5)
+    title.BackgroundTransparency = 1
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 15
+    title.Text = "ANGEL.LOL"
+
+    -- Target Button / Status
+    local lockBtn = Instance.new("TextButton", main)
+    lockBtn.Size = UDim2.new(0.9, 0, 0, 30)
+    lockBtn.Position = UDim2.new(0.05, 0, 0, 32)
+    lockBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    lockBtn.Font = Enum.Font.GothamMedium
+    lockBtn.TextSize = 11
+    lockBtn.TextColor3 = Color3.fromRGB(160, 160, 175)
+    lockBtn.Text = "STATUS: UNLOCKED"
+    Instance.new("UICorner", lockBtn).CornerRadius = UDim.new(0, 6)
+
+    -- Wall Check Toggle Button
+    local wallBtn = Instance.new("TextButton", main)
+    wallBtn.Size = UDim2.new(0.42, 0, 0, 25)
+    wallBtn.Position = UDim2.new(0.05, 0, 0, 68)
+    wallBtn.BackgroundColor3 = Color3.fromRGB(40, 120, 60)
+    wallBtn.Font = Enum.Font.GothamMedium
+    wallBtn.TextSize = 10
+    wallBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    wallBtn.Text = "Wall Check: ON"
+    Instance.new("UICorner", wallBtn).CornerRadius = UDim.new(0, 6)
+
+    -- Knock Check Toggle Button
+    local knockBtn = Instance.new("TextButton", main)
+    knockBtn.Size = UDim2.new(0.42, 0, 0, 25)
+    knockBtn.Position = UDim2.new(0.53, 0, 0, 68)
+    knockBtn.BackgroundColor3 = Color3.fromRGB(40, 120, 60)
+    knockBtn.Font = Enum.Font.GothamMedium
+    knockBtn.TextSize = 10
+    knockBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    knockBtn.Text = "Knock Check: ON"
+    Instance.new("UICorner", knockBtn).CornerRadius = UDim.new(0, 6)
+
+    -- FOV Toggle Button
+    local fovBtn = Instance.new("TextButton", main)
+    fovBtn.Size = UDim2.new(0.9, 0, 0, 25)
+    fovBtn.Position = UDim2.new(0.05, 0, 0, 98)
+    fovBtn.BackgroundColor3 = Color3.fromRGB(40, 120, 60)
+    fovBtn.Font = Enum.Font.GothamMedium
+    fovBtn.TextSize = 10
+    fovBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    fovBtn.Text = "Show FOV: ON"
+    Instance.new("UICorner", fovBtn).CornerRadius = UDim.new(0, 6)
+
+    -- Smoothness Label & Slider Frame
+    local sliderLbl = Instance.new("TextLabel", main)
+    sliderLbl.Size = UDim2.new(0.9, 0, 0, 20)
+    sliderLbl.Position = UDim2.new(0.05, 0, 0, 130)
+    sliderLbl.BackgroundTransparency = 1
+    sliderLbl.Font = Enum.Font.GothamMedium
+    sliderLbl.TextSize = 11
+    sliderLbl.TextColor3 = Color3.fromRGB(200, 200, 210)
+    sliderLbl.Text = "Smoothness: " .. string.format("%.2f", smoothness)
+
+    local sliderBg = Instance.new("Frame", main)
+    sliderBg.Size = UDim2.new(0.9, 0, 0, 10)
+    sliderBg.Position = UDim2.new(0.05, 0, 0, 155)
+    sliderBg.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1, 0)
+
+    local sliderFill = Instance.new("Frame", sliderBg)
+    sliderFill.Size = UDim2.new(smoothness, 0, 1, 0)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
+    Instance.new("UICorner", sliderFill).CornerRadius = UDim.new(1, 0)
+
+    -- Position Save System
+    local save = getshared and getshared(savedKey)
+    if save and typeof(save) == "UDim2" then
+        main.Position = save
+    else
+        main.Position = UDim2.new(0, 25, 0, 25)
+    end
+
+    -- Smooth Dragging System
+    local dragging, dragStart, posStart, activeTouch
+    local function upd(i)
+        local d = i.Position - dragStart
+        main.Position = UDim2.new(posStart.X.Scale, posStart.X.Offset + d.X, posStart.Y.Scale, posStart.Y.Offset + d.Y)
+    end
+
+    main.InputBegan:Connect(function(i)
+        if (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1) and not activeTouch then
+            activeTouch = i
+            dragging = true
+            dragStart = i.Position
+            posStart = main.Position
+            
+            local move, stop
+            move = uis.InputChanged:Connect(function(m)
+                if dragging and (m == activeTouch) then upd(m) end
+            end)
+            stop = i.Changed:Connect(function()
+                if i.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    activeTouch = nil
+                    move:Disconnect()
+                    stop:Disconnect()
+                    if setshared then setshared(savedKey, main.Position) end
+                end
+            end)
+        end
+    end)
+
+    -- Toggle Lock Click
+    lockBtn.MouseButton1Click:Connect(function()
+        locked = not locked
+        if locked then
+            tgt = getClosest()
+            if tgt then
+                lockBtn.Text = "TARGET: " .. string.upper(tgt.Name)
+                lockBtn.TextColor3 = Color3.fromRGB(80, 255, 140)
+            else
+                lockBtn.Text = "NO TARGET FOUND"
+                lockBtn.TextColor3 = Color3.fromRGB(255, 90, 90)
+            end
+        else
+            tgt = nil
+            lockBtn.Text = "STATUS: UNLOCKED"
+            lockBtn.TextColor3 = Color3.fromRGB(160, 160, 175)
+        end
+    end)
+
+    -- Wall Check Click
+    wallBtn.MouseButton1Click:Connect(function()
+        wallCheckEnabled = not wallCheckEnabled
+        wallBtn.Text = "Wall Check: " .. (wallCheckEnabled and "ON" or "OFF")
+        wallBtn.BackgroundColor3 = wallCheckEnabled and Color3.fromRGB(40, 120, 60) or Color3.fromRGB(120, 40, 40)
+    end)
+
+    -- Knock Check Click
+    knockBtn.MouseButton1Click:Connect(function()
+        knockCheckEnabled = not knockCheckEnabled
+        knockBtn.Text = "Knock Check: " .. (knockCheckEnabled and "ON" or "OFF")
+        knockBtn.BackgroundColor3 = knockCheckEnabled and Color3.fromRGB(40, 120, 60) or Color3.fromRGB(120, 40, 40)
+    end)
+
+    -- FOV Click
+    fovBtn.MouseButton1Click:Connect(function()
+        fovEnabled = not fovEnabled
+        fovCircle.Visible = fovEnabled
+        fovBtn.Text = "Show FOV: " .. (fovEnabled and "ON" or "OFF")
+        fovBtn.BackgroundColor3 = fovEnabled and Color3.fromRGB(40, 120, 60) or Color3.fromRGB(120, 40, 40)
+    end)
+
+    -- Slider Drag Logic
+    local sliding = false
+    local function updateSlider(input)
+        local posX = math.clamp((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X, 0.01, 1)
+        smoothness = posX
+        sliderFill.Size = UDim2.new(posX, 0, 1, 0)
+        sliderLbl.Text = "Smoothness: " .. string.format("%.2f", smoothness)
+    end
+
+    sliderBg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            sliding = true
+            updateSlider(input)
+        end
+    end)
+
+    uis.InputChanged:Connect(function(input)
+        if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            updateSlider(input)
+        end
+    end)
+
+    uis.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            sliding = false
+        end
+    end)
+
+    -- Main Loop (UI Updates & FOV Position)
+    run.RenderStepped:Connect(function(dt)
+        local h = (tick() * 0.3) % 1
+        local rgbColor = hsv(h, 0.7, 1)
+        
+        stroke.Color = rgbColor
+        title.TextColor3 = rgbColor
+
+        -- Update FOV Circle Position
+        if fovEnabled then
+            fovCircle.Position = uis:GetMouseLocation()
+            fovCircle.Color = rgbColor
+        end
+
+        if locked and tgt and alive(tgt) then
+            local targetPart = tgt.Character:FindFirstChild("HumanoidRootPart") or tgt.Character:FindFirstChild("UpperTorso")
+            if wallCheckEnabled and targetPart and not isVisible(targetPart) then
+                locked = false
+                tgt = nil
+                lockBtn.Text = "LOST TARGET (WALL)"
+                lockBtn.TextColor3 = Color3.fromRGB(255, 90, 90)
+            end
+        elseif locked and tgt and not alive(tgt) then
+            locked = false
+            tgt = nil
+            lockBtn.Text = "TARGET KNOCKED"
+            lockBtn.TextColor3 = Color3.fromRGB(255, 90, 90)
+        end
+    end)
+end
+
+intro()
+makeUI()
