@@ -125,27 +125,22 @@ local function getClosest()
 end
 
 -- Silent Aim Hook System
-local oldNamecall
-oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-    local args = {...}
-    local method = getnamecallmethod()
+local OldNamecall
+OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
+    if checkcaller() then return OldNamecall(Self, ...) end
+    local Args = { ... }
+    local Method = getnamecallmethod()
+    local SelfClass = ""
+    pcall(function()
+        if Self and typeof(Self) == "Instance" then SelfClass = Self.ClassName end
+    end)
 
-    if locked and tgt and alive(tgt) then
-        local targetPart = tgt.Character:FindFirstChild("HumanoidRootPart") or tgt.Character:FindFirstChild("UpperTorso")
-        if targetPart and isVisible(targetPart) then
-            if method == "Raycast" then
-                args[2] = (targetPart.Position - args[1]).Unit * args[2].Magnitude
-                return oldNamecall(self, unpack(args))
-            elseif method == "FindPartOnRayWithIgnoreList" or method == "FindPartOnRay" then
-                local origin = args[1].Origin
-                args[1] = Ray.new(origin, (targetPart.Position - origin).Unit * args[1].Direction.Magnitude)
-                return oldNamecall(self, unpack(args))
-            end
+    if SilentAimEnabled and CurrentAimTargetPosition then
+        if (Method == "ScreenPointToRay" or Method == "ViewportPointToRay") and SelfClass == "Camera" then
+            return Ray.new(Camera.CFrame.Position, (CurrentAimTargetPosition - Camera.CFrame.Position).Unit)
         end
-    end
-
-    return oldNamecall(self, ...)
-end)
+        if Method == "Raycast" and SelfClass == "Workspace" then
+end))
 
 local function intro()
     local scr = Instance.new("ScreenGui", gui)
