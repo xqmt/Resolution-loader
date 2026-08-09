@@ -142,6 +142,13 @@ local HitNotifyPosY = 65
 local HitOverlayEnabled = false
 local HitOverlayColor = Color3.fromRGB(255, 0, 0)
 
+-- SELF HIGHLIGHT CONFIG VARIABLES
+local SelfHighlightEnabled = false
+local SelfHighlightMainColor = Color3.fromRGB(0, 255, 150)
+local SelfHighlightOutlineColor = Color3.fromRGB(255, 255, 255)
+local SelfHighlightFillTrans = 0.5
+local SelfHighlightOutlineTrans = 0.0
+
 local SkyboxEnabled = false
 local SelectedSkybox = "Minecraft"
 local SkyboxIDs = {
@@ -214,6 +221,31 @@ local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 local DisplayNameLabel, UsernameLabel, UserIdLabel, AvatarImage
 local TargetVelocityHistory = {}
+
+-- SELF HIGHLIGHT INSTANCE SETUP
+local SelfHighlightInstance = Instance.new("Highlight")
+SelfHighlightInstance.Name = "hooksense_SelfHighlight"
+SelfHighlightInstance.Enabled = false
+SelfHighlightInstance.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+SelfHighlightInstance.Parent = CoreGui
+
+local function UpdateSelfHighlight()
+    if SelfHighlightEnabled and LocalPlayer.Character then
+        SelfHighlightInstance.Adornee = LocalPlayer.Character
+        SelfHighlightInstance.FillColor = SelfHighlightMainColor
+        SelfHighlightInstance.OutlineColor = SelfHighlightOutlineColor
+        SelfHighlightInstance.FillTransparency = SelfHighlightFillTrans
+        SelfHighlightInstance.OutlineTransparency = SelfHighlightOutlineTrans
+        SelfHighlightInstance.Enabled = true
+    else
+        SelfHighlightInstance.Enabled = false
+    end
+end
+
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    task.wait(0.5)
+    UpdateSelfHighlight()
+end)
 
 local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
 
@@ -1088,7 +1120,7 @@ local Tabs = {
     Movement = Window:AddTab("Character"),
     World = Window:AddTab("World"),
     Addons = Window:AddTab("Misc"),
-    ['UI'] = Window:AddTab("Setting")
+    ['UI'] = Window:AddTab("Ui-Setting")
 }
 
 local Options = getgenv().Options
@@ -1309,9 +1341,10 @@ Options.TracerLineOutlineColorPicker:OnChanged(function()
     TracerLineOutlineColor = Options.TracerLineOutlineColorPicker.Value
 end)
 
--- [HitEffects Tab Components]
+-- [HitEffects / Visual Tab Components]
 local SoundLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Sound")
 local OverlayLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Overlay") 
+local SelfHighlightLeftBox = Tabs.HitEffects:AddLeftGroupbox("Self Highlights ESP")
 local NotifyRightBox = Tabs.HitEffects:AddRightGroupbox("Hit Notification Custom System")
 
 SoundLeftBox:AddDropdown("HitSoundDropdown", { Text = "Target Hit Sound", Values = {"None", "Spark", "Neverlose", "Rust", "Fatality", "Fatality 2", "Minecraft xp", "Minecraft", "Crack", "Pop", "Headshot", "Manbo", "Skeet"}, Default = 1, Multi = false })
@@ -1332,6 +1365,38 @@ end)
 OverlayLeftBox:AddLabel("Overlay Border Color"):AddColorPicker("HitOverlayColorPicker", { Default = Color3.fromRGB(255, 0, 0) })
 Options.HitOverlayColorPicker:OnChanged(function()
     HitOverlayColor = Options.HitOverlayColorPicker.Value
+end)
+
+-- SELF HIGHLIGHTS UI COMPONENTS IN VISUAL TAB
+local SelfHLToggle = SelfHighlightLeftBox:AddToggle("SelfHighlightToggle", { Text = "Enable Self Highlights ESP", Default = false })
+SelfHLToggle:AddColorPicker("SelfHighlightMainColorPicker", { Default = Color3.fromRGB(0, 255, 150), Title = "Main Color" })
+SelfHLToggle:AddColorPicker("SelfHighlightOutlineColorPicker", { Default = Color3.fromRGB(255, 255, 255), Title = "Outline Color" })
+
+Toggles.SelfHighlightToggle:OnChanged(function()
+    SelfHighlightEnabled = Toggles.SelfHighlightToggle.Value
+    UpdateSelfHighlight()
+end)
+
+Options.SelfHighlightMainColorPicker:OnChanged(function()
+    SelfHighlightMainColor = Options.SelfHighlightMainColorPicker.Value
+    UpdateSelfHighlight()
+end)
+
+Options.SelfHighlightOutlineColorPicker:OnChanged(function()
+    SelfHighlightOutlineColor = Options.SelfHighlightOutlineColorPicker.Value
+    UpdateSelfHighlight()
+end)
+
+SelfHighlightLeftBox:AddSlider("SelfHLFillTransSlider", { Text = "Main Color Transparency", Default = 0.4, Min = 0, Max = 1, Rounding = 2 })
+Options.SelfHLFillTransSlider:OnChanged(function()
+    SelfHighlightFillTrans = Options.SelfHLFillTransSlider.Value
+    UpdateSelfHighlight()
+end)
+
+SelfHighlightLeftBox:AddSlider("SelfHLOutlineTransSlider", { Text = "Outline Color Transparency", Default = 1, Min = 0, Max = 1, Rounding = 2 })
+Options.SelfHLOutlineTransSlider:OnChanged(function()
+    SelfHighlightOutlineTrans = Options.SelfHLOutlineTransSlider.Value
+    UpdateSelfHighlight()
 end)
 
 NotifyRightBox:AddToggle("HitNotifyToggle", { Text = "Enable Hit Notification", Default = false })
@@ -1839,8 +1904,8 @@ local HighlightToggle = EspVisualsGroup:AddToggle("EspHighlight", { Text = "Enab
 HighlightToggle:AddColorPicker("HighlightMainColor", { Default = Color3.fromRGB(255, 0, 0), Title = "Main Color" })
 HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Outline Color" })
 
-EspVisualsGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.5, Min = 0, Max = 1, Rounding = 2 })
-EspVisualsGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.0, Min = 0, Max = 1, Rounding = 2 })
+EspVisualsGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.4, Min = 0, Max = 1, Rounding = 2 })
+EspVisualsGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 1, Min = 0, Max = 1, Rounding = 2 })
 
 EspVisualsGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill Gradient", Default = false })
 EspVisualsGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.5, Min = 0, Max = 1, Rounding = 2 })
@@ -2127,7 +2192,6 @@ BlacklistPlayersGroup:AddButton({ Text = "walkspeed", Func = function()
     end
 end })
 
-
 local InterfaceGroup = Tabs.UI:AddLeftGroupbox("Menu Customization")
 local MenuGroup = Tabs.UI:AddLeftGroupbox("Menu Settings")
 
@@ -2162,6 +2226,7 @@ Library.OnUnload(function()
     end
     table.clear(ESP_Drawing_Storage)
     if BoxFillGui then BoxFillGui:Destroy() end
+    if SelfHighlightInstance then SelfHighlightInstance:Destroy() end
     
     Library.Unloaded = true
 end)
