@@ -887,8 +887,6 @@ local Toggles = getgenv().Toggles
 
 -- [Main Tab Components]
 local LeftGroupBox = Tabs.Main:AddLeftGroupbox("Silent Aim")
-local Tab2 = TabBox:AddTab("Silent Aim")
-Tab2:AddToggle("Tab2Toggle", { Text = "Aimbot" });
 local PermLockGroupBox = Tabs.Main:AddLeftGroupbox("Permanent Lock Settings")
 local TargetGroupBox = Tabs.Main:AddLeftGroupbox("Targeting Options")
 local FOVGroupBox = Tabs.Main:AddRightGroupbox("FOV Settings")
