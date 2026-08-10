@@ -1114,13 +1114,13 @@ OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
 end))
 
 local Tabs = {
-    Main = Window:AddTab("Silent-Aim"),
-    HitEffects = Window:AddTab("Visual"),
-    ESP = Window:AddTab("Esp"),
-    Movement = Window:AddTab("Character"),
-    World = Window:AddTab("World"),
-    Addons = Window:AddTab("Misc"),
-    ['UI'] = Window:AddTab("Ui-Setting")
+    Main = Window:AddTab("main"),
+    World = Window:AddTab("world"),
+    ESP = Window:AddTab("esp"),
+    Hiteffects = Window:AddTab("visuals"),
+    Movement = Window:AddTab("character"),
+    Addons = Window:AddTab("misc"),
+    ['UI'] = Window:AddTab("settings")
 }
 
 local Options = getgenv().Options
