@@ -1387,7 +1387,7 @@ Options.SelfHighlightOutlineColorPicker:OnChanged(function()
     UpdateSelfHighlight()
 end)
 
-SelfHighlightLeftBox:AddSlider("SelfHLFillTransSlider", { Text = "Main Color Transparency", Default = 0.4, Min = 0, Max = 1, Rounding = 2 })
+SelfHighlightLeftBox:AddSlider("SelfHLFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
 Options.SelfHLFillTransSlider:OnChanged(function()
     SelfHighlightFillTrans = Options.SelfHLFillTransSlider.Value
     UpdateSelfHighlight()
@@ -1904,7 +1904,7 @@ local HighlightToggle = EspVisualsGroup:AddToggle("EspHighlight", { Text = "Enab
 HighlightToggle:AddColorPicker("HighlightMainColor", { Default = Color3.fromRGB(255, 0, 0), Title = "Main Color" })
 HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Outline Color" })
 
-EspVisualsGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.4, Min = 0, Max = 1, Rounding = 2 })
+EspVisualsGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
 EspVisualsGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 1, Min = 0, Max = 1, Rounding = 2 })
 
 EspVisualsGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill Gradient", Default = false })
