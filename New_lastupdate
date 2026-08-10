@@ -133,11 +133,7 @@ local SoundIDs = {
 
 local HitNotifyEnabled = false 
 local HitNotifyDuration = 2.5
-local HitNotifyTransparency = 0.0
-local HitNotifyFont = Enum.Font.Cartoon
 local HitNotifyTemplate = "Hit {name} in the {part} for {dmg} dmg with {weapon}" 
-local HitNotifyPosX = 50 
-local HitNotifyPosY = 65 
 
 local HitOverlayEnabled = false
 local HitOverlayColor = Color3.fromRGB(255, 0, 0)
@@ -264,28 +260,6 @@ local function TriggerHitOverlay()
     end)
 end
 
-local CenterNotifyGui = Instance.new("ScreenGui")
-CenterNotifyGui.Name = "hooksense_CenterNotifyGui"
-CenterNotifyGui.ResetOnSpawn = false
-CenterNotifyGui.Parent = TargetGuiParent
-
-local CenterNotifyContainer = Instance.new("Frame")
-CenterNotifyContainer.Name = "NotifyContainer"
-CenterNotifyContainer.Size = UDim2.new(0.6, 0, 0.4, 0)
-CenterNotifyContainer.AnchorPoint = Vector2.new(0.5, 0.5)
-CenterNotifyContainer.Position = UDim2.new(HitNotifyPosX / 100, 0, HitNotifyPosY / 100, 0)
-CenterNotifyContainer.BackgroundTransparency = 1
-CenterNotifyContainer.BorderSizePixel = 0
-CenterNotifyContainer.Parent = CenterNotifyGui
-
-local CenterNotifyLayout = Instance.new("UIListLayout")
-CenterNotifyLayout.FillDirection = Enum.FillDirection.Vertical
-CenterNotifyLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-CenterNotifyLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-CenterNotifyLayout.SortOrder = Enum.SortOrder.LayoutOrder
-CenterNotifyLayout.Padding = UDim.new(0, 5)
-CenterNotifyLayout.Parent = CenterNotifyContainer
-
 local function ShowCustomHitNotification(targetName, partName, damage, weaponName)
     if not HitNotifyEnabled then return end
     
@@ -297,40 +271,7 @@ local function ShowCustomHitNotification(targetName, partName, damage, weaponNam
     notifyText = string.gsub(notifyText, "{dmg}", tostring(damage))
     notifyText = string.gsub(notifyText, "{weapon}", weaponName)
     
-    local NotifyLabel = Instance.new("TextLabel")
-    NotifyLabel.Size = UDim2.new(1, 0, 0, 24)
-    NotifyLabel.BackgroundTransparency = 1
-    NotifyLabel.Text = notifyText
-    NotifyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    NotifyLabel.TextSize = 16
-    NotifyLabel.Font = HitNotifyFont
-    NotifyLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    
-    NotifyLabel.Position = UDim2.new(0, 0, 0, 15)
-    NotifyLabel.TextTransparency = 1
-    NotifyLabel.TextStrokeTransparency = 1
-    NotifyLabel.Parent = CenterNotifyContainer
-
-    local openTween = TweenService:Create(NotifyLabel, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Position = UDim2.new(0, 0, 0, 0),
-        TextTransparency = HitNotifyTransparency,
-        TextStrokeTransparency = math.clamp(HitNotifyTransparency + 0.4, 0, 1)
-    })
-    openTween:Play()
-
-    task.delay(HitNotifyDuration, function()
-        if not NotifyLabel or not NotifyLabel.Parent then return end
-        
-        local closeTween = TweenService:Create(NotifyLabel, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            Position = UDim2.new(0, 0, 0, 25),
-            TextTransparency = 1,
-            TextStrokeTransparency = 1
-        })
-        closeTween:Play()
-        closeTween.Completed:Connect(function()
-            NotifyLabel:Destroy()
-        end)
-    end)
+    Library:Notify(notifyText, HitNotifyDuration)
 end
 
 local function PlayHitSound()
@@ -426,7 +367,6 @@ FOVFillCorner.Parent = FOVFillFrame
 local FOVFillGradient = Instance.new("UIGradient")
 FOVFillGradient.Parent = FOVFillFrame
 
--- [Box Fill & Health Bar Gradient ESP GUI Setup]
 local BoxFillGui = Instance.new("ScreenGui")
 BoxFillGui.Name = "hooksense_BoxFillGui"
 BoxFillGui.ResetOnSpawn = false
@@ -434,7 +374,6 @@ BoxFillGui.IgnoreGuiInset = true
 BoxFillGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 BoxFillGui.Parent = TargetGuiParent
 
--- [External-like Premium FOV Draw]
 local FOVCircleOutline = Drawing.new("Circle")
 FOVCircleOutline.Thickness = 1.5
 FOVCircleOutline.NumSides = 144
@@ -459,9 +398,6 @@ local function getScreenCenter()
     return Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 end
 
--- ==========================================
--- OPTIMIZED WALL CHECK (RAYCASTING METHOD)
--- ==========================================
 local wallCheckParams = RaycastParams.new()
 wallCheckParams.FilterType = Enum.RaycastFilterType.Exclude
 wallCheckParams.IgnoreWater = true
@@ -493,10 +429,8 @@ local CurrentTargetCharacter = nil
 local lastTarget = nil
 local interpolationProgress = 0
 
--- Optimized Main Loop (~30Hz)
 task.spawn(function()
     while task.wait(0.03) do
-        -- Track True Velocity for Resolver Logic
         for _, p in ipairs(Players:GetPlayers()) do
             if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                 local hrp = p.Character.HumanoidRootPart
@@ -832,7 +766,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Silent Aim Hook Metamethod
 local OldNamecall
 OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
     if checkcaller() then return OldNamecall(Self, ...) end
@@ -885,7 +818,6 @@ local Tabs = {
 local Options = getgenv().Options
 local Toggles = getgenv().Toggles
 
--- [Main Tab Components]
 local LeftGroupBox = Tabs.Main:AddLeftGroupbox("Silent Aim")
 local PermLockGroupBox = Tabs.Main:AddLeftGroupbox("Permanent Lock Settings")
 local TargetGroupBox = Tabs.Main:AddLeftGroupbox("Targeting Options")
@@ -1100,7 +1032,6 @@ Options.TracerLineOutlineColorPicker:OnChanged(function()
     TracerLineOutlineColor = Options.TracerLineOutlineColorPicker.Value
 end)
 
--- [HitEffects / Visual Tab Components]
 local SoundLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Sound")
 local OverlayLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Overlay") 
 local SelfHighlightLeftBox = Tabs.HitEffects:AddLeftGroupbox("Self Highlights")
@@ -1126,7 +1057,6 @@ Options.HitOverlayColorPicker:OnChanged(function()
     HitOverlayColor = Options.HitOverlayColorPicker.Value
 end)
 
--- SELF HIGHLIGHTS UI COMPONENTS IN VISUAL TAB
 local SelfHLToggle = SelfHighlightLeftBox:AddToggle("SelfHighlightToggle", { Text = "Enable Self Highlights", Default = false })
 SelfHLToggle:AddColorPicker("SelfHighlightMainColorPicker", { Default = Color3.fromRGB(0, 255, 150), Title = "Main Color" })
 SelfHLToggle:AddColorPicker("SelfHighlightOutlineColorPicker", { Default = Color3.fromRGB(255, 255, 255), Title = "Outline Color" })
@@ -1168,31 +1098,6 @@ Options.HitNotifyDurationSlider:OnChanged(function()
     HitNotifyDuration = Options.HitNotifyDurationSlider.Value
 end)
 
-NotifyRightBox:AddSlider("HitNotifyTransparencySlider", { Text = "Notification Opacity/Transparency", Default = 0, Min = 0, Max = 1, Rounding = 2 })
-Options.HitNotifyTransparencySlider:OnChanged(function()
-    HitNotifyTransparency = Options.HitNotifyTransparencySlider.Value
-end)
-
-NotifyRightBox:AddSlider("HitNotifyPosXSlider", { Text = "Position X Offset (%)", Default = 50, Min = 1, Max = 100, Rounding = 0 })
-Options.HitNotifyPosXSlider:OnChanged(function()
-    HitNotifyPosX = Options.HitNotifyPosXSlider.Value
-    CenterNotifyContainer.Position = UDim2.new(HitNotifyPosX / 100, 0, HitNotifyPosY / 100, 0)
-end)
-
-NotifyRightBox:AddSlider("HitNotifyPosYSlider", { Text = "Position Y Offset (%)", Default = 65, Min = 1, Max = 100, Rounding = 0 })
-Options.HitNotifyPosYSlider:OnChanged(function()
-    HitNotifyPosY = Options.HitNotifyPosYSlider.Value
-    CenterNotifyContainer.Position = UDim2.new(HitNotifyPosX / 100, 0, HitNotifyPosY / 100, 0)
-end)
-
-NotifyRightBox:AddDropdown("HitNotifyFontDropdown", { Text = "Hit Notify Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "Cartoon") or 1, Multi = false })
-Options.HitNotifyFontDropdown:OnChanged(function()
-    local SelectedFont = Enum.Font[Options.HitNotifyFontDropdown.Value]
-    if SelectedFont then
-        HitNotifyFont = SelectedFont
-    end
-end)
-
 NotifyRightBox:AddInput("CustomHitNotifyInput", { Placeholder = "Format: {name} | {part} | {dmg} | {weapon}", Text = "Hit {name} in the {part} for {dmg} dmg with {weapon}", Numeric = false, Finished = true })
 Options.CustomHitNotifyInput:OnChanged(function()
     if Options.CustomHitNotifyInput.Value and Options.CustomHitNotifyInput.Value ~= "" then
@@ -1200,7 +1105,6 @@ Options.CustomHitNotifyInput:OnChanged(function()
     end
 end)
 
--- [ESP Tab Components - Integrated GUI Gradient Health Bar & Highlight ESP]
 local DrawingFonts = {
     ["UI"] = 0,
     ["System"] = 1,
@@ -1270,7 +1174,6 @@ local function ImplementESPSetup(holder)
         holder.BoxFillGradient.Parent = holder.BoxFillFrame
         holder.BoxFillRotationAngle = 0
 
-        -- GUI Based Gradient HealthBar Component
         holder.GuiHealthBg = Instance.new("Frame")
         holder.GuiHealthBg.Name = "HealthBg"
         holder.GuiHealthBg.BorderSizePixel = 0
@@ -1285,10 +1188,9 @@ local function ImplementESPSetup(holder)
         holder.GuiHealthBar.Parent = holder.GuiHealthBg
 
         holder.GuiHealthGradient = Instance.new("UIGradient")
-        holder.GuiHealthGradient.Rotation = 90 -- Vertical Gradient
+        holder.GuiHealthGradient.Rotation = 90
         holder.GuiHealthGradient.Parent = holder.GuiHealthBar
 
-        -- Highlight ESP Instance
         holder.Highlight = Instance.new("Highlight")
         holder.Highlight.Name = "hooksense_Highlight"
         holder.Highlight.Enabled = false
@@ -1419,7 +1321,6 @@ RunService.RenderStepped:Connect(function()
         local fillRotateEnabled = Toggles.EspBoxFillRotate and Toggles.EspBoxFillRotate.Value
         local fillRotateSpeed = Options.EspBoxFillRotateSpeed and Options.EspBoxFillRotateSpeed.Value or 1
 
-        -- Highlights ESP Config Options
         local highlightEnabled = Toggles.EspHighlight and Toggles.EspHighlight.Value
         local highlightMainColor = GetColor("HighlightMainColor", Color3.fromRGB(255, 0, 0))
         local highlightOutlineColor = GetColor("HighlightOutlineColor", Color3.fromRGB(255, 255, 255))
@@ -1439,7 +1340,6 @@ RunService.RenderStepped:Connect(function()
                         return
                     end
 
-                    -- Highlight ESP Rendering
                     if highlightEnabled and esp.Highlight then
                         esp.Highlight.Adornee = character
                         esp.Highlight.FillColor = highlightMainColor
@@ -1485,7 +1385,6 @@ RunService.RenderStepped:Connect(function()
                         if esp.Distance then esp.Distance.Font = currentDrawingFont; esp.Distance.Size = textSize end
                         if esp.HealthText then esp.HealthText.Font = currentDrawingFont; esp.HealthText.Size = hpTextSize end
 
-                        -- Box Fill Gradient
                         if boxFillEnabled and esp.BoxFillFrame then
                             esp.BoxFillFrame.Position = UDim2.new(0, boxX, 0, boxY)
                             esp.BoxFillFrame.Size = UDim2.new(0, mathWidth, 0, mathHeight)
@@ -1506,7 +1405,6 @@ RunService.RenderStepped:Connect(function()
                             if esp.BoxFillFrame then esp.BoxFillFrame.Visible = false end
                         end
 
-                        -- Corner Box
                         local corner = esp.CornerLines
                         local cornerOut = esp.CornerOutlines
                         local isCorner = Toggles.EspCornerBox and Toggles.EspCornerBox.Value
@@ -1547,7 +1445,6 @@ RunService.RenderStepped:Connect(function()
                             for i = 1, 16 do cornerOut[i].Visible = false end
                         end
 
-                        -- Normal Box
                         local lines = esp.BoxLines
                         local outs = esp.BoxOutlines
                         if isNormalBox and not isCorner then
@@ -1571,7 +1468,6 @@ RunService.RenderStepped:Connect(function()
                             for i = 1, 8 do outs[i].Visible = false end
                         end
 
-                        -- Gradient Health Bar System
                         if Toggles.EspHealth and Toggles.EspHealth.Value then
                             local barWidth = 3
                             local outlinePadding = 1
@@ -1649,7 +1545,6 @@ EspVisualsGroup:AddDropdown("EspFontDropdown", { Text = "ESP Font", Values = Dra
 EspVisualsGroup:AddToggle("EspBox", { Text = "Draw Box", Default = false }):AddColorPicker("BoxColor", { Default = Color3.fromRGB(255, 255, 255) })
 EspVisualsGroup:AddToggle("EspCornerBox", { Text = "Corner Box", Default = false }):AddColorPicker("CornerColor", { Default = Color3.fromRGB(255, 255, 255) })
 
--- Highlights ESP UI Setup
 local HighlightToggle = EspVisualsGroup:AddToggle("EspHighlight", { Text = "Enable Highlights ESP", Default = false })
 HighlightToggle:AddColorPicker("HighlightMainColor", { Default = Color3.fromRGB(255, 0, 0), Title = "Main Color" })
 HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Outline Color" })
@@ -1685,7 +1580,6 @@ EspVisualsGroup:AddSlider("HealthLerpSlider", {
 EspVisualsGroup:AddToggle("EspHealthText", { Text = "Show HP Number", Default = false }):AddColorPicker("HPTextColor", { Default = Color3.fromRGB(255, 255, 255) })
 EspVisualsGroup:AddToggle("EspDistance", { Text = "Draw Distance", Default = false }):AddColorPicker("DistColor", { Default = Color3.fromRGB(255, 255, 255) })
 
--- [Movement Tab Components]
 local MoveLeftBox = Tabs.Movement:AddLeftGroupbox("Anti Aim")
 
 MoveLeftBox:AddToggle("AntiAimToggle", { Text = "Enable Anti Aim", Default = false })
@@ -1710,7 +1604,6 @@ Options.SpinSpeedSlider:OnChanged(function()
     AntiAimSpeed = Options.SpinSpeedSlider.Value
 end)
 
--- [World Tab Components]
 local LightingColorsGroup = Tabs.World:AddLeftGroupbox("Lighting Colors & Time")
 local WorldSkyboxBox = Tabs.World:AddLeftGroupbox("Custom Skybox System")
 local WorldFogBox = Tabs.World:AddLeftGroupbox("World Fog Customization")
@@ -1854,7 +1747,6 @@ Options.FpsCapSlider:OnChanged(function()
     if setfpscap then setfpscap(Options.FpsCapSlider.Value) end
 end)
 
--- [Addons Tab Components]
 local BlacklistPlayersGroup = Tabs.Addons:AddLeftGroupbox("Loaders Scripts")
 
 BlacklistPlayersGroup:AddButton({ Text = "walkspeed", Func = function()
