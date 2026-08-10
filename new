@@ -38,7 +38,7 @@ Library.ShowCustomCursor = true
 Library.NotifySide = "Right" 
 
 local Window = Library:CreateWindow({
-    Title = "hooksenseㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
+    Title = "hooksense.clubㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
     Center = true, 
     AutoShow = true,
     Resizable = true,
@@ -1153,7 +1153,7 @@ Toggles.LookAtToggle:OnChanged(function()
     LookAtEnabled = Toggles.LookAtToggle.Value
 end)
 
-LeftGroupBox:AddToggle("BulletTPToggle", { Text = "Enable BulletTp", Default = false })
+LeftGroupBox:AddToggle("BulletTPToggle", { Text = "Enable MagicBullet", Default = false })
     :AddKeyPicker("BulletTPKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "BulletTp Bind" })
 
 Toggles.BulletTPToggle:OnChanged(function()
