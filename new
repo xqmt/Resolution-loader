@@ -1115,12 +1115,12 @@ end))
 
 local Tabs = {
     Main = Window:AddTab("main"),
-    World = Window:AddTab("world"),
+    HitEffects = Window:AddTab("visuals"),
     ESP = Window:AddTab("esp"),
-    Hiteffects = Window:AddTab("visuals"),
     Movement = Window:AddTab("character"),
+    World = Window:AddTab("world"),
     Addons = Window:AddTab("misc"),
-    ['UI'] = Window:AddTab("settings")
+    ['UI'] = Window:AddTab("Settings")
 }
 
 local Options = getgenv().Options
@@ -1387,7 +1387,7 @@ Options.SelfHighlightOutlineColorPicker:OnChanged(function()
     UpdateSelfHighlight()
 end)
 
-SelfHighlightLeftBox:AddSlider("SelfHLFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
+SelfHighlightLeftBox:AddSlider("SelfHLFillTransSlider", { Text = "Main Color Transparency", Default = 0.4, Min = 0, Max = 1, Rounding = 2 })
 Options.SelfHLFillTransSlider:OnChanged(function()
     SelfHighlightFillTrans = Options.SelfHLFillTransSlider.Value
     UpdateSelfHighlight()
@@ -1904,7 +1904,7 @@ local HighlightToggle = EspVisualsGroup:AddToggle("EspHighlight", { Text = "Enab
 HighlightToggle:AddColorPicker("HighlightMainColor", { Default = Color3.fromRGB(255, 0, 0), Title = "Main Color" })
 HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Outline Color" })
 
-EspVisualsGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
+EspVisualsGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.4, Min = 0, Max = 1, Rounding = 2 })
 EspVisualsGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 1, Min = 0, Max = 1, Rounding = 2 })
 
 EspVisualsGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill Gradient", Default = false })
@@ -2184,17 +2184,6 @@ end)
 BlacklistPlayersGroup:AddButton({ Text = "walkspeed", Func = function()
     local success, err = pcall(function()
         loadstring(game:HttpGet('https://raw.githubusercontent.com/19mdSkibidi/19sMooze-Mobile-Rework/refs/heads/main/Mooze%20Mob'))()
-    end)
-    if success then
-        Library:Notify("successfully!")
-    else
-        Library:Notify("Error loading script: " .. tostring(err))
-    end
-end })
-
-BlacklistPlayersGroup:AddButton({ Text = "Cysense", Func = function()
-    local success, err = pcall(function()
-        loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/606b846e88998801018fae498b9b8a3c.lua"))()
     end)
     if success then
         Library:Notify("successfully!")
