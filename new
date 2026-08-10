@@ -2192,6 +2192,17 @@ BlacklistPlayersGroup:AddButton({ Text = "walkspeed", Func = function()
     end
 end })
 
+BlacklistPlayersGroup:AddButton({ Text = "Cysense", Func = function()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/606b846e88998801018fae498b9b8a3c.lua"))()
+    end)
+    if success then
+        Library:Notify("successfully!")
+    else
+        Library:Notify("Error loading script: " .. tostring(err))
+    end
+end })
+
 local InterfaceGroup = Tabs.UI:AddLeftGroupbox("Menu Customization")
 local MenuGroup = Tabs.UI:AddLeftGroupbox("Menu Settings")
 
