@@ -44,9 +44,9 @@ local Window = Library:CreateWindow({
     Resizable = true,
     ShowCustomCursor = true,
     UnlockMouseWhileOpen = true,
-    NotifySide = "Right", 
+    NotifySide = "Center", 
     TabPadding = 8,
-    MenuFadeTime = 0.2
+    MenuFadeTime = 0
 })
 
 task.spawn(function()
