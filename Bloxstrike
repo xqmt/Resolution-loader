@@ -1,30 +1,36 @@
-for k, v in pairs(getgc(true)) do
-    if pcall(function()
-        return rawget(v, "indexInstance")
-    end) and type(rawget(v, "indexInstance")) == "table" and (rawget(v, "indexInstance"))[1] == "kick" then
-        setreadonly(v, false)
-        v.tvk = {
-            "kick",
-            function()
-                return game.Workspace:WaitForChild("")
-            end
-        }
-    end
+local CheckIfMethodIsValid = function(Self, Method)
+    return Self[Method] ~= nil
 end
-task.wait(4.8)
 
-task.spawn(function()
-    pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
-    end)
-end)
-task.wait(2.1)
+local UntrustedScripts = {}
 
-task.spawn(function()
-    pcall(function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/SUUUUUS00000/MEGGD-Anti-kick/refs/heads/main/MEGGD%20Best%20Anti-kick.lua'))()
-    end)
-end)
+local Old; Old = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+    local Method = getnamecallmethod()
+    local ScriptCalling = getcallingscript()
+    local Args = {...} -- แปลง ... เป็น Table เพื่อดึงค่า Arguments ป้องกัน Error
+
+    -- 1. เช็กการส่ง Argument ที่ผิดปกติใน WaitForChild
+    if self == game and Method == "WaitForChild" then
+        if typeof(Args[1]) == "table" then
+            return false, "invalid argument #1 to 'WaitForChild' (string expected, got table)"
+        end
+    end
+
+    -- 2. ดักจับ Fake Method หรือ Method ที่ไม่มีอยู่จริง (Anti-Cheat Honey Pot)
+    if Method == "OmgUnvirNamecall" or Method == "FakeIndex" or not CheckIfMethodIsValid(self, Method) then
+        if ScriptCalling then
+            UntrustedScripts[ScriptCalling] = true -- บันทึกสคริปต์ที่พยายามสแกนลงใน Table
+        end
+        return false, Method .. ' is not a valid member of DataModel "' .. self.Name .. '"'
+    end
+
+    -- 3. จัดการสคริปต์ที่ไม่น่าไว้วางใจ (ตัดการทำงานหรือหลอกข้อมูล)
+    if ScriptCalling and UntrustedScripts[ScriptCalling] then
+        return nil -- ปรับการตอบกลับตามต้องการเมื่อเป็นสคริปต์ Anti-Cheat
+    end
+
+    return Old(self, ...)
+end))
 
 task.wait(2)
 
