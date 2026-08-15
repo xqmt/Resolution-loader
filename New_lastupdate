@@ -224,6 +224,30 @@ local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 local TargetVelocityHistory = {}
 
+-- SKELETON BONES CONNECTIONS STRUCT
+local SkeletonConnections = {
+    {"Head", "UpperTorso"},
+    {"UpperTorso", "LowerTorso"},
+    {"UpperTorso", "LeftUpperArm"},
+    {"LeftUpperArm", "LeftLowerArm"},
+    {"LeftLowerArm", "LeftHand"},
+    {"UpperTorso", "RightUpperArm"},
+    {"RightUpperArm", "RightLowerArm"},
+    {"RightLowerArm", "RightHand"},
+    {"LowerTorso", "LeftUpperLeg"},
+    {"LeftUpperLeg", "LeftLowerLeg"},
+    {"LeftLowerLeg", "LeftFoot"},
+    {"LowerTorso", "RightUpperLeg"},
+    {"RightUpperLeg", "RightLowerLeg"},
+    {"RightLowerLeg", "RightFoot"},
+    -- R6 Rig Support Fallbacks
+    {"Head", "Torso"},
+    {"Torso", "Left Arm"},
+    {"Torso", "Right Arm"},
+    {"Torso", "Left Leg"},
+    {"Torso", "Right Leg"}
+}
+
 -- SELF HIGHLIGHT INSTANCE SETUP
 local SelfHighlightInstance = Instance.new("Highlight")
 SelfHighlightInstance.Name = "hooksense_SelfHighlight"
@@ -1184,6 +1208,15 @@ local function CreateSquare(thickness, color)
     return square
 end
 
+local function CreateLine(thickness, color)
+    local line = Drawing.new("Line")
+    line.Thickness = thickness or 1
+    line.Color = color or Color3.fromRGB(255, 255, 255)
+    line.Transparency = 1
+    line.Visible = false
+    return line
+end
+
 local function CreateText()
     local text = Drawing.new("Text")
     text.Size = 12
@@ -1201,6 +1234,19 @@ local function ImplementESPSetup(holder)
         -- ใช้ Drawing Square 2 ชั้น (Outline และ Main Box)
         holder.BoxOutline = CreateSquare(3, Color3.fromRGB(0, 0, 0))
         holder.BoxMain = CreateSquare(1, Color3.fromRGB(255, 255, 255))
+
+        -- Line ESP Outlines (Tracer to Target)
+        holder.LineESPOutline = CreateLine(3, Color3.fromRGB(0, 0, 0))
+        holder.LineESPMain = CreateLine(1, Color3.fromRGB(255, 255, 255))
+
+        -- Skeleton ESP Storage
+        holder.SkeletonLines = {}
+        for i = 1, #SkeletonConnections do
+            holder.SkeletonLines[i] = {
+                Outline = CreateLine(3, Color3.fromRGB(0, 0, 0)),
+                Main = CreateLine(1, Color3.fromRGB(255, 255, 255))
+            }
+        end
 
         holder.BoxFillFrame = Instance.new("Frame")
         holder.BoxFillFrame.Name = "BoxFill"
@@ -1269,11 +1315,15 @@ local function RemoveDrawingESP(player)
             if ESP_Drawing_Storage[player].Highlight then
                 ESP_Drawing_Storage[player].Highlight:Destroy()
             end
+            if ESP_Drawing_Storage[player].SkeletonLines then
+                for _, pair in ipairs(ESP_Drawing_Storage[player].SkeletonLines) do
+                    if pair.Outline then pair.Outline:Remove() end
+                    if pair.Main then pair.Main:Remove() end
+                end
+            end
             for _, obj in pairs(ESP_Drawing_Storage[player]) do
-                if type(obj) == "table" then
-                    for _, subObj in pairs(obj) do
-                        if subObj and subObj.Remove then subObj:Remove() end
-                    end
+                if type(obj) == "table" and obj.Remove then
+                    obj:Remove()
                 elseif type(obj) == "userdata" and obj.Remove then
                     obj:Remove()
                 end
@@ -1291,6 +1341,16 @@ local function SetVisibilityFalse(esp)
     pcall(function()
         if esp.BoxOutline then esp.BoxOutline.Visible = false end
         if esp.BoxMain then esp.BoxMain.Visible = false end
+
+        if esp.LineESPOutline then esp.LineESPOutline.Visible = false end
+        if esp.LineESPMain then esp.LineESPMain.Visible = false end
+
+        if esp.SkeletonLines then
+            for _, pair in ipairs(esp.SkeletonLines) do
+                if pair.Outline then pair.Outline.Visible = false end
+                if pair.Main then pair.Main.Visible = false end
+            end
+        end
 
         if esp.BoxFillFrame then esp.BoxFillFrame.Visible = false end
         if esp.GuiHealthBg then esp.GuiHealthBg.Visible = false end
@@ -1324,6 +1384,19 @@ RunService.RenderStepped:Connect(function()
         local boxEnabled = Toggles.EspBox and Toggles.EspBox.Value
         local boxColor = GetColor("BoxColor", Color3.fromRGB(255, 255, 255))
         local boxOutlineColor = GetColor("BoxOutlineColor", Color3.fromRGB(0, 0, 0))
+
+        local skeletonEnabled = Toggles.EspSkeleton and Toggles.EspSkeleton.Value
+        local skeletonColor = GetColor("SkeletonColor", Color3.fromRGB(255, 255, 255))
+        local skeletonOutlineColor = GetColor("SkeletonOutlineColor", Color3.fromRGB(0, 0, 0))
+        local skeletonThickness = Options.SkeletonThicknessSlider and Options.SkeletonThicknessSlider.Value or 1.5
+        local skeletonOutlineThickness = Options.SkeletonOutlineThicknessSlider and Options.SkeletonOutlineThicknessSlider.Value or 3.5
+
+        local lineESPEnabled = Toggles.EspLine and Toggles.EspLine.Value
+        local lineESPColor = GetColor("LineESPColor", Color3.fromRGB(255, 255, 255))
+        local lineESPOutlineColor = GetColor("LineESPOutlineColor", Color3.fromRGB(0, 0, 0))
+        local lineESPThickness = Options.LineESPThicknessSlider and Options.LineESPThicknessSlider.Value or 1.5
+        local lineESPOutlineThickness = Options.LineESPOutlineThicknessSlider and Options.LineESPOutlineThicknessSlider.Value or 3.5
+
         local nameColor = GetColor("NameColor", Color3.fromRGB(255, 255, 255))
         local distColor = GetColor("DistColor", Color3.fromRGB(255, 255, 255))
         local hpTextColor = GetColor("HPTextColor", Color3.fromRGB(255, 255, 255))
@@ -1403,7 +1476,6 @@ RunService.RenderStepped:Connect(function()
                         local mathWidth, mathHeight = math.round(width), math.round(height)
 
                         if boxEnabled then
-                            -- อัปเดต Drawing.new("Square") แทนแบบ Line
                             if esp.BoxOutline then
                                 esp.BoxOutline.Position = Vector2.new(boxX, boxY)
                                 esp.BoxOutline.Size = Vector2.new(mathWidth, mathHeight)
@@ -1422,6 +1494,78 @@ RunService.RenderStepped:Connect(function()
                         else
                             if esp.BoxOutline then esp.BoxOutline.Visible = false end
                             if esp.BoxMain then esp.BoxMain.Visible = false end
+                        end
+
+                        -- RENDER LINE ESP (FROM BOTTOM TO TARGET) WITH OUTLINE
+                        if lineESPEnabled then
+                            local screenCenterBottom = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                            local targetPos2D = Vector2.new(rootPos.X, rootPos.Y)
+
+                            if esp.LineESPOutline then
+                                esp.LineESPOutline.From = screenCenterBottom
+                                esp.LineESPOutline.To = targetPos2D
+                                esp.LineESPOutline.Thickness = lineESPOutlineThickness
+                                esp.LineESPOutline.Color = lineESPOutlineColor
+                                esp.LineESPOutline.Visible = true
+                            end
+                            if esp.LineESPMain then
+                                esp.LineESPMain.From = screenCenterBottom
+                                esp.LineESPMain.To = targetPos2D
+                                esp.LineESPMain.Thickness = lineESPThickness
+                                esp.LineESPMain.Color = lineESPColor
+                                esp.LineESPMain.Visible = true
+                            end
+                        else
+                            if esp.LineESPOutline then esp.LineESPOutline.Visible = false end
+                            if esp.LineESPMain then esp.LineESPMain.Visible = false end
+                        end
+
+                        -- RENDER SKELETON ESP WITH OUTLINE
+                        if skeletonEnabled then
+                            for idx, connection in ipairs(SkeletonConnections) do
+                                local partA = character:FindFirstChild(connection[1])
+                                local partB = character:FindFirstChild(connection[2])
+                                local drawPair = esp.SkeletonLines[idx]
+
+                                if partA and partB and drawPair then
+                                    local posA, visA = Camera:WorldToViewportPoint(partA.Position)
+                                    local posB, visB = Camera:WorldToViewportPoint(partB.Position)
+
+                                    if visA and visB then
+                                        local fromVector = Vector2.new(posA.X, posA.Y)
+                                        local toVector = Vector2.new(posB.X, posB.Y)
+
+                                        if drawPair.Outline then
+                                            drawPair.Outline.From = fromVector
+                                            drawPair.Outline.To = toVector
+                                            drawPair.Outline.Color = skeletonOutlineColor
+                                            drawPair.Outline.Thickness = skeletonOutlineThickness
+                                            drawPair.Outline.Visible = true
+                                        end
+
+                                        if drawPair.Main then
+                                            drawPair.Main.From = fromVector
+                                            drawPair.Main.To = toVector
+                                            drawPair.Main.Color = skeletonColor
+                                            drawPair.Main.Thickness = skeletonThickness
+                                            drawPair.Main.Visible = true
+                                        end
+                                    else
+                                        if drawPair.Outline then drawPair.Outline.Visible = false end
+                                        if drawPair.Main then drawPair.Main.Visible = false end
+                                    end
+                                else
+                                    if drawPair and drawPair.Outline then drawPair.Outline.Visible = false end
+                                    if drawPair and drawPair.Main then drawPair.Main.Visible = false end
+                                end
+                            end
+                        else
+                            if esp.SkeletonLines then
+                                for _, pair in ipairs(esp.SkeletonLines) do
+                                    if pair.Outline then pair.Outline.Visible = false end
+                                    if pair.Main then pair.Main.Visible = false end
+                                end
+                            end
                         end
 
                         local textSize = math.clamp(math.round(mathHeight * 0.16), 9, 14)
@@ -1518,41 +1662,63 @@ RunService.RenderStepped:Connect(function()
     end)
 end)
 
-local EspGroup = Tabs.ESP:AddLeftGroupbox("ESP Toggle")
-local EspVisualsGroup = Tabs.ESP:AddRightGroupbox("Esp Settings")
+-- ==============================================================================
+-- ESP TAB LAYOUT RESTRUCTURED (LEFT & RIGHT GROUPBOXES)
+-- ==============================================================================
+local EspMainGroup = Tabs.ESP:AddLeftGroupbox("ESP Main")
+local EspLineGroup = Tabs.ESP:AddLeftGroupbox("Line & Highlight")
 
-EspGroup:AddToggle("EspMaster", { Text = "Enable Drawing Esp", Default = false })
+local EspTextGroup = Tabs.ESP:AddRightGroupbox("Text & Display")
+local EspSkeletonGroup = Tabs.ESP:AddRightGroupbox("Skeleton")
 
-EspVisualsGroup:AddDropdown("EspFontDropdown", { Text = "ESP Font", Values = DrawingFontNames, Default = 3, Multi = false })
+-- ------------------------------------------------------------------------------
+-- [LEFT SIDE 1] ESP MAIN & BOX SETTINGS
+-- ------------------------------------------------------------------------------
+EspMainGroup:AddToggle("EspMaster", { Text = "Enable Esp", Default = false })
 
-local BoxToggle = EspVisualsGroup:AddToggle("EspBox", { Text = "Enable Box ESP", Default = false })
+local BoxToggle = EspMainGroup:AddToggle("EspBox", { Text = "Enable Box ESP", Default = false })
 BoxToggle:AddColorPicker("BoxColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Box Main Color" })
 BoxToggle:AddColorPicker("BoxOutlineColor", { Default = Color3.fromRGB(0, 0, 0), Title = "Box Outline Color" })
 
-local HighlightToggle = EspVisualsGroup:AddToggle("EspHighlight", { Text = "Enable Highlights ESP", Default = false })
+EspMainGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill", Default = false })
+EspMainGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.5, Min = 0, Max = 1, Rounding = 2 })
+EspMainGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 255, 255) })
+EspMainGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(255, 255, 255) })
+EspMainGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(255, 255, 255) })
+EspMainGroup:AddToggle("EspBoxFillRotate", { Text = "Rotate Box Fill Gradient", Default = false })
+EspMainGroup:AddSlider("EspBoxFillRotateSpeed", { Text = "Box Fill Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
+
+-- ------------------------------------------------------------------------------
+-- [LEFT SIDE 2] LINE & HIGHLIGHT SETTINGS
+-- ------------------------------------------------------------------------------
+local LineESPToggle = EspLineGroup:AddToggle("EspLine", { Text = "Enable Line ESP", Default = false })
+LineESPToggle:AddColorPicker("LineESPColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Line ESP Color" })
+LineESPToggle:AddColorPicker("LineESPOutlineColor", { Default = Color3.fromRGB(0, 0, 0), Title = "Line ESP Outline Color" })
+
+EspLineGroup:AddSlider("LineESPThicknessSlider", { Text = "Line ESP Thickness", Default = 1.5, Min = 0.5, Max = 5.0, Rounding = 1 })
+EspLineGroup:AddSlider("LineESPOutlineThicknessSlider", { Text = "Line ESP Outline Thickness", Default = 3.5, Min = 1.0, Max = 8.0, Rounding = 1 })
+
+local HighlightToggle = EspLineGroup:AddToggle("EspHighlight", { Text = "Enable Highlights ESP", Default = false })
 HighlightToggle:AddColorPicker("HighlightMainColor", { Default = Color3.fromRGB(255, 0, 0), Title = "Main Color" })
 HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Outline Color" })
 
-EspVisualsGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
-EspVisualsGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 1, Min = 0, Max = 1, Rounding = 2 })
+EspLineGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
+EspLineGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.95, Min = 0, Max = 1, Rounding = 2 })
 
-EspVisualsGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill", Default = false })
-EspVisualsGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.5, Min = 0, Max = 1, Rounding = 2 })
-EspVisualsGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 0, 0) })
-EspVisualsGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(0, 255, 0) })
-EspVisualsGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(0, 0, 255) })
-EspVisualsGroup:AddToggle("EspBoxFillRotate", { Text = "Rotate Box Fill Gradient", Default = false })
-EspVisualsGroup:AddSlider("EspBoxFillRotateSpeed", { Text = "Box Fill Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
+-- ------------------------------------------------------------------------------
+-- [RIGHT SIDE 1] TEXT & DISPLAY SETTINGS
+-- ------------------------------------------------------------------------------
+EspTextGroup:AddDropdown("EspFontDropdown", { Text = "ESP Font", Values = DrawingFontNames, Default = 3, Multi = false })
 
-EspVisualsGroup:AddToggle("EspName", { Text = "Draw Name", Default = false }):AddColorPicker("NameColor", { Default = Color3.fromRGB(255, 255, 255) })
-EspVisualsGroup:AddDropdown("NameStyleDropdown", { Text = "Name Style", Values = {"Username", "Display Name"}, Default = 1, Multi = false })
+EspTextGroup:AddToggle("EspName", { Text = "Name", Default = false }):AddColorPicker("NameColor", { Default = Color3.fromRGB(255, 255, 255) })
+EspTextGroup:AddDropdown("NameStyleDropdown", { Text = "Name Style", Values = {"Username", "Display Name"}, Default = 1, Multi = false })
 
-local EspHealthToggle = EspVisualsGroup:AddToggle("EspHealth", { Text = "Draw Health Bar", Default = false })
-EspHealthToggle:AddColorPicker("HPFullColor", { Default = Color3.fromRGB(0, 255, 0), Title = "Full HP Color" })
-EspHealthToggle:AddColorPicker("HPHalfColor", { Default = Color3.fromRGB(255, 170, 0), Title = "Half HP Color" })
-EspHealthToggle:AddColorPicker("HPLowColor", { Default = Color3.fromRGB(255, 0, 0), Title = "Low HP Color" })
+local EspHealthToggle = EspTextGroup:AddToggle("EspHealth", { Text = "Health Bar", Default = false })
+EspHealthToggle:AddColorPicker("HPFullColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Full HP Color" })
+EspHealthToggle:AddColorPicker("HPHalfColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Half HP Color" })
+EspHealthToggle:AddColorPicker("HPLowColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Low HP Color" })
 
-EspVisualsGroup:AddSlider("HealthLerpSlider", {
+EspTextGroup:AddSlider("HealthLerpSlider", {
     Text = "Health Lerp",
     Default = 0.6,
     Min = 0.1,
@@ -1561,8 +1727,18 @@ EspVisualsGroup:AddSlider("HealthLerpSlider", {
     Compact = false
 })
 
-EspVisualsGroup:AddToggle("EspHealthText", { Text = "Show HP Number", Default = false }):AddColorPicker("HPTextColor", { Default = Color3.fromRGB(255, 255, 255) })
-EspVisualsGroup:AddToggle("EspDistance", { Text = "Draw Distance", Default = false }):AddColorPicker("DistColor", { Default = Color3.fromRGB(255, 255, 255) })
+EspTextGroup:AddToggle("EspHealthText", { Text = "Show HP Number", Default = false }):AddColorPicker("HPTextColor", { Default = Color3.fromRGB(255, 255, 255) })
+EspTextGroup:AddToggle("EspDistance", { Text = "Draw Distance", Default = false }):AddColorPicker("DistColor", { Default = Color3.fromRGB(255, 255, 255) })
+
+-- ------------------------------------------------------------------------------
+-- [RIGHT SIDE 2] SKELETON SETTINGS
+-- ------------------------------------------------------------------------------
+local SkeletonToggle = EspSkeletonGroup:AddToggle("EspSkeleton", { Text = "Enable Skeleton ESP", Default = false })
+SkeletonToggle:AddColorPicker("SkeletonColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Skeleton Main Color" })
+SkeletonToggle:AddColorPicker("SkeletonOutlineColor", { Default = Color3.fromRGB(0, 0, 0), Title = "Skeleton Outline Color" })
+
+EspSkeletonGroup:AddSlider("SkeletonThicknessSlider", { Text = "Skeleton Line Thickness", Default = 1.5, Min = 0.5, Max = 5.0, Rounding = 1 })
+EspSkeletonGroup:AddSlider("SkeletonOutlineThicknessSlider", { Text = "Skeleton Outline Thickness", Default = 3.5, Min = 1.0, Max = 8.0, Rounding = 1 })
 
 local MoveLeftBox = Tabs.Movement:AddLeftGroupbox("Anti Aim")
 
