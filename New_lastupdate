@@ -159,6 +159,9 @@ local SkyboxIDs = {
 
 local FOVCircleColor = Color3.fromRGB(255, 255, 255)
 local FOVCircleOutlineColor = Color3.fromRGB(0, 0, 0)
+local FOVThickness = 1.0
+local FOVOutlineThickness = 3.0
+
 local TracerLineColor = Color3.fromRGB(255, 0, 0)
 local TracerLineOutlineColor = Color3.fromRGB(0, 0, 0)
 local TracerThickness = 1.0
@@ -374,16 +377,19 @@ BoxFillGui.IgnoreGuiInset = true
 BoxFillGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 BoxFillGui.Parent = TargetGuiParent
 
+-- TARGET LINE STYLE FOV SETUP (LINE & OUTLINE)
 local FOVCircleOutline = Drawing.new("Circle")
-FOVCircleOutline.Thickness = 1.5
+FOVCircleOutline.Thickness = 3.0
 FOVCircleOutline.NumSides = 144
 FOVCircleOutline.Filled = false
+FOVCircleOutline.Transparency = 1.0
 FOVCircleOutline.Visible = FOVVisible
 
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 1.0
 FOVCircle.NumSides = 144
 FOVCircle.Filled = false
+FOVCircle.Transparency = 1.0
 FOVCircle.Visible = FOVVisible
 
 local TracerLineOutline = Drawing.new("Line")
@@ -634,13 +640,16 @@ RunService.RenderStepped:Connect(function()
     local Center = getScreenCenter()
     local ShowCircle = FOVVisible and SilentAimEnabled
     
+    -- LINE TARGET STYLING FOR FOV (OUTLINE & MAIN LINE SYNC)
     FOVCircleOutline.Position = Center
     FOVCircleOutline.Radius = FOVSize
+    FOVCircleOutline.Thickness = FOVOutlineThickness
     FOVCircleOutline.Visible = ShowCircle
     FOVCircleOutline.Color = FOVCircleOutlineColor
 
     FOVCircle.Position = Center
     FOVCircle.Radius = FOVSize
+    FOVCircle.Thickness = FOVThickness
     FOVCircle.Visible = ShowCircle
     FOVCircle.Color = FOVCircleColor
 
@@ -962,6 +971,16 @@ Options.FOVSlider:OnChanged(function()
     FOVSize = Options.FOVSlider.Value
 end)
 
+FOVGroupBox:AddSlider("FOVThicknessSlider", { Text = "FOV Line Thickness", Default = 1.5, Min = 0.5, Max = 5.0, Rounding = 1 })
+Options.FOVThicknessSlider:OnChanged(function()
+    FOVThickness = Options.FOVThicknessSlider.Value
+end)
+
+FOVGroupBox:AddSlider("FOVOutlineThicknessSlider", { Text = "FOV Outline Thickness", Default = 3.0, Min = 1.0, Max = 8.0, Rounding = 1 })
+Options.FOVOutlineThicknessSlider:OnChanged(function()
+    FOVOutlineThickness = Options.FOVOutlineThicknessSlider.Value
+end)
+
 FOVGroupBox:AddLabel("FOV Line Color"):AddColorPicker("FOVCircleColorPicker", { Default = Color3.fromRGB(255, 255, 255) })
 Options.FOVCircleColorPicker:OnChanged(function()
     FOVCircleColor = Options.FOVCircleColorPicker.Value
@@ -977,32 +996,32 @@ Toggles.FOVFillToggle:OnChanged(function()
     FOVFillEnabled = Toggles.FOVFillToggle.Value
 end)
 
-FOVFillGroupBox:AddSlider("FOVFillTransparencySlider", { Text = "FOV Fill Opacity", Default = 0.2, Min = 0, Max = 1, Rounding = 2 })
+FOVFillGroupBox:AddSlider("FOVFillTransparencySlider", { Text = "FOV Fill Opacity", Default = 0.65, Min = 0, Max = 1, Rounding = 2 })
 Options.FOVFillTransparencySlider:OnChanged(function()
     FOVFillTransparency = Options.FOVFillTransparencySlider.Value
 end)
 
-FOVFillGroupBox:AddLabel("Fill Color 1"):AddColorPicker("FOVFillColor1Picker", { Default = Color3.fromRGB(255, 0, 0) })
+FOVFillGroupBox:AddLabel("Fill Color 1"):AddColorPicker("FOVFillColor1Picker", { Default = Color3.fromRGB(255, 255, 255) })
 Options.FOVFillColor1Picker:OnChanged(function()
     FOVFillColor1 = Options.FOVFillColor1Picker.Value
 end)
 
-FOVFillGroupBox:AddLabel("Fill Color 2"):AddColorPicker("FOVFillColor2Picker", { Default = Color3.fromRGB(0, 255, 0) })
+FOVFillGroupBox:AddLabel("Fill Color 2"):AddColorPicker("FOVFillColor2Picker", { Default = Color3.fromRGB(255, 255, 255) })
 Options.FOVFillColor2Picker:OnChanged(function()
     FOVFillColor2 = Options.FOVFillColor2Picker.Value
 end)
 
-FOVFillGroupBox:AddLabel("Fill Color 3"):AddColorPicker("FOVFillColor3Picker", { Default = Color3.fromRGB(0, 0, 255) })
+FOVFillGroupBox:AddLabel("Fill Color 3"):AddColorPicker("FOVFillColor3Picker", { Default = Color3.fromRGB(255, 255, 255) })
 Options.FOVFillColor3Picker:OnChanged(function()
     FOVFillColor3 = Options.FOVFillColor3Picker.Value
 end)
 
-FOVFillGroupBox:AddToggle("FOVFillRotateToggle", { Text = "Rotate FOV Gradient", Default = false })
+FOVFillGroupBox:AddToggle("FOVFillRotateToggle", { Text = "Rotate FOV", Default = false })
 Toggles.FOVFillRotateToggle:OnChanged(function()
     FOVFillRotateEnabled = Toggles.FOVFillRotateToggle.Value
 end)
 
-FOVFillGroupBox:AddSlider("FOVFillRotateSpeedSlider", { Text = "Gradient Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
+FOVFillGroupBox:AddSlider("FOVFillRotateSpeedSlider", { Text = "Gradient Rotation Speed", Default = 3, Min = 1, Max = 10, Rounding = 1 })
 Options.FOVFillRotateSpeedSlider:OnChanged(function()
     FOVFillRotateSpeed = Options.FOVFillRotateSpeedSlider.Value
 end)
@@ -1012,7 +1031,7 @@ Toggles.TracerVisibleToggle:OnChanged(function()
     TracerEnabled = Toggles.TracerVisibleToggle.Value
 end)
 
-TracerGroupBox:AddSlider("TracerThicknessSlider", { Text = "Tracer Line Thickness", Default = 1.0, Min = 0.5, Max = 5.0, Rounding = 1 })
+TracerGroupBox:AddSlider("TracerThicknessSlider", { Text = "Tracer Line Thickness", Default = 1.5, Min = 0.5, Max = 5.0, Rounding = 1 })
 Options.TracerThicknessSlider:OnChanged(function()
     TracerThickness = Options.TracerThicknessSlider.Value
 end)
@@ -1795,6 +1814,8 @@ Library.OnUnload(function()
     table.clear(ESP_Drawing_Storage)
     if BoxFillGui then BoxFillGui:Destroy() end
     if SelfHighlightInstance then SelfHighlightInstance:Destroy() end
+    if FOVCircleOutline then FOVCircleOutline:Remove() end
+    if FOVCircle then FOVCircle:Remove() end
     
     Library.Unloaded = true
 end)
