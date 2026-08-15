@@ -33,6 +33,25 @@ local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
 local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
+local GlobalFontSetting = Enum.Font.Cartoon
+
+-- HOOK FORCE NOTIFY FONT TO CARTOON
+local OldNotify = Library.Notify
+Library.Notify = function(self, text, time)
+    local notification = OldNotify(self, text, time)
+    pcall(function()
+        local container = Library.NotificationArea or Library.Notifications
+        if container then
+            for _, desc in ipairs(container:GetDescendants()) do
+                if desc:IsA("TextLabel") or desc:IsA("TextButton") then
+                    desc.Font = GlobalFontSetting
+                end
+            end
+        end
+    end)
+    return notification
+end
+
 Library.ShowToggleFrameInKeybinds = true
 Library.ShowCustomCursor = true
 Library.NotifySide = "center" 
@@ -103,7 +122,6 @@ local PredictionValue = 0.1
 
 local PermLockEnabled = false
 local PermTargetList = {}
-local GlobalFontSetting = Enum.Font.Cartoon
 
 local CustomFOVValue = 70
 
@@ -377,7 +395,6 @@ BoxFillGui.IgnoreGuiInset = true
 BoxFillGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 BoxFillGui.Parent = TargetGuiParent
 
--- TARGET LINE STYLE FOV SETUP (LINE & OUTLINE)
 local FOVCircleOutline = Drawing.new("Circle")
 FOVCircleOutline.Thickness = 3.0
 FOVCircleOutline.NumSides = 144
@@ -640,7 +657,6 @@ RunService.RenderStepped:Connect(function()
     local Center = getScreenCenter()
     local ShowCircle = FOVVisible and SilentAimEnabled
     
-    -- LINE TARGET STYLING FOR FOV (OUTLINE & MAIN LINE SYNC)
     FOVCircleOutline.Position = Center
     FOVCircleOutline.Radius = FOVSize
     FOVCircleOutline.Thickness = FOVOutlineThickness
@@ -1101,7 +1117,7 @@ Options.SelfHLFillTransSlider:OnChanged(function()
     UpdateSelfHighlight()
 end)
 
-SelfHighlightLeftBox:AddSlider("SelfHLOutlineTransSlider", { Text = "Outline Color Transparency", Default = 1, Min = 0, Max = 1, Rounding = 2 })
+SelfHighlightLeftBox:AddSlider("SelfHLOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.95, Min = 0, Max = 1, Rounding = 2 })
 Options.SelfHLOutlineTransSlider:OnChanged(function()
     SelfHighlightOutlineTrans = Options.SelfHLOutlineTransSlider.Value
     UpdateSelfHighlight()
@@ -1181,6 +1197,19 @@ end
 local ESP_Drawing_Storage = {}
 local function ImplementESPSetup(holder)
     pcall(function()
+        -- สร้างเส้น 4 ด้านทั้ง Top, Bottom, Left, Right สำหรับ Outline และ Main Line
+        holder.BoxTopOutline = CreateLine(3, Color3.fromRGB(0, 0, 0))
+        holder.BoxTopMain = CreateLine(1, Color3.fromRGB(255, 255, 255))
+        
+        holder.BoxBottomOutline = CreateLine(3, Color3.fromRGB(0, 0, 0))
+        holder.BoxBottomMain = CreateLine(1, Color3.fromRGB(255, 255, 255))
+
+        holder.BoxLeftOutline = CreateLine(3, Color3.fromRGB(0, 0, 0))
+        holder.BoxLeftMain = CreateLine(1, Color3.fromRGB(255, 255, 255))
+
+        holder.BoxRightOutline = CreateLine(3, Color3.fromRGB(0, 0, 0))
+        holder.BoxRightMain = CreateLine(1, Color3.fromRGB(255, 255, 255))
+
         holder.BoxFillFrame = Instance.new("Frame")
         holder.BoxFillFrame.Name = "BoxFill"
         holder.BoxFillFrame.AnchorPoint = Vector2.new(0, 0)
@@ -1215,22 +1244,6 @@ local function ImplementESPSetup(holder)
         holder.Highlight.Enabled = false
         holder.Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
         holder.Highlight.Parent = CoreGui
-
-        holder.BoxLines = {CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1)}
-        holder.BoxOutlines = {
-            CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1),
-            CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1)
-        }
-        holder.CornerLines = {
-            CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1),
-            CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1)
-        }
-        holder.CornerOutlines = {
-            CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1),
-            CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1),
-            CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1),
-            CreateLine(1), CreateLine(1), CreateLine(1), CreateLine(1)
-        }
 
         holder.HealthText = CreateText()
         holder.Name = CreateText()
@@ -1284,13 +1297,18 @@ Players.PlayerRemoving:Connect(RemoveDrawingESP)
 
 local function SetVisibilityFalse(esp)
     pcall(function()
+        if esp.BoxTopOutline then esp.BoxTopOutline.Visible = false end
+        if esp.BoxTopMain then esp.BoxTopMain.Visible = false end
+        if esp.BoxBottomOutline then esp.BoxBottomOutline.Visible = false end
+        if esp.BoxBottomMain then esp.BoxBottomMain.Visible = false end
+        if esp.BoxLeftOutline then esp.BoxLeftOutline.Visible = false end
+        if esp.BoxLeftMain then esp.BoxLeftMain.Visible = false end
+        if esp.BoxRightOutline then esp.BoxRightOutline.Visible = false end
+        if esp.BoxRightMain then esp.BoxRightMain.Visible = false end
+
         if esp.BoxFillFrame then esp.BoxFillFrame.Visible = false end
         if esp.GuiHealthBg then esp.GuiHealthBg.Visible = false end
         if esp.Highlight then esp.Highlight.Enabled = false end
-        if esp.BoxLines then for i = 1, 4 do esp.BoxLines[i].Visible = false end end
-        if esp.BoxOutlines then for i = 1, 8 do esp.BoxOutlines[i].Visible = false end end
-        if esp.CornerLines then for i = 1, 8 do esp.CornerLines[i].Visible = false end end
-        if esp.CornerOutlines then for i = 1, 16 do esp.CornerOutlines[i].Visible = false end end
         if esp.HealthText then esp.HealthText.Visible = false end
         if esp.Name then esp.Name.Visible = false end
         if esp.Distance then esp.Distance.Visible = false end
@@ -1317,8 +1335,9 @@ RunService.RenderStepped:Connect(function()
             return
         end
 
+        local boxEnabled = Toggles.EspBox and Toggles.EspBox.Value
         local boxColor = GetColor("BoxColor", Color3.fromRGB(255, 255, 255))
-        local cornerColor = GetColor("CornerColor", Color3.fromRGB(0, 210, 255))
+        local boxOutlineColor = GetColor("BoxOutlineColor", Color3.fromRGB(0, 0, 0))
         local nameColor = GetColor("NameColor", Color3.fromRGB(255, 255, 255))
         local distColor = GetColor("DistColor", Color3.fromRGB(255, 255, 255))
         local hpTextColor = GetColor("HPTextColor", Color3.fromRGB(255, 255, 255))
@@ -1397,6 +1416,40 @@ RunService.RenderStepped:Connect(function()
                         local pct = math.clamp(esp.SmoothHealth / maxHp, 0, 1)
                         local mathWidth, mathHeight = math.round(width), math.round(height)
 
+                        if boxEnabled then
+                            local function updateBoxLine(line, fromX, fromY, toX, toY, color, thickness)
+                                if line then
+                                    line.From = Vector2.new(fromX, fromY)
+                                    line.To = Vector2.new(toX, toY)
+                                    line.Color = color
+                                    line.Thickness = thickness
+                                    line.Visible = true
+                                end
+                            end
+
+                            -- วาด 4 ด้านครบถ้วน (Top, Left, Bottom, Right)
+                            updateBoxLine(esp.BoxTopOutline, boxX, boxY, boxX + mathWidth, boxY, boxOutlineColor, 3)
+                            updateBoxLine(esp.BoxTopMain, boxX, boxY, boxX + mathWidth, boxY, boxColor, 1)
+
+                            updateBoxLine(esp.BoxLeftOutline, boxX, boxY, boxX, boxY + mathHeight, boxOutlineColor, 3)
+                            updateBoxLine(esp.BoxLeftMain, boxX, boxY, boxX, boxY + mathHeight, boxColor, 1)
+
+                            updateBoxLine(esp.BoxBottomOutline, boxX, boxY + mathHeight, boxX + mathWidth, boxY + mathHeight, boxOutlineColor, 3)
+                            updateBoxLine(esp.BoxBottomMain, boxX, boxY + mathHeight, boxX + mathWidth, boxY + mathHeight, boxColor, 1)
+
+                            updateBoxLine(esp.BoxRightOutline, boxX + mathWidth, boxY, boxX + mathWidth, boxY + mathHeight, boxOutlineColor, 3)
+                            updateBoxLine(esp.BoxRightMain, boxX + mathWidth, boxY, boxX + mathWidth, boxY + mathHeight, boxColor, 1)
+                        else
+                            if esp.BoxTopOutline then esp.BoxTopOutline.Visible = false end
+                            if esp.BoxTopMain then esp.BoxTopMain.Visible = false end
+                            if esp.BoxBottomOutline then esp.BoxBottomOutline.Visible = false end
+                            if esp.BoxBottomMain then esp.BoxBottomMain.Visible = false end
+                            if esp.BoxLeftOutline then esp.BoxLeftOutline.Visible = false end
+                            if esp.BoxLeftMain then esp.BoxLeftMain.Visible = false end
+                            if esp.BoxRightOutline then esp.BoxRightOutline.Visible = false end
+                            if esp.BoxRightMain then esp.BoxRightMain.Visible = false end
+                        end
+
                         local textSize = math.clamp(math.round(mathHeight * 0.16), 9, 14)
                         local hpTextSize = math.clamp(math.round(mathHeight * 0.13), 8, 12)
 
@@ -1422,69 +1475,6 @@ RunService.RenderStepped:Connect(function()
                             esp.BoxFillFrame.Visible = true
                         else
                             if esp.BoxFillFrame then esp.BoxFillFrame.Visible = false end
-                        end
-
-                        local corner = esp.CornerLines
-                        local cornerOut = esp.CornerOutlines
-                        local isCorner = Toggles.EspCornerBox and Toggles.EspCornerBox.Value
-                        local isNormalBox = Toggles.EspBox and Toggles.EspBox.Value
-
-                        if isCorner then
-                            local cl = math.clamp(math.round(mathWidth * 0.22), 3, 12)
-                            corner[1].From, corner[1].To = Vector2.new(boxX, boxY), Vector2.new(boxX + cl, boxY)
-                            corner[2].From, corner[2].To = Vector2.new(boxX, boxY), Vector2.new(boxX, boxY + cl)
-                            corner[3].From, corner[3].To = Vector2.new(boxX + mathWidth, boxY), Vector2.new(boxX + mathWidth - cl, boxY)
-                            corner[4].From, corner[4].To = Vector2.new(boxX + mathWidth, boxY), Vector2.new(boxX + mathWidth, boxY + cl)
-                            corner[5].From, corner[5].To = Vector2.new(boxX, boxY + mathHeight), Vector2.new(boxX + cl, boxY + mathHeight)
-                            corner[6].From, corner[6].To = Vector2.new(boxX, boxY + mathHeight), Vector2.new(boxX, boxY + mathHeight - cl)
-                            corner[7].From, corner[7].To = Vector2.new(boxX + mathWidth, boxY + mathHeight), Vector2.new(boxX + mathWidth - cl, boxY + mathHeight)
-                            corner[8].From, corner[8].To = Vector2.new(boxX + mathWidth, boxY + mathHeight), Vector2.new(boxX + mathWidth, boxY + mathHeight - cl)
-
-                            cornerOut[1].From, cornerOut[1].To = Vector2.new(boxX - 1, boxY - 1), Vector2.new(boxX + cl + 1, boxY - 1)
-                            cornerOut[2].From, cornerOut[2].To = Vector2.new(boxX - 1, boxY - 1), Vector2.new(boxX - 1, boxY + cl + 1)
-                            cornerOut[3].From, cornerOut[3].To = Vector2.new(boxX + mathWidth + 1, boxY - 1), Vector2.new(boxX + mathWidth - cl - 1, boxY - 1)
-                            cornerOut[4].From, cornerOut[4].To = Vector2.new(boxX + mathWidth + 1, boxY - 1), Vector2.new(boxX + mathWidth + 1, boxY + cl + 1)
-                            cornerOut[5].From, cornerOut[5].To = Vector2.new(boxX - 1, boxY + mathHeight + 1), Vector2.new(boxX + cl + 1, boxY + mathHeight + 1)
-                            cornerOut[6].From, cornerOut[6].To = Vector2.new(boxX - 1, boxY + mathHeight + 1), Vector2.new(boxX - 1, boxY + mathHeight - cl - 1)
-                            cornerOut[7].From, cornerOut[7].To = Vector2.new(boxX + mathWidth + 1, boxY + mathHeight + 1), Vector2.new(boxX + mathWidth - cl - 1, boxY + mathHeight + 1)
-                            cornerOut[8].From, cornerOut[8].To = Vector2.new(boxX + mathWidth + 1, boxY + mathHeight + 1), Vector2.new(boxX + mathWidth + 1, boxY + mathHeight - cl - 1)
-                            cornerOut[9].From, cornerOut[9].To = Vector2.new(boxX + 1, boxY + 1), Vector2.new(boxX + cl - 1, boxY + 1)
-                            cornerOut[10].From, cornerOut[10].To = Vector2.new(boxX + 1, boxY + 1), Vector2.new(boxX + 1, boxY + cl - 1)
-                            cornerOut[11].From, cornerOut[11].To = Vector2.new(boxX + mathWidth - 1, boxY + 1), Vector2.new(boxX + mathWidth - cl + 1, boxY + 1)
-                            cornerOut[12].From, cornerOut[12].To = Vector2.new(boxX + mathWidth - 1, boxY + 1), Vector2.new(boxX + mathWidth - 1, boxY + cl - 1)
-                            cornerOut[13].From, cornerOut[13].To = Vector2.new(boxX + 1, boxY + mathHeight - 1), Vector2.new(boxX + cl - 1, boxY + mathHeight - 1)
-                            cornerOut[14].From, cornerOut[14].To = Vector2.new(boxX + 1, boxY + mathHeight - 1), Vector2.new(boxX + 1, boxY + mathHeight - cl + 1)
-                            cornerOut[15].From, cornerOut[15].To = Vector2.new(boxX + mathWidth - 1, boxY + mathHeight - 1), Vector2.new(boxX + mathWidth - cl + 1, boxY + mathHeight - 1)
-                            cornerOut[16].From, cornerOut[16].To = Vector2.new(boxX + mathWidth - 1, boxY + mathHeight - 1), Vector2.new(boxX + mathWidth - 1, boxY + mathHeight - cl + 1)
-
-                            for i = 1, 8 do corner[i].Color = cornerColor; corner[i].Visible = true end
-                            for i = 1, 16 do cornerOut[i].Color = Color3.fromRGB(0, 0, 0); cornerOut[i].Visible = true end
-                        else
-                            for i = 1, 8 do corner[i].Visible = false end
-                            for i = 1, 16 do cornerOut[i].Visible = false end
-                        end
-
-                        local lines = esp.BoxLines
-                        local outs = esp.BoxOutlines
-                        if isNormalBox and not isCorner then
-                            lines[1].From, lines[1].To = Vector2.new(boxX, boxY), Vector2.new(boxX + mathWidth, boxY)
-                            lines[2].From, lines[2].To = Vector2.new(boxX + mathWidth, boxY), Vector2.new(boxX + mathWidth, boxY + mathHeight)
-                            lines[3].From, lines[3].To = Vector2.new(boxX + mathWidth, boxY + mathHeight), Vector2.new(boxX, boxY + mathHeight)
-                            lines[4].From, lines[4].To = Vector2.new(boxX, boxY + mathHeight), Vector2.new(boxX, boxY)
-                            for i = 1, 4 do lines[i].Color = boxColor; lines[i].Visible = true end
-
-                            outs[1].From, outs[1].To = Vector2.new(boxX - 1, boxY - 1), Vector2.new(boxX + mathWidth + 1, boxY - 1)
-                            outs[2].From, outs[2].To = Vector2.new(boxX + mathWidth + 1, boxY - 1), Vector2.new(boxX + mathWidth + 1, boxY + mathHeight + 1)
-                            outs[3].From, outs[3].To = Vector2.new(boxX + mathWidth + 1, boxY + mathHeight + 1), Vector2.new(boxX - 1, boxY + mathHeight + 1)
-                            outs[4].From, outs[4].To = Vector2.new(boxX - 1, boxY + mathHeight + 1), Vector2.new(boxX - 1, boxY - 1)
-                            outs[5].From, outs[5].To = Vector2.new(boxX + 1, boxY + 1), Vector2.new(boxX + mathWidth - 1, boxY + 1)
-                            outs[6].From, outs[6].To = Vector2.new(boxX + mathWidth - 1, boxY + 1), Vector2.new(boxX + mathWidth - 1, boxY + mathHeight - 1)
-                            outs[7].From, outs[7].To = Vector2.new(boxX + mathWidth - 1, boxY + mathHeight - 1), Vector2.new(boxX + 1, boxY + mathHeight - 1)
-                            outs[8].From, outs[8].To = Vector2.new(boxX + 1, boxY + 1), Vector2.new(boxX + 1, boxY + mathHeight - 1)
-                            for i = 1, 8 do outs[i].Visible = true end
-                        else
-                            for i = 1, 4 do lines[i].Visible = false end
-                            for i = 1, 8 do outs[i].Visible = false end
                         end
 
                         if Toggles.EspHealth and Toggles.EspHealth.Value then
@@ -1561,8 +1551,9 @@ EspGroup:AddToggle("EspMaster", { Text = "Enable Drawing Esp", Default = false }
 
 EspVisualsGroup:AddDropdown("EspFontDropdown", { Text = "ESP Font", Values = DrawingFontNames, Default = 3, Multi = false })
 
-EspVisualsGroup:AddToggle("EspBox", { Text = "Draw Box", Default = false }):AddColorPicker("BoxColor", { Default = Color3.fromRGB(255, 255, 255) })
-EspVisualsGroup:AddToggle("EspCornerBox", { Text = "Corner Box", Default = false }):AddColorPicker("CornerColor", { Default = Color3.fromRGB(255, 255, 255) })
+local BoxToggle = EspVisualsGroup:AddToggle("EspBox", { Text = "Enable Box ESP", Default = false })
+BoxToggle:AddColorPicker("BoxColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Box Main Color" })
+BoxToggle:AddColorPicker("BoxOutlineColor", { Default = Color3.fromRGB(0, 0, 0), Title = "Box Outline Color" })
 
 local HighlightToggle = EspVisualsGroup:AddToggle("EspHighlight", { Text = "Enable Highlights ESP", Default = false })
 HighlightToggle:AddColorPicker("HighlightMainColor", { Default = Color3.fromRGB(255, 0, 0), Title = "Main Color" })
@@ -1571,7 +1562,7 @@ HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromR
 EspVisualsGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
 EspVisualsGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 1, Min = 0, Max = 1, Rounding = 2 })
 
-EspVisualsGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill Gradient", Default = false })
+EspVisualsGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill", Default = false })
 EspVisualsGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.5, Min = 0, Max = 1, Rounding = 2 })
 EspVisualsGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 0, 0) })
 EspVisualsGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(0, 255, 0) })
@@ -1589,7 +1580,7 @@ EspHealthToggle:AddColorPicker("HPLowColor", { Default = Color3.fromRGB(255, 0, 
 
 EspVisualsGroup:AddSlider("HealthLerpSlider", {
     Text = "Health Lerp",
-    Default = 0.2,
+    Default = 0.6,
     Min = 0.1,
     Max = 1.0,
     Rounding = 2,
@@ -1788,6 +1779,7 @@ Options.UIFontDropdown:OnChanged(function()
     pcall(function()
         local targetFont = Enum.Font[Options.UIFontDropdown.Value]
         if not targetFont then return end
+        GlobalFontSetting = targetFont
         local parentGui = Library.ScreenGui or Library.Main
         if parentGui then
             for _, desc in ipairs(parentGui:GetDescendants()) do
