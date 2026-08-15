@@ -1174,13 +1174,14 @@ local function GetColor(optionName, defaultColor)
     return fallback
 end
 
-local function CreateLine(thickness, color)
-    local line = Drawing.new("Line")
-    line.Thickness = thickness or 1
-    line.Color = color or Color3.fromRGB(0, 0, 0)
-    line.Transparency = 1
-    line.Visible = false
-    return line
+local function CreateSquare(thickness, color)
+    local square = Drawing.new("Square")
+    square.Thickness = thickness or 1
+    square.Color = color or Color3.fromRGB(255, 255, 255)
+    square.Filled = false
+    square.Transparency = 1
+    square.Visible = false
+    return square
 end
 
 local function CreateText()
@@ -1197,18 +1198,9 @@ end
 local ESP_Drawing_Storage = {}
 local function ImplementESPSetup(holder)
     pcall(function()
-        -- สร้างเส้น 4 ด้านทั้ง Top, Bottom, Left, Right สำหรับ Outline และ Main Line
-        holder.BoxTopOutline = CreateLine(3, Color3.fromRGB(0, 0, 0))
-        holder.BoxTopMain = CreateLine(1, Color3.fromRGB(255, 255, 255))
-        
-        holder.BoxBottomOutline = CreateLine(3, Color3.fromRGB(0, 0, 0))
-        holder.BoxBottomMain = CreateLine(1, Color3.fromRGB(255, 255, 255))
-
-        holder.BoxLeftOutline = CreateLine(3, Color3.fromRGB(0, 0, 0))
-        holder.BoxLeftMain = CreateLine(1, Color3.fromRGB(255, 255, 255))
-
-        holder.BoxRightOutline = CreateLine(3, Color3.fromRGB(0, 0, 0))
-        holder.BoxRightMain = CreateLine(1, Color3.fromRGB(255, 255, 255))
+        -- ใช้ Drawing Square 2 ชั้น (Outline และ Main Box)
+        holder.BoxOutline = CreateSquare(3, Color3.fromRGB(0, 0, 0))
+        holder.BoxMain = CreateSquare(1, Color3.fromRGB(255, 255, 255))
 
         holder.BoxFillFrame = Instance.new("Frame")
         holder.BoxFillFrame.Name = "BoxFill"
@@ -1297,14 +1289,8 @@ Players.PlayerRemoving:Connect(RemoveDrawingESP)
 
 local function SetVisibilityFalse(esp)
     pcall(function()
-        if esp.BoxTopOutline then esp.BoxTopOutline.Visible = false end
-        if esp.BoxTopMain then esp.BoxTopMain.Visible = false end
-        if esp.BoxBottomOutline then esp.BoxBottomOutline.Visible = false end
-        if esp.BoxBottomMain then esp.BoxBottomMain.Visible = false end
-        if esp.BoxLeftOutline then esp.BoxLeftOutline.Visible = false end
-        if esp.BoxLeftMain then esp.BoxLeftMain.Visible = false end
-        if esp.BoxRightOutline then esp.BoxRightOutline.Visible = false end
-        if esp.BoxRightMain then esp.BoxRightMain.Visible = false end
+        if esp.BoxOutline then esp.BoxOutline.Visible = false end
+        if esp.BoxMain then esp.BoxMain.Visible = false end
 
         if esp.BoxFillFrame then esp.BoxFillFrame.Visible = false end
         if esp.GuiHealthBg then esp.GuiHealthBg.Visible = false end
@@ -1417,37 +1403,25 @@ RunService.RenderStepped:Connect(function()
                         local mathWidth, mathHeight = math.round(width), math.round(height)
 
                         if boxEnabled then
-                            local function updateBoxLine(line, fromX, fromY, toX, toY, color, thickness)
-                                if line then
-                                    line.From = Vector2.new(fromX, fromY)
-                                    line.To = Vector2.new(toX, toY)
-                                    line.Color = color
-                                    line.Thickness = thickness
-                                    line.Visible = true
-                                end
+                            -- อัปเดต Drawing.new("Square") แทนแบบ Line
+                            if esp.BoxOutline then
+                                esp.BoxOutline.Position = Vector2.new(boxX, boxY)
+                                esp.BoxOutline.Size = Vector2.new(mathWidth, mathHeight)
+                                esp.BoxOutline.Color = boxOutlineColor
+                                esp.BoxOutline.Thickness = 3
+                                esp.BoxOutline.Visible = true
                             end
 
-                            -- วาด 4 ด้านครบถ้วน (Top, Left, Bottom, Right)
-                            updateBoxLine(esp.BoxTopOutline, boxX, boxY, boxX + mathWidth, boxY, boxOutlineColor, 3)
-                            updateBoxLine(esp.BoxTopMain, boxX, boxY, boxX + mathWidth, boxY, boxColor, 1)
-
-                            updateBoxLine(esp.BoxLeftOutline, boxX, boxY, boxX, boxY + mathHeight, boxOutlineColor, 3)
-                            updateBoxLine(esp.BoxLeftMain, boxX, boxY, boxX, boxY + mathHeight, boxColor, 1)
-
-                            updateBoxLine(esp.BoxBottomOutline, boxX, boxY + mathHeight, boxX + mathWidth, boxY + mathHeight, boxOutlineColor, 3)
-                            updateBoxLine(esp.BoxBottomMain, boxX, boxY + mathHeight, boxX + mathWidth, boxY + mathHeight, boxColor, 1)
-
-                            updateBoxLine(esp.BoxRightOutline, boxX + mathWidth, boxY, boxX + mathWidth, boxY + mathHeight, boxOutlineColor, 3)
-                            updateBoxLine(esp.BoxRightMain, boxX + mathWidth, boxY, boxX + mathWidth, boxY + mathHeight, boxColor, 1)
+                            if esp.BoxMain then
+                                esp.BoxMain.Position = Vector2.new(boxX, boxY)
+                                esp.BoxMain.Size = Vector2.new(mathWidth, mathHeight)
+                                esp.BoxMain.Color = boxColor
+                                esp.BoxMain.Thickness = 1
+                                esp.BoxMain.Visible = true
+                            end
                         else
-                            if esp.BoxTopOutline then esp.BoxTopOutline.Visible = false end
-                            if esp.BoxTopMain then esp.BoxTopMain.Visible = false end
-                            if esp.BoxBottomOutline then esp.BoxBottomOutline.Visible = false end
-                            if esp.BoxBottomMain then esp.BoxBottomMain.Visible = false end
-                            if esp.BoxLeftOutline then esp.BoxLeftOutline.Visible = false end
-                            if esp.BoxLeftMain then esp.BoxLeftMain.Visible = false end
-                            if esp.BoxRightOutline then esp.BoxRightOutline.Visible = false end
-                            if esp.BoxRightMain then esp.BoxRightMain.Visible = false end
+                            if esp.BoxOutline then esp.BoxOutline.Visible = false end
+                            if esp.BoxMain then esp.BoxMain.Visible = false end
                         end
 
                         local textSize = math.clamp(math.round(mathHeight * 0.16), 9, 14)
