@@ -4,11 +4,14 @@ task.spawn(function()
     end)
 end)
 
+task.wait(2.1)
+
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
     end)
 end)
+
 task.wait(2.1)
 
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
