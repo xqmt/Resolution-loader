@@ -1016,7 +1016,7 @@ Options.FOVThicknessSlider:OnChanged(function()
     FOVThickness = Options.FOVThicknessSlider.Value
 end)
 
-FOVGroupBox:AddSlider("FOVOutlineThicknessSlider", { Text = "FOV Outline Thickness", Default = 3.5, Min = 1.0, Max = 8.0, Rounding = 1 })
+FOVGroupBox:AddSlider("FOVOutlineThicknessSlider", { Text = "FOV Outline Thickness", Default = 3, Min = 1.0, Max = 8.0, Rounding = 1 })
 Options.FOVOutlineThicknessSlider:OnChanged(function()
     FOVOutlineThickness = Options.FOVOutlineThicknessSlider.Value
 end)
@@ -1071,7 +1071,7 @@ Toggles.TracerVisibleToggle:OnChanged(function()
     TracerEnabled = Toggles.TracerVisibleToggle.Value
 end)
 
-TracerGroupBox:AddSlider("TracerThicknessSlider", { Text = "Tracer Line Thickness", Default = 1.5, Min = 0.5, Max = 5.0, Rounding = 1 })
+TracerGroupBox:AddSlider("TracerThicknessSlider", { Text = "Tracer Line Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
 Options.TracerThicknessSlider:OnChanged(function()
     TracerThickness = Options.TracerThicknessSlider.Value
 end)
