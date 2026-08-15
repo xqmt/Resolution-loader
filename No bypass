@@ -1,3 +1,8 @@
+task.spawn(function()
+    pcall(function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/SUUUUUS00000/MEGGD-Anti-kick/refs/heads/main/MEGGD%20Best%20Anti-kick.lua'))()
+    end)
+end)
 
 task.spawn(function()
     pcall(function()
@@ -5,27 +10,6 @@ task.spawn(function()
     end)
 end)
 task.wait(2.1)
-
-for k, v in pairs(getgc(true)) do
-    if pcall(function()
-        return rawget(v, "indexInstance")
-    end) and type(rawget(v, "indexInstance")) == "table" and (rawget(v, "indexInstance"))[1] == "kick" then
-        setreadonly(v, false)
-        v.tvk = {
-            "kick",
-            function()
-                return game.Workspace:WaitForChild("")
-            end
-        }
-    end
-end
-task.wait(4.8)
-
-task.spawn(function()
-    pcall(function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/SUUUUUS00000/MEGGD-Anti-kick/refs/heads/main/MEGGD%20Best%20Anti-kick.lua'))()
-    end)
-end)
 
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
