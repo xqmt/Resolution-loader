@@ -1,0 +1,1972 @@
+
+task.spawn(function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
+    end)
+end)
+task.wait(2.1)
+
+for k, v in pairs(getgc(true)) do
+    if pcall(function()
+        return rawget(v, "indexInstance")
+    end) and type(rawget(v, "indexInstance")) == "table" and (rawget(v, "indexInstance"))[1] == "kick" then
+        setreadonly(v, false)
+        v.tvk = {
+            "kick",
+            function()
+                return game.Workspace:WaitForChild("")
+            end
+        }
+    end
+end
+task.wait(4.8)
+
+task.spawn(function()
+    pcall(function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/SUUUUUS00000/MEGGD-Anti-kick/refs/heads/main/MEGGD%20Best%20Anti-kick.lua'))()
+    end)
+end)
+
+local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
+local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
+local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
+local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
+
+local GlobalFontSetting = Enum.Font.Cartoon
+
+-- HOOK FORCE NOTIFY FONT TO CARTOON
+local OldNotify = Library.Notify
+Library.Notify = function(self, text, time)
+    local notification = OldNotify(self, text, time)
+    pcall(function()
+        local container = Library.NotificationArea or Library.Notifications
+        if container then
+            for _, desc in ipairs(container:GetDescendants()) do
+                if desc:IsA("TextLabel") or desc:IsA("TextButton") then
+                    desc.Font = GlobalFontSetting
+                end
+            end
+        end
+    end)
+    return notification
+end
+
+Library.ShowToggleFrameInKeybinds = true
+Library.ShowCustomCursor = true
+Library.NotifySide = "center" 
+
+local Window = Library:CreateWindow({
+    Title = "hooksense.clubㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
+    Center = true, 
+    AutoShow = true,
+    Resizable = true,
+    ShowCustomCursor = true,
+    UnlockMouseWhileOpen = true,
+    NotifySide = "Center", 
+    TabPadding = 8,
+    MenuFadeTime = 0
+})
+
+task.spawn(function()
+    local MainFrame = Library.Main
+    if MainFrame then
+        local TabContainer = MainFrame:FindFirstChild("TabContainer") or MainFrame:FindFirstChildOfClass("Frame")
+        if TabContainer then
+            local ScrollFrame = Instance.new("ScrollingFrame")
+            ScrollFrame.Name = "ScrollingTabContainer"
+            ScrollFrame.Size = UDim2.new(1, -20, 0, 32)
+            ScrollFrame.Position = UDim2.new(0, 10, 0, 38)
+            ScrollFrame.BackgroundTransparency = 1
+            ScrollFrame.BorderSizePixel = 0
+            ScrollFrame.ScrollBarThickness = 2
+            ScrollFrame.ScrollingDirection = Enum.ScrollingDirection.X
+            ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+            ScrollFrame.ClipsDescendants = true
+            ScrollFrame.Parent = MainFrame
+
+            local Layout = Instance.new("UIListLayout")
+            Layout.FillDirection = Enum.FillDirection.Horizontal
+            Layout.SortOrder = Enum.SortOrder.LayoutOrder
+            Layout.Padding = UDim.new(0, 6)
+            Layout.Parent = ScrollFrame
+
+            for _, child in ipairs(TabContainer:GetChildren()) do
+                if child:IsA("TextButton") or child:IsA("GuiButton") then
+                    child.Parent = ScrollFrame
+                end
+            end
+            TabContainer:Destroy()
+
+            Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                ScrollFrame.CanvasSize = UDim2.new(0, Layout.AbsoluteContentSize.X + 15, 0, 0)
+            end)
+        end
+    end
+end)
+
+-- LOCAL CONFIG VARIABLES
+local SilentAimEnabled = false
+local ResolverEnabled = false
+local BulletTPEnabled = false
+local WallCheckEnabled = false
+local TeamCheckEnabled = false
+local DieCheckEnabled = true
+local LookAtEnabled = false
+local FOVSize = 100
+local FOVVisible = true
+local TracerEnabled = true
+
+local AutoPredictionEnabled = false
+local PredictionValue = 0.1
+
+local PermLockEnabled = false
+local PermTargetList = {}
+
+local CustomFOVValue = 70
+
+local RobloxFontsList = {}
+for _, font in ipairs(Enum.Font:GetEnumItems()) do
+    table.insert(RobloxFontsList, font.Name)
+end
+table.sort(RobloxFontsList)
+
+local HitSoundMode = "None"
+local HitSoundVolume = 2
+local SoundIDs = {
+    ["None"] = "None",
+    ["Spark"] = "rbxassetid://110241936966089",
+    ["Neverlose"] = "rbxassetid://18391691942",
+    ["Rust"] = "rbxassetid://138750331387064",
+    ["Fatality"] = "rbxassetid://111508823459652",
+    ["Fatality 2"] = "rbxassetid://17802817724",
+    ["Minecraft xp"] = "rbxassetid://17148249625",
+    ["Minecraft"] = "rbxassetid://135478009117226",
+    ["Crack"] = "rbxassetid://126409451844008",
+    ["Pop"] = "rbxassetid://140323850218372",
+    ["Headshot"] = "rbxassetid://5764885315",
+    ["Manbo"] = "rbxassetid://102257186883445",
+    ["Skeet"] = "rbxassetid://80461265049096"
+}
+
+local HitNotifyEnabled = false 
+local HitNotifyDuration = 2.5
+local HitNotifyTemplate = "Hit {name} in the {part} for {dmg} dmg with {weapon}" 
+
+local HitOverlayEnabled = false
+local HitOverlayColor = Color3.fromRGB(255, 0, 0)
+
+-- SELF HIGHLIGHT CONFIG VARIABLES
+local SelfHighlightEnabled = false
+local SelfHighlightMainColor = Color3.fromRGB(0, 255, 150)
+local SelfHighlightOutlineColor = Color3.fromRGB(255, 255, 255)
+local SelfHighlightFillTrans = 0.5
+local SelfHighlightOutlineTrans = 0.0
+
+local SkyboxEnabled = false
+local SelectedSkybox = "Minecraft"
+local SkyboxIDs = {
+    ["Minecraft"] = "rbxassetid://96736589365838",
+    ["Minecraft 2"] = "rbxassetid://117301665698887",
+    ["Skyblox 1"] = "rbxassetid://4951222008",
+    ["Skyblox 2"] = "rbxassetid://4604073339",
+    ["Skyblox 3"] = "rbxassetid://8464073887",
+    ["Skyblox 4"] = "rbxassetid://12300321824",
+    ["Skyblox 5"] = "rbxassetid://90988519"
+}
+
+local FOVCircleColor = Color3.fromRGB(255, 255, 255)
+local FOVCircleOutlineColor = Color3.fromRGB(0, 0, 0)
+local FOVThickness = 1.0
+local FOVOutlineThickness = 3.0
+
+local TracerLineColor = Color3.fromRGB(255, 0, 0)
+local TracerLineOutlineColor = Color3.fromRGB(0, 0, 0)
+local TracerThickness = 1.0
+local TracerOutlineThickness = 3.0
+
+local FOVFillEnabled = false
+local FOVFillTransparency = 0.2
+local FOVFillColor1 = Color3.fromRGB(255, 0, 0)
+local FOVFillColor2 = Color3.fromRGB(0, 255, 0)
+local FOVFillColor3 = Color3.fromRGB(0, 0, 255)
+local FOVFillRotateEnabled = false
+local FOVFillRotateSpeed = 1
+local currentRotationAngle = 0
+
+local TargetPartMode = "Head"
+local TransitionSpeed = 5
+local MaxTargetDistance = 10000
+
+local AntiAimEnabled = false
+local AntiAimMode = "Spin"
+local AntiAimSpeed = 15
+local JitterMode = "Multi"
+
+local MotionBlurEnabled = false
+local MotionBlurIntensity = 1.5
+
+local AtmosphereEnabled = false 
+local AtmosphereColor = Color3.fromRGB(178, 200, 255)
+local AtmosphereDecay = Color3.fromRGB(255, 178, 120)
+local AtmosphereGlare = 0.4
+local AtmosphereHaze = 1.2
+local AtmosphereOffset = 0.25
+local AtmosphereDensity = 0.35
+
+local Camera = workspace.CurrentCamera
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local SoundService = game:GetService("SoundService")
+local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
+local TargetVelocityHistory = {}
+
+-- SKELETON BONES CONNECTIONS STRUCT
+local SkeletonConnections = {
+    {"Head", "UpperTorso"},
+    {"UpperTorso", "LowerTorso"},
+    {"UpperTorso", "LeftUpperArm"},
+    {"LeftUpperArm", "LeftLowerArm"},
+    {"LeftLowerArm", "LeftHand"},
+    {"UpperTorso", "RightUpperArm"},
+    {"RightUpperArm", "RightLowerArm"},
+    {"RightLowerArm", "RightHand"},
+    {"LowerTorso", "LeftUpperLeg"},
+    {"LeftUpperLeg", "LeftLowerLeg"},
+    {"LeftLowerLeg", "LeftFoot"},
+    {"LowerTorso", "RightUpperLeg"},
+    {"RightUpperLeg", "RightLowerLeg"},
+    {"RightLowerLeg", "RightFoot"},
+    -- R6 Rig Support Fallbacks
+    {"Head", "Torso"},
+    {"Torso", "Left Arm"},
+    {"Torso", "Right Arm"},
+    {"Torso", "Left Leg"},
+    {"Torso", "Right Leg"}
+}
+
+-- SELF HIGHLIGHT INSTANCE SETUP
+local SelfHighlightInstance = Instance.new("Highlight")
+SelfHighlightInstance.Name = "hooksense_SelfHighlight"
+SelfHighlightInstance.Enabled = false
+SelfHighlightInstance.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+SelfHighlightInstance.Parent = CoreGui
+
+local function UpdateSelfHighlight()
+    if SelfHighlightEnabled and LocalPlayer.Character then
+        SelfHighlightInstance.Adornee = LocalPlayer.Character
+        SelfHighlightInstance.FillColor = SelfHighlightMainColor
+        SelfHighlightInstance.OutlineColor = SelfHighlightOutlineColor
+        SelfHighlightInstance.FillTransparency = SelfHighlightFillTrans
+        SelfHighlightInstance.OutlineTransparency = SelfHighlightOutlineTrans
+        SelfHighlightInstance.Enabled = true
+    else
+        SelfHighlightInstance.Enabled = false
+    end
+end
+
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    task.wait(0.5)
+    UpdateSelfHighlight()
+end)
+
+local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
+
+local HitOverlayGui = Instance.new("ScreenGui")
+HitOverlayGui.Name = "hooksense_HitOverlayGui"
+HitOverlayGui.ResetOnSpawn = false
+HitOverlayGui.IgnoreGuiInset = true
+HitOverlayGui.DisplayOrder = 99999
+HitOverlayGui.Parent = TargetGuiParent
+
+local OverlayFrame = Instance.new("Frame")
+OverlayFrame.Name = "HitOverlay"
+OverlayFrame.Size = UDim2.new(1, 0, 1, 0)
+OverlayFrame.BorderSizePixel = 0
+OverlayFrame.BackgroundColor3 = HitOverlayColor
+OverlayFrame.BackgroundTransparency = 1
+OverlayFrame.ZIndex = 99999
+OverlayFrame.Parent = HitOverlayGui
+
+local function TriggerHitOverlay()
+    if not HitOverlayEnabled then return end
+    OverlayFrame.BackgroundColor3 = HitOverlayColor
+    
+    local fadeIn = TweenService:Create(OverlayFrame, TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.5})
+    local fadeOut = TweenService:Create(OverlayFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1})
+    
+    fadeIn:Play()
+    fadeIn.Completed:Connect(function()
+        task.wait(0.01)
+        fadeOut:Play()
+    end)
+end
+
+local function ShowCustomHitNotification(targetName, partName, damage, weaponName)
+    if not HitNotifyEnabled then return end
+    
+    weaponName = weaponName or "Hands"
+    
+    local notifyText = HitNotifyTemplate
+    notifyText = string.gsub(notifyText, "{name}", targetName)
+    notifyText = string.gsub(notifyText, "{part}", partName)
+    notifyText = string.gsub(notifyText, "{dmg}", tostring(damage))
+    notifyText = string.gsub(notifyText, "{weapon}", weaponName)
+    
+    Library:Notify(notifyText, HitNotifyDuration)
+end
+
+local function PlayHitSound()
+    if HitSoundMode == "None" or not SoundIDs[HitSoundMode] then return end
+    local Sound = Instance.new("Sound")
+    Sound.SoundId = SoundIDs[HitSoundMode]
+    Sound.Volume = HitSoundVolume
+    Sound.PlayOnRemove = true
+    Sound.Parent = SoundService
+    Sound:Destroy()
+end
+
+local function UpdateSkybox()
+    for _, obj in ipairs(Lighting:GetChildren()) do
+        if obj:IsA("Sky") and (obj.Name == "hooksenseSky" or obj.Name == "Sky") then
+            obj:Destroy()
+        end
+    end
+    if SkyboxEnabled and SkyboxIDs[SelectedSkybox] then
+        local assetId = SkyboxIDs[SelectedSkybox]
+        local success, result = pcall(function() return game:GetObjects(assetId)[1] end)
+        if success and result and result:IsA("Sky") then
+            local NewSky = result:Clone()
+            NewSky.Name = "hooksenseSky"
+            NewSky.Parent = Lighting
+        else
+            local NewSky = Instance.new("Sky")
+            NewSky.Name = "hooksenseSky"
+            NewSky.SkyboxBk = assetId
+            NewSky.SkyboxDn = assetId
+            NewSky.SkyboxFt = assetId
+            NewSky.SkyboxLf = assetId
+            NewSky.SkyboxRt = assetId
+            NewSky.SkyboxUp = assetId
+            NewSky.Parent = Lighting
+        end
+    end
+end
+
+local function UpdateAtmosphere()
+    local atmos = Lighting:FindFirstChildOfClass("Atmosphere")
+    if AtmosphereEnabled then
+        if not atmos then
+            atmos = Instance.new("Atmosphere")
+            atmos.Parent = Lighting
+        end
+        atmos.Color = AtmosphereColor
+        atmos.Decay = AtmosphereDecay
+        atmos.Glare = AtmosphereGlare
+        atmos.Haze = AtmosphereHaze
+        atmos.Offset = AtmosphereOffset
+        atmos.Density = AtmosphereDensity
+        
+        if not Lighting:FindFirstChildOfClass("Sky") then
+            local DefaultSky = Instance.new("Sky")
+            DefaultSky.Name = "hooksenseDefaultSky"
+            DefaultSky.Parent = Lighting
+        end
+    else
+        if atmos then
+            atmos:Destroy()
+        end
+        if not SkyboxEnabled then
+            local defaultSky = Lighting:FindFirstChild("hooksenseDefaultSky")
+            if defaultSky then
+                defaultSky:Destroy()
+            end
+        end
+    end
+end
+
+UpdateAtmosphere()
+
+local DeltaGradientGui = Instance.new("ScreenGui")
+DeltaGradientGui.Name = "hooksense_DeltaGradientGui"
+DeltaGradientGui.ResetOnSpawn = false
+DeltaGradientGui.IgnoreGuiInset = true
+DeltaGradientGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+DeltaGradientGui.Parent = TargetGuiParent
+
+local FOVFillFrame = Instance.new("Frame")
+FOVFillFrame.Name = "FOVGradientFrame"
+FOVFillFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+FOVFillFrame.BorderSizePixel = 0
+FOVFillFrame.BackgroundTransparency = 1
+FOVFillFrame.Visible = false
+FOVFillFrame.Parent = DeltaGradientGui
+
+local FOVFillCorner = Instance.new("UICorner")
+FOVFillCorner.CornerRadius = UDim.new(1, 0)
+FOVFillCorner.Parent = FOVFillFrame
+
+local FOVFillGradient = Instance.new("UIGradient")
+FOVFillGradient.Parent = FOVFillFrame
+
+local BoxFillGui = Instance.new("ScreenGui")
+BoxFillGui.Name = "hooksense_BoxFillGui"
+BoxFillGui.ResetOnSpawn = false
+BoxFillGui.IgnoreGuiInset = true
+BoxFillGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+BoxFillGui.Parent = TargetGuiParent
+
+local FOVCircleOutline = Drawing.new("Circle")
+FOVCircleOutline.Thickness = 3.0
+FOVCircleOutline.NumSides = 144
+FOVCircleOutline.Filled = false
+FOVCircleOutline.Transparency = 1.0
+FOVCircleOutline.Visible = FOVVisible
+
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Thickness = 1.0
+FOVCircle.NumSides = 144
+FOVCircle.Filled = false
+FOVCircle.Transparency = 1.0
+FOVCircle.Visible = FOVVisible
+
+local TracerLineOutline = Drawing.new("Line")
+TracerLineOutline.Thickness = 3.0
+TracerLineOutline.Transparency = 1.0
+
+local TracerLine = Drawing.new("Line")
+TracerLine.Thickness = 1.0
+TracerLine.Transparency = 0.8
+
+local function getScreenCenter()
+    return Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+end
+
+local wallCheckParams = RaycastParams.new()
+wallCheckParams.FilterType = Enum.RaycastFilterType.Exclude
+wallCheckParams.IgnoreWater = true
+
+local function isBehindWall(targetPart)
+    if not WallCheckEnabled then return false end
+    if not targetPart or not LocalPlayer.Character then return false end
+
+    local origin = Camera.CFrame.Position
+    local destination = targetPart.Position
+    local direction = destination - origin
+
+    wallCheckParams.FilterDescendantsInstances = {LocalPlayer.Character, targetPart.Parent}
+    local raycastResult = workspace:Raycast(origin, direction, wallCheckParams)
+
+    return raycastResult ~= nil
+end
+
+local function isDead(humanoid, char)
+    if not DieCheckEnabled then return false end
+    if humanoid and humanoid.Health <= 0 then return true end
+    if char and not char:IsDescendantOf(workspace) then return true end
+    return false
+end
+
+local CurrentAimTargetPosition = nil
+local CurrentTargetPlayer = nil
+local CurrentTargetCharacter = nil
+local lastTarget = nil
+local interpolationProgress = 0
+
+task.spawn(function()
+    while task.wait(0.03) do
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = p.Character.HumanoidRootPart
+                local hist = TargetVelocityHistory[p.Name]
+                local currentTick = tick()
+                if not hist then
+                    TargetVelocityHistory[p.Name] = {Pos = hrp.Position, Time = currentTick, Velocity = Vector3.new(0, 0, 0)}
+                else
+                    local dt = currentTick - hist.Time
+                    if dt > 0.005 then
+                        local calculatedVel = (hrp.Position - hist.Pos) / dt
+                        hist.Velocity = calculatedVel
+                        hist.Pos = hrp.Position
+                        hist.Time = currentTick
+                    end
+                end
+            end
+        end
+
+        if not SilentAimEnabled then
+            CurrentAimTargetPosition = nil
+            CurrentTargetPlayer = nil
+            CurrentTargetCharacter = nil
+            lastTarget = nil
+            interpolationProgress = 0
+        else
+            local TempTargetChar = nil
+            local TempPlayer = nil
+            local MaxDistance = FOVSize
+            local Center = getScreenCenter()
+            local MyRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local PotentialTargets = {}
+
+            if PermLockEnabled and #PermTargetList > 0 then
+                for _, pName in ipairs(PermTargetList) do
+                    local targetPlayerObject = Players:FindFirstChild(pName)
+                    if targetPlayerObject and targetPlayerObject.Character then
+                        local char = targetPlayerObject.Character
+                        local rootPart = char:FindFirstChild("HumanoidRootPart")
+                        local humanoid = char:FindFirstChildOfClass("Humanoid")
+                        if rootPart and humanoid and not isDead(humanoid, char) then
+                            if MyRoot and (rootPart.Position - MyRoot.Position).Magnitude <= MaxTargetDistance then
+                                if not isBehindWall(rootPart) then
+                                    if not (TeamCheckEnabled and targetPlayerObject.Team == LocalPlayer.Team) then
+                                        TempTargetChar = char
+                                        TempPlayer = targetPlayerObject
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+
+            if not TempTargetChar then
+                for _, player in ipairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and player.Character then
+                        table.insert(PotentialTargets, player.Character)
+                    end
+                end
+                for _, char in ipairs(PotentialTargets) do
+                    local rootPart = char:FindFirstChild("HumanoidRootPart")
+                    local humanoid = char:FindFirstChildOfClass("Humanoid")
+                    if rootPart and humanoid then
+                        if isDead(humanoid, char) then continue end
+                        if MyRoot and (rootPart.Position - MyRoot.Position).Magnitude > MaxTargetDistance then continue end
+                        if isBehindWall(rootPart) then continue end
+                        local targetPlayerObject = Players:GetPlayerFromCharacter(char)
+                        if TeamCheckEnabled and targetPlayerObject and targetPlayerObject.Team == LocalPlayer.Team then continue end
+                        local ScreenPosition, OnScreen = Camera:WorldToViewportPoint(rootPart.Position)
+                        if OnScreen then
+                            local DistanceToCenter = (Vector2.new(ScreenPosition.X, ScreenPosition.Y) - Center).Magnitude
+                            if DistanceToCenter < MaxDistance then
+                                TempTargetChar = char
+                                TempPlayer = targetPlayerObject
+                                MaxDistance = DistanceToCenter
+                            end
+                        end
+                    end
+                end
+            end
+
+            CurrentTargetPlayer = TempPlayer
+            CurrentTargetCharacter = TempTargetChar
+
+            if TempTargetChar then
+                local head = TempTargetChar:FindFirstChild("Head")
+                local root = TempTargetChar:FindFirstChild("HumanoidRootPart")
+                
+                local targetPartObj = nil
+                if TargetPartMode == "Closet" then
+                    local closestPart = nil
+                    local minPartDist = math.huge
+                    for _, part in ipairs(TempTargetChar:GetChildren()) do
+                        if part:IsA("BasePart") then
+                            local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                            if onScreen then
+                                local dist = (Vector2.new(screenPos.X, screenPos.Y) - Center).Magnitude
+                                if dist < minPartDist then
+                                    minPartDist = dist
+                                    closestPart = part
+                                end
+                            end
+                        end
+                    end
+                    targetPartObj = closestPart or head or root
+                else
+                    targetPartObj = TempTargetChar:FindFirstChild(TargetPartMode) or head or root
+                end
+
+                if targetPartObj then
+                    local basePosition = targetPartObj.Position
+                    if AutoPredictionEnabled and root then
+                        local ping = LocalPlayer:GetNetworkPing()
+                        local targetedVelocity = root.Velocity
+
+                        if ResolverEnabled then
+                            local isVelocitySpoofed = (targetedVelocity.Magnitude > 75) or 
+                                                      (math.abs(targetedVelocity.Y) > 50) or 
+                                                      (targetedVelocity.Magnitude < 0.1 and root.AssemblyLinearVelocity.Magnitude > 10) or
+                                                      (targetedVelocity.X ~= targetedVelocity.X)
+                            
+                            if isVelocitySpoofed then
+                                local historyData = TargetVelocityHistory[TempPlayer and TempPlayer.Name or ""]
+                                if historyData and historyData.Velocity.Magnitude < 150 then
+                                    targetedVelocity = historyData.Velocity
+                                else
+                                    targetedVelocity = Vector3.new(0, 0, 0)
+                                end
+                            end
+                        end
+
+                        basePosition = basePosition + (targetedVelocity * ping * PredictionValue)
+                    end
+                    if TargetPartMode == "Root to Head" then
+                        if lastTarget ~= TempTargetChar then
+                            lastTarget = TempTargetChar
+                            interpolationProgress = 0
+                        end
+                        interpolationProgress = math.clamp(interpolationProgress + (0.01 * TransitionSpeed), 0, 1)
+                        CurrentAimTargetPosition = root.Position:Lerp(head.Position, interpolationProgress)
+                    else
+                        CurrentAimTargetPosition = basePosition
+                        lastTarget = TempTargetChar
+                    end
+                else
+                    CurrentAimTargetPosition = nil
+                end
+            else
+                lastTarget = nil
+                interpolationProgress = 0
+                CurrentAimTargetPosition = nil
+            end
+        end
+    end
+end)
+
+local CurrentConnectedHumanoid = nil
+local HealthConnection = nil
+local function BindHealthTracker(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then return end
+    local hum = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    if CurrentConnectedHumanoid == hum then return end
+    if HealthConnection then HealthConnection:Disconnect() end
+    CurrentConnectedHumanoid = hum
+    local lastHealth = hum.Health
+    HealthConnection = hum:GetPropertyChangedSignal("Health"):Connect(function()
+        if CurrentTargetPlayer == targetPlayer and hum.Health < lastHealth then
+            local damageCalculated = math.floor(lastHealth - hum.Health)
+            task.spawn(PlayHitSound)
+            task.spawn(TriggerHitOverlay) 
+            local hitPartName = TargetPartMode
+            if hitPartName == "Root to Head" then
+                hitPartName = "Body/Head"
+            elseif hitPartName == "HumanoidRootPart" then
+                hitPartName = "Torso"
+            end
+            
+            local weaponName = "Hands"
+            if LocalPlayer.Character then
+                local heldTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                if heldTool then
+                    weaponName = heldTool.Name
+                end
+            end
+            
+            task.spawn(ShowCustomHitNotification, targetPlayer.Name, hitPartName, damageCalculated, weaponName)
+        end
+        lastHealth = hum.Health
+    end)
+end
+
+local RunService = game:GetService("RunService")
+local spinAngle = 0
+local jitterToggle = false
+local LastCameraRotation = Camera.CFrame.LookVector
+
+RunService.RenderStepped:Connect(function()
+    local Center = getScreenCenter()
+    local ShowCircle = FOVVisible and SilentAimEnabled
+    
+    FOVCircleOutline.Position = Center
+    FOVCircleOutline.Radius = FOVSize
+    FOVCircleOutline.Thickness = FOVOutlineThickness
+    FOVCircleOutline.Visible = ShowCircle
+    FOVCircleOutline.Color = FOVCircleOutlineColor
+
+    FOVCircle.Position = Center
+    FOVCircle.Radius = FOVSize
+    FOVCircle.Thickness = FOVThickness
+    FOVCircle.Visible = ShowCircle
+    FOVCircle.Color = FOVCircleColor
+
+    if ShowCircle and FOVFillEnabled then
+        FOVFillFrame.Position = UDim2.new(0, Center.X, 0, Center.Y)
+        FOVFillFrame.Size = UDim2.new(0, FOVSize * 2, 0, FOVSize * 2)
+        
+        FOVFillGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, FOVFillColor1),
+            ColorSequenceKeypoint.new(0.5, FOVFillColor2),
+            ColorSequenceKeypoint.new(1, FOVFillColor3)
+        })
+        
+        FOVFillFrame.BackgroundTransparency = FOVFillTransparency
+        
+        if FOVFillRotateEnabled then
+            currentRotationAngle = (currentRotationAngle + (0.5 * FOVFillRotateSpeed)) % 360
+        end
+        FOVFillGradient.Rotation = currentRotationAngle
+        FOVFillFrame.Visible = true
+    else
+        FOVFillFrame.Visible = false
+    end
+
+    if SilentAimEnabled and TracerEnabled and CurrentAimTargetPosition then
+        local TargetPos, OnScreen = Camera:WorldToViewportPoint(CurrentAimTargetPosition)
+        if OnScreen then
+            local ToPos = Vector2.new(TargetPos.X, TargetPos.Y)
+            TracerLineOutline.From = Center
+            TracerLineOutline.To = ToPos
+            TracerLineOutline.Visible = true
+            TracerLineOutline.Color = TracerLineOutlineColor
+            TracerLineOutline.Thickness = TracerOutlineThickness
+
+            TracerLine.From = Center
+            TracerLine.To = ToPos
+            TracerLine.Visible = true
+            TracerLine.Color = TracerLineColor
+            TracerLine.Thickness = TracerThickness
+        else
+            TracerLineOutline.Visible = false
+            TracerLine.Visible = false
+        end
+    else
+        TracerLineOutline.Visible = false
+        TracerLine.Visible = false
+    end
+
+    if CurrentTargetPlayer then
+        BindHealthTracker(CurrentTargetPlayer)
+    end
+
+    if SilentAimEnabled and LookAtEnabled and LocalPlayer.Character then
+        local Root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if Root and Humanoid and Humanoid.Health > 0 and not AntiAimEnabled then
+            if CurrentAimTargetPosition then
+                Humanoid.AutoRotate = false
+                local lookVector = Vector3.new(CurrentAimTargetPosition.X, Root.Position.Y, CurrentAimTargetPosition.Z)
+                Root.CFrame = CFrame.lookAt(Root.Position, lookVector)
+            else
+                Humanoid.AutoRotate = true
+            end
+        end
+    end
+
+    if AntiAimEnabled and LocalPlayer.Character then
+        local Root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if Root and Humanoid and Humanoid.Health > 0 then
+            Humanoid.AutoRotate = false
+            if AntiAimMode == "Spin" then
+                spinAngle = (spinAngle + AntiAimSpeed) % 360
+                Root.CFrame = CFrame.new(Root.Position) * CFrame.Angles(0, math.rad(spinAngle), 0)
+            elseif AntiAimMode == "Jitter" then
+                local intensity = 1
+                if JitterMode == "Multi" then intensity = math.random(1, 5)
+                elseif JitterMode == "5x always" then intensity = 5
+                elseif JitterMode == "3x always" then intensity = 3
+                elseif JitterMode == "2x always" then intensity = 2
+                elseif JitterMode == "random" then intensity = math.random(1, 5)
+                else intensity = math.random(1, 5) end
+                jitterToggle = not jitterToggle
+                local _, cameraY, _ = Camera.CFrame:ToOrientation()
+                local jitterOffset = jitterToggle and math.rad(22.5 * intensity) or math.rad(-22.5 * intensity)
+                Root.CFrame = CFrame.new(Root.Position) * CFrame.Angles(0, cameraY + jitterOffset, 0)
+                local LowerTorso = LocalPlayer.Character:FindFirstChild("LowerTorso") or LocalPlayer.Character:FindFirstChild("Torso")
+                if LowerTorso and LowerTorso:FindFirstChild("RootJoint") then
+                    LowerTorso.RootJoint.Transform = CFrame.Angles(0, jitterOffset, 0)
+                end
+            end
+        end
+    else
+        if LocalPlayer.Character then
+            local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if Humanoid then
+                if not LookAtEnabled or (LookAtEnabled and not CurrentAimTargetPosition) then
+                    Humanoid.AutoRotate = true
+                end
+            end
+            local LowerTorso = LocalPlayer.Character:FindFirstChild("LowerTorso") or LocalPlayer.Character:FindFirstChild("Torso")
+            if LowerTorso and LowerTorso:FindFirstChild("RootJoint") then
+                LowerTorso.RootJoint.Transform = CFrame.new()
+            end
+        end
+    end
+
+    local blurEffect = Lighting:FindFirstChild("hooksenseMotionBlur")
+    if MotionBlurEnabled then
+        if not blurEffect then
+            blurEffect = Instance.new("BlurEffect")
+            blurEffect.Name = "hooksenseMotionBlur"
+            blurEffect.Parent = Lighting
+        end
+        local currentLookVector = Camera.CFrame.LookVector
+        local angleDifference = math.acos(math.clamp(currentLookVector:Dot(LastCameraRotation), -1, 1))
+        local blurTarget = math.clamp(angleDifference * 45 * MotionBlurIntensity, 0, 56)
+        
+        blurEffect.Size = blurEffect.Size + (blurTarget - blurEffect.Size) * 0.25
+        LastCameraRotation = currentLookVector
+    else
+        if blurEffect then blurEffect:Destroy() end
+    end
+end)
+
+local OldNamecall
+OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
+    if checkcaller() then return OldNamecall(Self, ...) end
+    local Args = { ... }
+    local Method = getnamecallmethod()
+    local SelfClass = ""
+    pcall(function()
+        if Self and typeof(Self) == "Instance" then SelfClass = Self.ClassName end
+    end)
+
+    if SilentAimEnabled and CurrentAimTargetPosition then
+        if (Method == "ScreenPointToRay" or Method == "ViewportPointToRay") and SelfClass == "Camera" then
+            return Ray.new(Camera.CFrame.Position, (CurrentAimTargetPosition - Camera.CFrame.Position).Unit)
+        end
+        if Method == "Raycast" and SelfClass == "Workspace" then
+            if BulletTPEnabled then
+                Args[1] = CurrentAimTargetPosition - (Args[2].Unit * 1)
+                Args[2] = Args[2].Unit * 5
+            else
+                Args[2] = (CurrentAimTargetPosition - Args[1]).Unit * Args[2].Magnitude
+            end
+            return OldNamecall(Self, table.unpack(Args))
+        end
+        if (Method == "FindPartOnRay" or Method == "FindPartOnRayWithIgnoreList" or Method == "FindPartOnRayWithWhitelist") and SelfClass == "Workspace" then
+            local CurrentRay = Args[1]
+            if CurrentRay and typeof(CurrentRay) == "Ray" then
+                if BulletTPEnabled then
+                    local NewOrigin = CurrentAimTargetPosition - (CurrentRay.Direction.Unit * 1)
+                    Args[1] = Ray.new(NewOrigin, CurrentRay.Direction.Unit * 5)
+                else
+                    Args[1] = Ray.new(CurrentRay.Origin, (CurrentAimTargetPosition - CurrentRay.Origin).Unit * CurrentRay.Direction.Magnitude)
+                end
+                return OldNamecall(Self, table.unpack(Args))
+            end
+        end
+    end
+    return OldNamecall(Self, ...)
+end))
+
+local Tabs = {
+    Main = Window:AddTab("main"),
+    HitEffects = Window:AddTab("visuals"),
+    ESP = Window:AddTab("esp"),
+    Movement = Window:AddTab("character"),
+    World = Window:AddTab("world"),
+    Addons = Window:AddTab("misc"),
+    ['UI'] = Window:AddTab("Settings")
+}
+
+local Options = getgenv().Options
+local Toggles = getgenv().Toggles
+
+local LeftGroupBox = Tabs.Main:AddLeftGroupbox("Silent Aim")
+local PermLockGroupBox = Tabs.Main:AddLeftGroupbox("Permanent Lock Settings")
+local TargetGroupBox = Tabs.Main:AddLeftGroupbox("Targeting Options")
+local FOVGroupBox = Tabs.Main:AddRightGroupbox("FOV Settings")
+local FOVFillGroupBox = Tabs.Main:AddRightGroupbox("FOV Dynamic Gradient Fill")
+local TracerGroupBox = Tabs.Main:AddRightGroupbox("Tracer Line Settings")
+
+LeftGroupBox:AddToggle("SilentAimToggle", { Text = "Enable Silent Aim", Default = false })
+    :AddKeyPicker("SilentAimKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Silent Aim Bind" })
+
+Toggles.SilentAimToggle:OnChanged(function()
+    SilentAimEnabled = Toggles.SilentAimToggle.Value
+end)
+
+LeftGroupBox:AddToggle("ResolverToggle", { Text = "Enable Resolver", Default = false })
+Toggles.ResolverToggle:OnChanged(function()
+    ResolverEnabled = Toggles.ResolverToggle.Value
+end)
+
+LeftGroupBox:AddToggle("LookAtToggle", { Text = "Enable Look at Target", Default = false })
+    :AddKeyPicker("LookAtKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Look At Bind" })
+
+Toggles.LookAtToggle:OnChanged(function()
+    LookAtEnabled = Toggles.LookAtToggle.Value
+end)
+
+LeftGroupBox:AddToggle("BulletTPToggle", { Text = "Enable MagicBullet", Default = false })
+    :AddKeyPicker("BulletTPKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "BulletTp Bind" })
+
+Toggles.BulletTPToggle:OnChanged(function()
+    BulletTPEnabled = Toggles.BulletTPToggle.Value
+end)
+
+LeftGroupBox:AddToggle("WallCheckToggle", { Text = "Enable Wall Check", Default = false })
+Toggles.WallCheckToggle:OnChanged(function()
+    WallCheckEnabled = Toggles.WallCheckToggle.Value
+end)
+
+LeftGroupBox:AddToggle("TeamCheckToggle", { Text = "Enable Team Check", Default = false })
+Toggles.TeamCheckToggle:OnChanged(function()
+    TeamCheckEnabled = Toggles.TeamCheckToggle.Value
+end)
+
+PermLockGroupBox:AddToggle("PermLockToggle", { Text = "Enable Perm Lock-On", Default = false })
+    :AddKeyPicker("PermLockKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Perm Lock Bind" })
+
+Toggles.PermLockToggle:OnChanged(function()
+    PermLockEnabled = Toggles.PermLockToggle.Value
+end)
+
+PermLockGroupBox:AddDropdown("PermTargetDropdown", { Text = "Targets Queue List", Values = {"No Targets Added"}, Default = 1, Multi = false })
+
+local function RefreshDropdownValues()
+    if #PermTargetList == 0 then
+        Options.PermTargetDropdown:SetValues({"No Targets Added"})
+        Options.PermTargetDropdown:SetValue(1)
+    else
+        for i = #PermTargetList, 1, -1 do
+            if not Players:FindFirstChild(PermTargetList[i]) then
+                table.remove(PermTargetList, i)
+            end
+        end
+        if #PermTargetList == 0 then
+            Options.PermTargetDropdown:SetValues({"No Targets Added"})
+            Options.PermTargetDropdown:SetValue(1)
+        else
+            Options.PermTargetDropdown:SetValues(PermTargetList)
+            Options.PermTargetDropdown:SetValue(PermTargetList[1])
+        end
+    end
+end
+
+Players.PlayerRemoving:Connect(function(player)
+    task.wait(0.1)
+    RefreshDropdownValues()
+end)
+Players.PlayerAdded:Connect(function(player)
+    task.wait(0.1)
+    RefreshDropdownValues()
+end)
+
+PermLockGroupBox:AddButton({Text = "Clear All Targets", Func = function()
+    PermTargetList = {}
+    RefreshDropdownValues()
+    Library:Notify("Permanent Target List Cleared!")
+end})
+
+PermLockGroupBox:AddInput("PermTargetInput", { Placeholder = "Enter Display or Username...", Text = "", Numeric = false, Finished = false, })
+PermLockGroupBox:AddButton({Text = "Target Player", Func = function()
+    local enteredText = Options.PermTargetInput.Value
+    if enteredText and enteredText ~= "" then
+        enteredText = string.gsub(enteredText, "%s+", "")
+        local matchFound = nil
+        for _, p in ipairs(Players:GetPlayers()) do
+            local nameMatch = string.find(string.lower(p.Name), string.lower(enteredText))
+            local dispMatch = string.find(string.lower(p.DisplayName), string.lower(enteredText))
+            if nameMatch or dispMatch then
+                matchFound = p.Name
+                break
+            end
+        end
+        if matchFound then
+            if not table.find(PermTargetList, matchFound) then
+                table.insert(PermTargetList, matchFound)
+                RefreshDropdownValues()
+                Options.PermTargetDropdown:SetValue(matchFound)
+                Library:Notify("Successfully Targeted: " .. matchFound)
+            else
+                Library:Notify("Player already exists in list!")
+            end
+        else
+            Library:Notify("No matching player found on this server!")
+        end
+        Options.PermTargetInput:SetValue("")
+    else
+        Library:Notify("Please enter a valid player name.")
+    end
+end})
+
+TargetGroupBox:AddDropdown("TargetPartDropdown", { Text = "Target Lock Part", Values = {"Head", "HumanoidRootPart", "Root to Head", "Closet"}, Default = 1, Multi = false })
+Options.TargetPartDropdown:OnChanged(function()
+    TargetPartMode = Options.TargetPartDropdown.Value
+end)
+
+TargetGroupBox:AddSlider("TransitionSpeedSlider", { Text = "Root Transfer Speed (Root to Head)", Default = 5, Min = 1, Max = 30, Rounding = 1 })
+Options.TransitionSpeedSlider:OnChanged(function()
+    TransitionSpeed = Options.TransitionSpeedSlider.Value
+end)
+
+TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Lock Distance (Studs)", Default = 10000, Min = 1, Max = 9999999999999999999999999999999999999999999999999999, Rounding = 0 })
+Options.MaxDistanceSlider:OnChanged(function()
+    MaxTargetDistance = Options.MaxDistanceSlider.Value
+end)
+
+FOVGroupBox:AddToggle("FOVVisibleToggle", { Text = "Show FOV Circle", Default = true })
+Toggles.FOVVisibleToggle:OnChanged(function()
+    FOVVisible = Toggles.FOVVisibleToggle.Value
+end)
+
+FOVGroupBox:AddSlider("FOVSlider", { Text = "FOV Size Radius", Default = 100, Min = 40, Max = 800, Rounding = 0 })
+Options.FOVSlider:OnChanged(function()
+    FOVSize = Options.FOVSlider.Value
+end)
+
+FOVGroupBox:AddSlider("FOVThicknessSlider", { Text = "FOV Line Thickness", Default = 1.5, Min = 0.5, Max = 5.0, Rounding = 1 })
+Options.FOVThicknessSlider:OnChanged(function()
+    FOVThickness = Options.FOVThicknessSlider.Value
+end)
+
+FOVGroupBox:AddSlider("FOVOutlineThicknessSlider", { Text = "FOV Outline Thickness", Default = 3, Min = 1.0, Max = 8.0, Rounding = 1 })
+Options.FOVOutlineThicknessSlider:OnChanged(function()
+    FOVOutlineThickness = Options.FOVOutlineThicknessSlider.Value
+end)
+
+FOVGroupBox:AddLabel("FOV Line Color"):AddColorPicker("FOVCircleColorPicker", { Default = Color3.fromRGB(255, 255, 255) })
+Options.FOVCircleColorPicker:OnChanged(function()
+    FOVCircleColor = Options.FOVCircleColorPicker.Value
+end)
+
+FOVGroupBox:AddLabel("FOV Outline Color"):AddColorPicker("FOVCircleOutlineColorPicker", { Default = Color3.fromRGB(0, 0, 0) })
+Options.FOVCircleOutlineColorPicker:OnChanged(function()
+    FOVCircleOutlineColor = Options.FOVCircleOutlineColorPicker.Value
+end)
+
+FOVFillGroupBox:AddToggle("FOVFillToggle", { Text = "Enable FOV Fill", Default = false })
+Toggles.FOVFillToggle:OnChanged(function()
+    FOVFillEnabled = Toggles.FOVFillToggle.Value
+end)
+
+FOVFillGroupBox:AddSlider("FOVFillTransparencySlider", { Text = "FOV Fill Opacity", Default = 0.65, Min = 0, Max = 1, Rounding = 2 })
+Options.FOVFillTransparencySlider:OnChanged(function()
+    FOVFillTransparency = Options.FOVFillTransparencySlider.Value
+end)
+
+FOVFillGroupBox:AddLabel("Fill Color 1"):AddColorPicker("FOVFillColor1Picker", { Default = Color3.fromRGB(255, 255, 255) })
+Options.FOVFillColor1Picker:OnChanged(function()
+    FOVFillColor1 = Options.FOVFillColor1Picker.Value
+end)
+
+FOVFillGroupBox:AddLabel("Fill Color 2"):AddColorPicker("FOVFillColor2Picker", { Default = Color3.fromRGB(255, 255, 255) })
+Options.FOVFillColor2Picker:OnChanged(function()
+    FOVFillColor2 = Options.FOVFillColor2Picker.Value
+end)
+
+FOVFillGroupBox:AddLabel("Fill Color 3"):AddColorPicker("FOVFillColor3Picker", { Default = Color3.fromRGB(255, 255, 255) })
+Options.FOVFillColor3Picker:OnChanged(function()
+    FOVFillColor3 = Options.FOVFillColor3Picker.Value
+end)
+
+FOVFillGroupBox:AddToggle("FOVFillRotateToggle", { Text = "Rotate FOV", Default = false })
+Toggles.FOVFillRotateToggle:OnChanged(function()
+    FOVFillRotateEnabled = Toggles.FOVFillRotateToggle.Value
+end)
+
+FOVFillGroupBox:AddSlider("FOVFillRotateSpeedSlider", { Text = "Gradient Rotation Speed", Default = 3, Min = 1, Max = 10, Rounding = 1 })
+Options.FOVFillRotateSpeedSlider:OnChanged(function()
+    FOVFillRotateSpeed = Options.FOVFillRotateSpeedSlider.Value
+end)
+
+TracerGroupBox:AddToggle("TracerVisibleToggle", { Text = "Enable Tracer Line", Default = true })
+Toggles.TracerVisibleToggle:OnChanged(function()
+    TracerEnabled = Toggles.TracerVisibleToggle.Value
+end)
+
+TracerGroupBox:AddSlider("TracerThicknessSlider", { Text = "Tracer Line Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
+Options.TracerThicknessSlider:OnChanged(function()
+    TracerThickness = Options.TracerThicknessSlider.Value
+end)
+
+TracerGroupBox:AddSlider("TracerOutlineThicknessSlider", { Text = "Tracer Outline Thickness", Default = 3.0, Min = 1.0, Max = 8.0, Rounding = 1 })
+Options.TracerOutlineThicknessSlider:OnChanged(function()
+    TracerOutlineThickness = Options.TracerOutlineThicknessSlider.Value
+end)
+
+TracerGroupBox:AddLabel("Tracer Main Color"):AddColorPicker("TracerLineColorPicker", { Default = Color3.fromRGB(255, 0, 0) })
+Options.TracerLineColorPicker:OnChanged(function()
+    TracerLineColor = Options.TracerLineColorPicker.Value
+end)
+
+TracerGroupBox:AddLabel("Tracer Outline Color"):AddColorPicker("TracerLineOutlineColorPicker", { Default = Color3.fromRGB(0, 0, 0) })
+Options.TracerLineOutlineColorPicker:OnChanged(function()
+    TracerLineOutlineColor = Options.TracerLineOutlineColorPicker.Value
+end)
+
+local SoundLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Sound")
+local OverlayLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Overlay") 
+local SelfHighlightLeftBox = Tabs.HitEffects:AddLeftGroupbox("Self Highlights")
+local NotifyRightBox = Tabs.HitEffects:AddRightGroupbox("Hit Notification Custom System")
+
+SoundLeftBox:AddDropdown("HitSoundDropdown", { Text = "Target Hit Sound", Values = {"None", "Spark", "Neverlose", "Rust", "Fatality", "Fatality 2", "Minecraft xp", "Minecraft", "Crack", "Pop", "Headshot", "Manbo", "Skeet"}, Default = 1, Multi = false })
+Options.HitSoundDropdown:OnChanged(function()
+    HitSoundMode = Options.HitSoundDropdown.Value
+end)
+
+SoundLeftBox:AddSlider("HitSoundVolumeSlider", { Text = "Hit Sound Volume Level", Default = 2.0, Min = 0.0, Max = 5.0, Rounding = 1 })
+Options.HitSoundVolumeSlider:OnChanged(function()
+    HitSoundVolume = Options.HitSoundVolumeSlider.Value
+end)
+
+OverlayLeftBox:AddToggle("HitOverlayToggle", { Text = "Enable Hit Overlay", Default = false })
+Toggles.HitOverlayToggle:OnChanged(function()
+    HitOverlayEnabled = Toggles.HitOverlayToggle.Value
+end)
+
+OverlayLeftBox:AddLabel("Overlay Border Color"):AddColorPicker("HitOverlayColorPicker", { Default = Color3.fromRGB(255, 0, 0) })
+Options.HitOverlayColorPicker:OnChanged(function()
+    HitOverlayColor = Options.HitOverlayColorPicker.Value
+end)
+
+local SelfHLToggle = SelfHighlightLeftBox:AddToggle("SelfHighlightToggle", { Text = "Enable Self Highlights", Default = false })
+SelfHLToggle:AddColorPicker("SelfHighlightMainColorPicker", { Default = Color3.fromRGB(0, 255, 150), Title = "Main Color" })
+SelfHLToggle:AddColorPicker("SelfHighlightOutlineColorPicker", { Default = Color3.fromRGB(255, 255, 255), Title = "Outline Color" })
+
+Toggles.SelfHighlightToggle:OnChanged(function()
+    SelfHighlightEnabled = Toggles.SelfHighlightToggle.Value
+    UpdateSelfHighlight()
+end)
+
+Options.SelfHighlightMainColorPicker:OnChanged(function()
+    SelfHighlightMainColor = Options.SelfHighlightMainColorPicker.Value
+    UpdateSelfHighlight()
+end)
+
+Options.SelfHighlightOutlineColorPicker:OnChanged(function()
+    SelfHighlightOutlineColor = Options.SelfHighlightOutlineColorPicker.Value
+    UpdateSelfHighlight()
+end)
+
+SelfHighlightLeftBox:AddSlider("SelfHLFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
+Options.SelfHLFillTransSlider:OnChanged(function()
+    SelfHighlightFillTrans = Options.SelfHLFillTransSlider.Value
+    UpdateSelfHighlight()
+end)
+
+SelfHighlightLeftBox:AddSlider("SelfHLOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.95, Min = 0, Max = 1, Rounding = 2 })
+Options.SelfHLOutlineTransSlider:OnChanged(function()
+    SelfHighlightOutlineTrans = Options.SelfHLOutlineTransSlider.Value
+    UpdateSelfHighlight()
+end)
+
+NotifyRightBox:AddToggle("HitNotifyToggle", { Text = "Enable Hit Notification", Default = false })
+Toggles.HitNotifyToggle:OnChanged(function()
+    HitNotifyEnabled = Toggles.HitNotifyToggle.Value
+end)
+
+NotifyRightBox:AddSlider("HitNotifyDurationSlider", { Text = "Notification Duration (s)", Default = 2.5, Min = 0.5, Max = 5.0, Rounding = 1 })
+Options.HitNotifyDurationSlider:OnChanged(function()
+    HitNotifyDuration = Options.HitNotifyDurationSlider.Value
+end)
+
+NotifyRightBox:AddInput("CustomHitNotifyInput", { Placeholder = "Format: {name} | {part} | {dmg} | {weapon}", Text = "Hit {name} in the {part} for {dmg} dmg with {weapon}", Numeric = false, Finished = true })
+Options.CustomHitNotifyInput:OnChanged(function()
+    if Options.CustomHitNotifyInput.Value and Options.CustomHitNotifyInput.Value ~= "" then
+        HitNotifyTemplate = Options.CustomHitNotifyInput.Value
+    end
+end)
+
+local DrawingFonts = {
+    ["UI"] = 0,
+    ["System"] = 1,
+    ["Plex"] = 2,
+    ["Monospace"] = 3
+}
+local DrawingFontNames = {"UI", "System", "Plex", "Monospace"}
+
+local LastCameraCFrame = workspace.CurrentCamera.CFrame
+
+local function GetColor(optionName, defaultColor)
+    local fallback = defaultColor or Color3.fromRGB(255, 255, 255)
+    if not Options then return fallback end
+    local opt = Options[optionName]
+    if not opt then return fallback end
+
+    if typeof(opt) == "Color3" then
+        return opt
+    elseif typeof(opt) == "table" then
+        if typeof(opt.Value) == "Color3" then
+            return opt.Value
+        elseif typeof(opt.Color) == "Color3" then
+            return opt.Color
+        elseif opt[1] and typeof(opt[1]) == "number" then
+            return Color3.new(opt[1], opt[2], opt[3])
+        end
+    elseif typeof(opt) == "UserData" or typeof(opt) == "RBXScriptConnection" then
+        if opt.Value and typeof(opt.Value) == "Color3" then
+            return opt.Value
+        end
+    end
+    return fallback
+end
+
+local function CreateSquare(thickness, color)
+    local square = Drawing.new("Square")
+    square.Thickness = thickness or 1
+    square.Color = color or Color3.fromRGB(255, 255, 255)
+    square.Filled = false
+    square.Transparency = 1
+    square.Visible = false
+    return square
+end
+
+local function CreateLine(thickness, color)
+    local line = Drawing.new("Line")
+    line.Thickness = thickness or 1
+    line.Color = color or Color3.fromRGB(255, 255, 255)
+    line.Transparency = 1
+    line.Visible = false
+    return line
+end
+
+local function CreateText()
+    local text = Drawing.new("Text")
+    text.Size = 12
+    text.Center = true
+    text.Outline = true
+    text.OutlineColor = Color3.fromRGB(0, 0, 0)
+    text.Font = 2
+    text.Visible = false
+    return text
+end
+
+local ESP_Drawing_Storage = {}
+local function ImplementESPSetup(holder)
+    pcall(function()
+        -- ใช้ Drawing Square 2 ชั้น (Outline และ Main Box)
+        holder.BoxOutline = CreateSquare(3, Color3.fromRGB(0, 0, 0))
+        holder.BoxMain = CreateSquare(1, Color3.fromRGB(255, 255, 255))
+
+        -- Line ESP Outlines (Tracer to Target)
+        holder.LineESPOutline = CreateLine(3, Color3.fromRGB(0, 0, 0))
+        holder.LineESPMain = CreateLine(1, Color3.fromRGB(255, 255, 255))
+
+        -- Skeleton ESP Storage
+        holder.SkeletonLines = {}
+        for i = 1, #SkeletonConnections do
+            holder.SkeletonLines[i] = {
+                Outline = CreateLine(3, Color3.fromRGB(0, 0, 0)),
+                Main = CreateLine(1, Color3.fromRGB(255, 255, 255))
+            }
+        end
+
+        holder.BoxFillFrame = Instance.new("Frame")
+        holder.BoxFillFrame.Name = "BoxFill"
+        holder.BoxFillFrame.AnchorPoint = Vector2.new(0, 0)
+        holder.BoxFillFrame.BorderSizePixel = 0
+        holder.BoxFillFrame.BackgroundTransparency = 1
+        holder.BoxFillFrame.Visible = false
+        holder.BoxFillFrame.Parent = BoxFillGui
+
+        holder.BoxFillGradient = Instance.new("UIGradient")
+        holder.BoxFillGradient.Parent = holder.BoxFillFrame
+        holder.BoxFillRotationAngle = 0
+
+        holder.GuiHealthBg = Instance.new("Frame")
+        holder.GuiHealthBg.Name = "HealthBg"
+        holder.GuiHealthBg.BorderSizePixel = 0
+        holder.GuiHealthBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        holder.GuiHealthBg.Visible = false
+        holder.GuiHealthBg.Parent = BoxFillGui
+
+        holder.GuiHealthBar = Instance.new("Frame")
+        holder.GuiHealthBar.Name = "HealthBar"
+        holder.GuiHealthBar.BorderSizePixel = 0
+        holder.GuiHealthBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        holder.GuiHealthBar.Parent = holder.GuiHealthBg
+
+        holder.GuiHealthGradient = Instance.new("UIGradient")
+        holder.GuiHealthGradient.Rotation = 90
+        holder.GuiHealthGradient.Parent = holder.GuiHealthBar
+
+        holder.Highlight = Instance.new("Highlight")
+        holder.Highlight.Name = "hooksense_Highlight"
+        holder.Highlight.Enabled = false
+        holder.Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        holder.Highlight.Parent = CoreGui
+
+        holder.HealthText = CreateText()
+        holder.Name = CreateText()
+        holder.Distance = CreateText()
+        holder.SmoothHealth = nil
+        holder.NeedsRefresh = true
+
+        if holder.HealthText then 
+            holder.HealthText.Size = 10 
+            holder.HealthText.Center = true 
+        end
+    end)
+end
+
+local function CreateDrawingESP(player)
+    if player == LocalPlayer then return end
+    if ESP_Drawing_Storage[player] then return end
+    ESP_Drawing_Storage[player] = {}
+    ImplementESPSetup(ESP_Drawing_Storage[player])
+end
+
+local function RemoveDrawingESP(player)
+    if ESP_Drawing_Storage[player] then
+        pcall(function()
+            if ESP_Drawing_Storage[player].BoxFillFrame then
+                ESP_Drawing_Storage[player].BoxFillFrame:Destroy()
+            end
+            if ESP_Drawing_Storage[player].GuiHealthBg then
+                ESP_Drawing_Storage[player].GuiHealthBg:Destroy()
+            end
+            if ESP_Drawing_Storage[player].Highlight then
+                ESP_Drawing_Storage[player].Highlight:Destroy()
+            end
+            if ESP_Drawing_Storage[player].SkeletonLines then
+                for _, pair in ipairs(ESP_Drawing_Storage[player].SkeletonLines) do
+                    if pair.Outline then pair.Outline:Remove() end
+                    if pair.Main then pair.Main:Remove() end
+                end
+            end
+            for _, obj in pairs(ESP_Drawing_Storage[player]) do
+                if type(obj) == "table" and obj.Remove then
+                    obj:Remove()
+                elseif type(obj) == "userdata" and obj.Remove then
+                    obj:Remove()
+                end
+            end
+        end)
+        ESP_Drawing_Storage[player] = nil
+    end
+end
+
+for _, p in ipairs(Players:GetPlayers()) do CreateDrawingESP(p) end
+Players.PlayerAdded:Connect(CreateDrawingESP)
+Players.PlayerRemoving:Connect(RemoveDrawingESP)
+
+local function SetVisibilityFalse(esp)
+    pcall(function()
+        if esp.BoxOutline then esp.BoxOutline.Visible = false end
+        if esp.BoxMain then esp.BoxMain.Visible = false end
+
+        if esp.LineESPOutline then esp.LineESPOutline.Visible = false end
+        if esp.LineESPMain then esp.LineESPMain.Visible = false end
+
+        if esp.SkeletonLines then
+            for _, pair in ipairs(esp.SkeletonLines) do
+                if pair.Outline then pair.Outline.Visible = false end
+                if pair.Main then pair.Main.Visible = false end
+            end
+        end
+
+        if esp.BoxFillFrame then esp.BoxFillFrame.Visible = false end
+        if esp.GuiHealthBg then esp.GuiHealthBg.Visible = false end
+        if esp.Highlight then esp.Highlight.Enabled = false end
+        if esp.HealthText then esp.HealthText.Visible = false end
+        if esp.Name then esp.Name.Visible = false end
+        if esp.Distance then esp.Distance.Visible = false end
+        esp.NeedsRefresh = true
+    end)
+end
+
+RunService.RenderStepped:Connect(function()
+    pcall(function()
+        local Camera = workspace.CurrentCamera
+        if not Camera then return end
+
+        local currentCFrame = Camera.CFrame
+        if currentCFrame ~= LastCameraCFrame then
+            LastCameraCFrame = currentCFrame
+            for _, esp in pairs(ESP_Drawing_Storage) do
+                esp.NeedsRefresh = true
+            end
+        end
+
+        local espMaster = Toggles.EspMaster and Toggles.EspMaster.Value
+        if not espMaster then
+            for _, esp in pairs(ESP_Drawing_Storage) do SetVisibilityFalse(esp) end
+            return
+        end
+
+        local boxEnabled = Toggles.EspBox and Toggles.EspBox.Value
+        local boxColor = GetColor("BoxColor", Color3.fromRGB(255, 255, 255))
+        local boxOutlineColor = GetColor("BoxOutlineColor", Color3.fromRGB(0, 0, 0))
+
+        local skeletonEnabled = Toggles.EspSkeleton and Toggles.EspSkeleton.Value
+        local skeletonColor = GetColor("SkeletonColor", Color3.fromRGB(255, 255, 255))
+        local skeletonOutlineColor = GetColor("SkeletonOutlineColor", Color3.fromRGB(0, 0, 0))
+        local skeletonThickness = Options.SkeletonThicknessSlider and Options.SkeletonThicknessSlider.Value or 1.5
+        local skeletonOutlineThickness = Options.SkeletonOutlineThicknessSlider and Options.SkeletonOutlineThicknessSlider.Value or 3.5
+
+        local lineESPEnabled = Toggles.EspLine and Toggles.EspLine.Value
+        local lineESPColor = GetColor("LineESPColor", Color3.fromRGB(255, 255, 255))
+        local lineESPOutlineColor = GetColor("LineESPOutlineColor", Color3.fromRGB(0, 0, 0))
+        local lineESPThickness = Options.LineESPThicknessSlider and Options.LineESPThicknessSlider.Value or 1.5
+        local lineESPOutlineThickness = Options.LineESPOutlineThicknessSlider and Options.LineESPOutlineThicknessSlider.Value or 3.5
+
+        local nameColor = GetColor("NameColor", Color3.fromRGB(255, 255, 255))
+        local distColor = GetColor("DistColor", Color3.fromRGB(255, 255, 255))
+        local hpTextColor = GetColor("HPTextColor", Color3.fromRGB(255, 255, 255))
+        local nameStyle = Options.NameStyleDropdown and Options.NameStyleDropdown.Value or "Username"
+        
+        local selectedFontName = Options.EspFontDropdown and Options.EspFontDropdown.Value or "Plex"
+        local currentDrawingFont = DrawingFonts[selectedFontName] or 2
+
+        local hpFullColor = GetColor("HPFullColor", Color3.fromRGB(0, 255, 0))
+        local hpHalfColor = GetColor("HPHalfColor", Color3.fromRGB(255, 170, 0))
+        local hpLowColor = GetColor("HPLowColor", Color3.fromRGB(255, 0, 0))
+        local lerpAlpha = Options.HealthLerpSlider and Options.HealthLerpSlider.Value or 0.2
+
+        local boxFillEnabled = Toggles.EspBoxFill and Toggles.EspBoxFill.Value
+        local boxFillTrans = Options.EspBoxFillTransparency and Options.EspBoxFillTransparency.Value or 0.5
+        local fillCol1 = GetColor("EspBoxFillColor1", Color3.fromRGB(255, 0, 0))
+        local fillCol2 = GetColor("EspBoxFillColor2", Color3.fromRGB(0, 255, 0))
+        local fillCol3 = GetColor("EspBoxFillColor3", Color3.fromRGB(0, 0, 255))
+        local fillRotateEnabled = Toggles.EspBoxFillRotate and Toggles.EspBoxFillRotate.Value
+        local fillRotateSpeed = Options.EspBoxFillRotateSpeed and Options.EspBoxFillRotateSpeed.Value or 1
+
+        local highlightEnabled = Toggles.EspHighlight and Toggles.EspHighlight.Value
+        local highlightMainColor = GetColor("HighlightMainColor", Color3.fromRGB(255, 0, 0))
+        local highlightOutlineColor = GetColor("HighlightOutlineColor", Color3.fromRGB(255, 255, 255))
+        local highlightFillTrans = Options.HighlightFillTransSlider and Options.HighlightFillTransSlider.Value or 0.5
+        local highlightOutlineTrans = Options.HighlightOutlineTransSlider and Options.HighlightOutlineTransSlider.Value or 0.0
+
+        for player, esp in pairs(ESP_Drawing_Storage) do
+            pcall(function()
+                local character = player.Character
+                local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+                local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+                if character and rootPart and humanoid and humanoid.Health > 0 then
+                    if TeamCheckEnabled and player.Team == LocalPlayer.Team then
+                        esp.SmoothHealth = nil
+                        SetVisibilityFalse(esp)
+                        return
+                    end
+
+                    if highlightEnabled and esp.Highlight then
+                        esp.Highlight.Adornee = character
+                        esp.Highlight.FillColor = highlightMainColor
+                        esp.Highlight.OutlineColor = highlightOutlineColor
+                        esp.Highlight.FillTransparency = highlightFillTrans
+                        esp.Highlight.OutlineTransparency = highlightOutlineTrans
+                        esp.Highlight.Enabled = true
+                    else
+                        if esp.Highlight then esp.Highlight.Enabled = false end
+                    end
+
+                    local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+                    
+                    if onScreen and rootPos.Z > 0 then
+                        local headOffset = rootPart.CFrame * CFrame.new(0, 2.5, 0)
+                        local feetOffset = rootPart.CFrame * CFrame.new(0, -3.0, 0)
+                        
+                        local headPos = Camera:WorldToViewportPoint(headOffset.Position)
+                        local feetPos = Camera:WorldToViewportPoint(feetOffset.Position)
+                        
+                        local height = math.abs(headPos.Y - feetPos.Y)
+                        local width = height * 0.48
+                        local boxX = math.round(rootPos.X - (width / 2))
+                        local boxY = math.round(headPos.Y)
+                        
+                        local selectedName = (nameStyle == "Display Name") and player.DisplayName or player.Name
+                        local maxHp = (humanoid.MaxHealth > 0) and humanoid.MaxHealth or 100
+                        local targetHp = math.clamp(humanoid.Health, 0, maxHp)
+                        
+                        if not esp.SmoothHealth then 
+                            esp.SmoothHealth = targetHp 
+                        else
+                            esp.SmoothHealth = esp.SmoothHealth + (targetHp - esp.SmoothHealth) * lerpAlpha
+                        end
+
+                        local pct = math.clamp(esp.SmoothHealth / maxHp, 0, 1)
+                        local mathWidth, mathHeight = math.round(width), math.round(height)
+
+                        if boxEnabled then
+                            if esp.BoxOutline then
+                                esp.BoxOutline.Position = Vector2.new(boxX, boxY)
+                                esp.BoxOutline.Size = Vector2.new(mathWidth, mathHeight)
+                                esp.BoxOutline.Color = boxOutlineColor
+                                esp.BoxOutline.Thickness = 3
+                                esp.BoxOutline.Visible = true
+                            end
+
+                            if esp.BoxMain then
+                                esp.BoxMain.Position = Vector2.new(boxX, boxY)
+                                esp.BoxMain.Size = Vector2.new(mathWidth, mathHeight)
+                                esp.BoxMain.Color = boxColor
+                                esp.BoxMain.Thickness = 1
+                                esp.BoxMain.Visible = true
+                            end
+                        else
+                            if esp.BoxOutline then esp.BoxOutline.Visible = false end
+                            if esp.BoxMain then esp.BoxMain.Visible = false end
+                        end
+
+                        -- RENDER LINE ESP (FROM BOTTOM TO TARGET) WITH OUTLINE
+                        if lineESPEnabled then
+                            local screenCenterBottom = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                            local targetPos2D = Vector2.new(rootPos.X, rootPos.Y)
+
+                            if esp.LineESPOutline then
+                                esp.LineESPOutline.From = screenCenterBottom
+                                esp.LineESPOutline.To = targetPos2D
+                                esp.LineESPOutline.Thickness = lineESPOutlineThickness
+                                esp.LineESPOutline.Color = lineESPOutlineColor
+                                esp.LineESPOutline.Visible = true
+                            end
+                            if esp.LineESPMain then
+                                esp.LineESPMain.From = screenCenterBottom
+                                esp.LineESPMain.To = targetPos2D
+                                esp.LineESPMain.Thickness = lineESPThickness
+                                esp.LineESPMain.Color = lineESPColor
+                                esp.LineESPMain.Visible = true
+                            end
+                        else
+                            if esp.LineESPOutline then esp.LineESPOutline.Visible = false end
+                            if esp.LineESPMain then esp.LineESPMain.Visible = false end
+                        end
+
+                        -- RENDER SKELETON ESP WITH OUTLINE
+                        if skeletonEnabled then
+                            for idx, connection in ipairs(SkeletonConnections) do
+                                local partA = character:FindFirstChild(connection[1])
+                                local partB = character:FindFirstChild(connection[2])
+                                local drawPair = esp.SkeletonLines[idx]
+
+                                if partA and partB and drawPair then
+                                    local posA, visA = Camera:WorldToViewportPoint(partA.Position)
+                                    local posB, visB = Camera:WorldToViewportPoint(partB.Position)
+
+                                    if visA and visB then
+                                        local fromVector = Vector2.new(posA.X, posA.Y)
+                                        local toVector = Vector2.new(posB.X, posB.Y)
+
+                                        if drawPair.Outline then
+                                            drawPair.Outline.From = fromVector
+                                            drawPair.Outline.To = toVector
+                                            drawPair.Outline.Color = skeletonOutlineColor
+                                            drawPair.Outline.Thickness = skeletonOutlineThickness
+                                            drawPair.Outline.Visible = true
+                                        end
+
+                                        if drawPair.Main then
+                                            drawPair.Main.From = fromVector
+                                            drawPair.Main.To = toVector
+                                            drawPair.Main.Color = skeletonColor
+                                            drawPair.Main.Thickness = skeletonThickness
+                                            drawPair.Main.Visible = true
+                                        end
+                                    else
+                                        if drawPair.Outline then drawPair.Outline.Visible = false end
+                                        if drawPair.Main then drawPair.Main.Visible = false end
+                                    end
+                                else
+                                    if drawPair and drawPair.Outline then drawPair.Outline.Visible = false end
+                                    if drawPair and drawPair.Main then drawPair.Main.Visible = false end
+                                end
+                            end
+                        else
+                            if esp.SkeletonLines then
+                                for _, pair in ipairs(esp.SkeletonLines) do
+                                    if pair.Outline then pair.Outline.Visible = false end
+                                    if pair.Main then pair.Main.Visible = false end
+                                end
+                            end
+                        end
+
+                        local textSize = math.clamp(math.round(mathHeight * 0.16), 9, 14)
+                        local hpTextSize = math.clamp(math.round(mathHeight * 0.13), 8, 12)
+
+                        if esp.Name then esp.Name.Font = currentDrawingFont; esp.Name.Size = textSize end
+                        if esp.Distance then esp.Distance.Font = currentDrawingFont; esp.Distance.Size = textSize end
+                        if esp.HealthText then esp.HealthText.Font = currentDrawingFont; esp.HealthText.Size = hpTextSize end
+
+                        if boxFillEnabled and esp.BoxFillFrame then
+                            esp.BoxFillFrame.Position = UDim2.new(0, boxX, 0, boxY)
+                            esp.BoxFillFrame.Size = UDim2.new(0, mathWidth, 0, mathHeight)
+                            esp.BoxFillFrame.BackgroundTransparency = boxFillTrans
+                            
+                            esp.BoxFillGradient.Color = ColorSequence.new({
+                                ColorSequenceKeypoint.new(0, fillCol1),
+                                ColorSequenceKeypoint.new(0.5, fillCol2),
+                                ColorSequenceKeypoint.new(1, fillCol3)
+                            })
+                            
+                            if fillRotateEnabled then
+                                esp.BoxFillRotationAngle = (esp.BoxFillRotationAngle + (0.5 * fillRotateSpeed)) % 360
+                            end
+                            esp.BoxFillGradient.Rotation = esp.BoxFillRotationAngle
+                            esp.BoxFillFrame.Visible = true
+                        else
+                            if esp.BoxFillFrame then esp.BoxFillFrame.Visible = false end
+                        end
+
+                        if Toggles.EspHealth and Toggles.EspHealth.Value then
+                            local barWidth = 3
+                            local outlinePadding = 1
+                            local barX = boxX - 6
+                            local barY = boxY
+
+                            esp.GuiHealthBg.Position = UDim2.new(0, barX - outlinePadding, 0, barY - outlinePadding)
+                            esp.GuiHealthBg.Size = UDim2.new(0, barWidth + (outlinePadding * 2), 0, mathHeight + (outlinePadding * 2))
+                            esp.GuiHealthBg.Visible = true
+
+                            local healthHeight = math.clamp(math.round(mathHeight * pct), 0, mathHeight)
+                            
+                            esp.GuiHealthBar.Position = UDim2.new(0, outlinePadding, 0, outlinePadding + (mathHeight - healthHeight))
+                            esp.GuiHealthBar.Size = UDim2.new(0, barWidth, 0, healthHeight)
+
+                            esp.GuiHealthGradient.Color = ColorSequence.new({
+                                ColorSequenceKeypoint.new(0, hpFullColor),
+                                ColorSequenceKeypoint.new(0.5, hpHalfColor),
+                                ColorSequenceKeypoint.new(1, hpLowColor)
+                            })
+
+                            if Toggles.EspHealthText and Toggles.EspHealthText.Value then
+                                esp.HealthText.Text = tostring(math.round(targetHp))
+                                esp.HealthText.Position = Vector2.new(barX - (hpTextSize + 4), math.clamp(barY + (mathHeight - healthHeight) - 4, boxY - 4, boxY + mathHeight - 10))
+                                esp.HealthText.Color = hpTextColor
+                                esp.HealthText.Visible = true
+                            else
+                                esp.HealthText.Visible = false
+                            end
+                        else
+                            esp.GuiHealthBg.Visible = false
+                            esp.HealthText.Visible = false
+                        end
+
+                        if Toggles.EspName and Toggles.EspName.Value then
+                            esp.Name.Text = selectedName
+                            esp.Name.Position = Vector2.new(boxX + (mathWidth / 2), boxY - (textSize + 3))
+                            esp.Name.Color = nameColor
+                            esp.Name.Visible = true
+                        else
+                            esp.Name.Visible = false
+                        end
+
+                        if Toggles.EspDistance and Toggles.EspDistance.Value then
+                            local dist = math.floor((Camera.CFrame.Position - rootPart.Position).Magnitude)
+                            esp.Distance.Text = "[ " .. tostring(dist) .. "m ]"
+                            esp.Distance.Position = Vector2.new(boxX + (mathWidth / 2), boxY + mathHeight + 3)
+                            esp.Distance.Color = distColor
+                            esp.Distance.Visible = true
+                        else
+                            esp.Distance.Visible = false
+                        end
+                        
+                        esp.NeedsRefresh = false
+                    else
+                        esp.SmoothHealth = nil
+                        SetVisibilityFalse(esp)
+                    end
+                else
+                    esp.SmoothHealth = nil
+                    SetVisibilityFalse(esp)
+                end
+            end)
+        end
+    end)
+end)
+
+-- ==============================================================================
+-- ESP TAB LAYOUT RESTRUCTURED (LEFT & RIGHT GROUPBOXES)
+-- ==============================================================================
+local EspMainGroup = Tabs.ESP:AddLeftGroupbox("ESP Main")
+local EspLineGroup = Tabs.ESP:AddLeftGroupbox("Line & Highlight")
+
+local EspTextGroup = Tabs.ESP:AddRightGroupbox("Text & Display")
+local EspSkeletonGroup = Tabs.ESP:AddRightGroupbox("Skeleton")
+
+-- ------------------------------------------------------------------------------
+-- [LEFT SIDE 1] ESP MAIN & BOX SETTINGS
+-- ------------------------------------------------------------------------------
+EspMainGroup:AddToggle("EspMaster", { Text = "Enable Esp", Default = false })
+
+local BoxToggle = EspMainGroup:AddToggle("EspBox", { Text = "Enable Box ESP", Default = false })
+BoxToggle:AddColorPicker("BoxColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Box Main Color" })
+BoxToggle:AddColorPicker("BoxOutlineColor", { Default = Color3.fromRGB(0, 0, 0), Title = "Box Outline Color" })
+
+EspMainGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill", Default = false })
+EspMainGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.5, Min = 0, Max = 1, Rounding = 2 })
+EspMainGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 255, 255) })
+EspMainGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(255, 255, 255) })
+EspMainGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(255, 255, 255) })
+EspMainGroup:AddToggle("EspBoxFillRotate", { Text = "Rotate Box Fill Gradient", Default = false })
+EspMainGroup:AddSlider("EspBoxFillRotateSpeed", { Text = "Box Fill Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
+
+-- ------------------------------------------------------------------------------
+-- [LEFT SIDE 2] LINE & HIGHLIGHT SETTINGS
+-- ------------------------------------------------------------------------------
+local LineESPToggle = EspLineGroup:AddToggle("EspLine", { Text = "Enable Line ESP", Default = false })
+LineESPToggle:AddColorPicker("LineESPColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Line ESP Color" })
+LineESPToggle:AddColorPicker("LineESPOutlineColor", { Default = Color3.fromRGB(0, 0, 0), Title = "Line ESP Outline Color" })
+
+EspLineGroup:AddSlider("LineESPThicknessSlider", { Text = "Line ESP Thickness", Default = 1.5, Min = 0.5, Max = 5.0, Rounding = 1 })
+EspLineGroup:AddSlider("LineESPOutlineThicknessSlider", { Text = "Line ESP Outline Thickness", Default = 3.5, Min = 1.0, Max = 8.0, Rounding = 1 })
+
+local HighlightToggle = EspLineGroup:AddToggle("EspHighlight", { Text = "Enable Highlights ESP", Default = false })
+HighlightToggle:AddColorPicker("HighlightMainColor", { Default = Color3.fromRGB(255, 0, 0), Title = "Main Color" })
+HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Outline Color" })
+
+EspLineGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
+EspLineGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.95, Min = 0, Max = 1, Rounding = 2 })
+
+-- ------------------------------------------------------------------------------
+-- [RIGHT SIDE 1] TEXT & DISPLAY SETTINGS
+-- ------------------------------------------------------------------------------
+EspTextGroup:AddDropdown("EspFontDropdown", { Text = "ESP Font", Values = DrawingFontNames, Default = 3, Multi = false })
+
+EspTextGroup:AddToggle("EspName", { Text = "Name", Default = false }):AddColorPicker("NameColor", { Default = Color3.fromRGB(255, 255, 255) })
+EspTextGroup:AddDropdown("NameStyleDropdown", { Text = "Name Style", Values = {"Username", "Display Name"}, Default = 1, Multi = false })
+
+local EspHealthToggle = EspTextGroup:AddToggle("EspHealth", { Text = "Health Bar", Default = false })
+EspHealthToggle:AddColorPicker("HPFullColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Full HP Color" })
+EspHealthToggle:AddColorPicker("HPHalfColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Half HP Color" })
+EspHealthToggle:AddColorPicker("HPLowColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Low HP Color" })
+
+EspTextGroup:AddSlider("HealthLerpSlider", {
+    Text = "Health Lerp",
+    Default = 0.6,
+    Min = 0.1,
+    Max = 1.0,
+    Rounding = 2,
+    Compact = false
+})
+
+EspTextGroup:AddToggle("EspHealthText", { Text = "Show HP Number", Default = false }):AddColorPicker("HPTextColor", { Default = Color3.fromRGB(255, 255, 255) })
+EspTextGroup:AddToggle("EspDistance", { Text = "Draw Distance", Default = false }):AddColorPicker("DistColor", { Default = Color3.fromRGB(255, 255, 255) })
+
+-- ------------------------------------------------------------------------------
+-- [RIGHT SIDE 2] SKELETON SETTINGS
+-- ------------------------------------------------------------------------------
+local SkeletonToggle = EspSkeletonGroup:AddToggle("EspSkeleton", { Text = "Enable Skeleton ESP", Default = false })
+SkeletonToggle:AddColorPicker("SkeletonColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Skeleton Main Color" })
+SkeletonToggle:AddColorPicker("SkeletonOutlineColor", { Default = Color3.fromRGB(0, 0, 0), Title = "Skeleton Outline Color" })
+
+EspSkeletonGroup:AddSlider("SkeletonThicknessSlider", { Text = "Skeleton Line Thickness", Default = 1.5, Min = 0.5, Max = 5.0, Rounding = 1 })
+EspSkeletonGroup:AddSlider("SkeletonOutlineThicknessSlider", { Text = "Skeleton Outline Thickness", Default = 3.5, Min = 1.0, Max = 8.0, Rounding = 1 })
+
+local MoveLeftBox = Tabs.Movement:AddLeftGroupbox("Anti Aim")
+
+MoveLeftBox:AddToggle("AntiAimToggle", { Text = "Enable Anti Aim", Default = false })
+    :AddKeyPicker("AntiAimKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Anti Aim Bind" })
+
+Toggles.AntiAimToggle:OnChanged(function()
+    AntiAimEnabled = Toggles.AntiAimToggle.Value
+end)
+
+MoveLeftBox:AddDropdown("AntiAimModeDropdown", { Text = "Anti Aim Stance Type", Values = {"Spin", "Jitter"}, Default = 1, Multi = false })
+Options.AntiAimModeDropdown:OnChanged(function()
+    AntiAimMode = Options.AntiAimModeDropdown.Value
+end)
+
+MoveLeftBox:AddDropdown("JitterSettingDropdown", { Text = "Jitter Core Settings", Values = {"Multi", "5x always", "3x always", "2x always", "random"}, Default = 1, Multi = false })
+Options.JitterSettingDropdown:OnChanged(function()
+    JitterMode = Options.JitterSettingDropdown.Value
+end)
+
+MoveLeftBox:AddSlider("SpinSpeedSlider", { Text = "Rotation Spin Speed", Default = 15, Min = 5, Max = 50, Rounding = 0 })
+Options.SpinSpeedSlider:OnChanged(function()
+    AntiAimSpeed = Options.SpinSpeedSlider.Value
+end)
+
+local LightingColorsGroup = Tabs.World:AddLeftGroupbox("Lighting Colors & Time")
+local WorldSkyboxBox = Tabs.World:AddLeftGroupbox("Custom Skybox System")
+local WorldFogBox = Tabs.World:AddLeftGroupbox("World Fog Customization")
+local WorldAtmosphereBox = Tabs.World:AddLeftGroupbox("World Atmosphere Customization")
+local CameraDisplayBox = Tabs.World:AddRightGroupbox("Camera & Display Settings")
+
+LightingColorsGroup:AddSlider("ClockTimeSlider", { Text = "Game Clock Time", Default = Lighting.ClockTime, Min = 0, Max = 24, Rounding = 1 })
+Options.ClockTimeSlider:OnChanged(function()
+    Lighting.ClockTime = Options.ClockTimeSlider.Value
+end)
+
+LightingColorsGroup:AddLabel("Ambient Color"):AddColorPicker("AmbientColorPicker", { Default = Lighting.Ambient })
+Options.AmbientColorPicker:OnChanged(function()
+    Lighting.Ambient = Options.AmbientColorPicker.Value
+end)
+
+LightingColorsGroup:AddLabel("Outdoor Ambient Color"):AddColorPicker("OutdoorAmbientColorPicker", { Default = Lighting.OutdoorAmbient })
+Options.OutdoorAmbientColorPicker:OnChanged(function()
+    Lighting.OutdoorAmbient = Options.OutdoorAmbientColorPicker.Value
+end)
+
+LightingColorsGroup:AddLabel("ColorShift Top Color"):AddColorPicker("ColorShiftTopColorPicker", { Default = Lighting.ColorShift_Top })
+Options.ColorShiftTopColorPicker:OnChanged(function()
+    Lighting.ColorShift_Top = Options.ColorShiftTopColorPicker.Value
+end)
+
+LightingColorsGroup:AddLabel("ColorShift Bottom Color"):AddColorPicker("ColorShiftBottomColorPicker", { Default = Lighting.ColorShift_Bottom })
+Options.ColorShiftBottomColorPicker:OnChanged(function()
+    Lighting.ColorShift_Bottom = Options.ColorShiftBottomColorPicker.Value
+end)
+
+WorldSkyboxBox:AddToggle("SkyboxToggle", { Text = "Enable Custom Skybox", Default = false })
+Toggles.SkyboxToggle:OnChanged(function()
+    SkyboxEnabled = Toggles.SkyboxToggle.Value
+    UpdateSkybox()
+end)
+
+WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox", Values = {"Minecraft", "Minecraft 2", "Skyblox 1", "Skyblox 2", "Skyblox 3", "Skyblox 4", "Skyblox 5"}, Default = 1, Multi = false })
+Options.SkyboxDropdown:OnChanged(function()
+    SelectedSkybox = Options.SkyboxDropdown.Value
+    UpdateSkybox()
+end)
+
+WorldFogBox:AddLabel("Fog Color"):AddColorPicker("FogColorPicker", { Default = Lighting.FogColor })
+Options.FogColorPicker:OnChanged(function()
+    Lighting.FogColor = Options.FogColorPicker.Value
+end)
+
+WorldFogBox:AddSlider("FogStartSlider", { Text = "Fog Start Distance", Default = Lighting.FogStart, Min = 0, Max = 5000, Rounding = 0 })
+Options.FogStartSlider:OnChanged(function()
+    Lighting.FogStart = Options.FogStartSlider.Value
+end)
+
+WorldFogBox:AddSlider("FogEndSlider", { Text = "Fog End Distance", Default = Lighting.FogEnd, Min = 0, Max = 10000, Rounding = 0 })
+Options.FogEndSlider:OnChanged(function()
+    Lighting.FogEnd = Options.FogEndSlider.Value
+end)
+
+WorldAtmosphereBox:AddToggle("AtmosphereToggle", { Text = "Enable Atmosphere", Default = false })
+Toggles.AtmosphereToggle:OnChanged(function()
+    AtmosphereEnabled = Toggles.AtmosphereToggle.Value
+    UpdateAtmosphere()
+end)
+
+WorldAtmosphereBox:AddLabel("Tint Color"):AddColorPicker("AtmosColorPicker", { Default = AtmosphereColor })
+Options.AtmosColorPicker:OnChanged(function()
+    AtmosphereColor = Options.AtmosColorPicker.Value
+    UpdateAtmosphere()
+end)
+
+WorldAtmosphereBox:AddLabel("Decay Color"):AddColorPicker("AtmosDecayPicker", { Default = AtmosphereDecay })
+Options.AtmosDecayPicker:OnChanged(function()
+    AtmosphereDecay = Options.AtmosDecayPicker.Value
+    UpdateAtmosphere()
+end)
+
+WorldAtmosphereBox:AddSlider("AtmosGlareSlider", { Text = "Glare Intensity", Default = AtmosphereGlare, Min = 0.1, Max = 10, Rounding = 1 })
+Options.AtmosGlareSlider:OnChanged(function()
+    AtmosphereGlare = Options.AtmosGlareSlider.Value
+    UpdateAtmosphere()
+end)
+
+WorldAtmosphereBox:AddSlider("AtmosHazeSlider", { Text = "Haze Density", Default = AtmosphereHaze, Min = 0.1, Max = 10, Rounding = 1 })
+Options.AtmosHazeSlider:OnChanged(function()
+    AtmosphereHaze = Options.AtmosHazeSlider.Value
+    UpdateAtmosphere()
+end)
+
+WorldAtmosphereBox:AddSlider("AtmosOffsetSlider", { Text = "Horizon Offset", Default = AtmosphereOffset, Min = 0.01, Max = 1, Rounding = 2 })
+Options.AtmosOffsetSlider:OnChanged(function()
+    AtmosphereOffset = Options.AtmosOffsetSlider.Value
+    UpdateAtmosphere()
+end)
+
+WorldAtmosphereBox:AddSlider("AtmosDensitySlider", { Text = "Atmosphere Density", Default = AtmosphereDensity, Min = 0.01, Max = 1, Rounding = 2 })
+Options.AtmosDensitySlider:OnChanged(function()
+    AtmosphereDensity = Options.AtmosDensitySlider.Value
+    UpdateAtmosphere()
+end)
+
+CameraDisplayBox:AddSlider("CustomFovSlider", { Text = "Custom FOV", Default = 70, Min = 70, Max = 120, Rounding = 0 })
+Options.CustomFovSlider:OnChanged(function()
+    CustomFOVValue = Options.CustomFovSlider.Value
+    Camera.FieldOfView = CustomFOVValue
+end)
+
+Camera:GetPropertyChangedSignal("FieldOfView"):Connect(function()
+    if Camera.FieldOfView ~= CustomFOVValue then
+        Camera.FieldOfView = CustomFOVValue
+    end
+end)
+
+CameraDisplayBox:AddSlider("BlurSlider", { Text = "World Blur", Default = 0, Min = 0, Max = 5, Rounding = 1 })
+Options.BlurSlider:OnChanged(function()
+    local blurValue = Options.BlurSlider.Value
+    local blurEffect = Lighting:FindFirstChild("hooksenseWorldBlur")
+    if blurValue > 0 then
+        if not blurEffect then
+            blurEffect = Instance.new("BlurEffect")
+            blurEffect.Name = "hooksenseWorldBlur"
+            blurEffect.Parent = Lighting
+        end
+        blurEffect.Size = blurValue * 8
+    else
+        if blurEffect then blurEffect:Destroy() end
+    end
+end)
+
+CameraDisplayBox:AddToggle("MotionBlurToggle", { Text = "Enable Motion Blur", Default = false })
+Toggles.MotionBlurToggle:OnChanged(function()
+    MotionBlurEnabled = Toggles.MotionBlurToggle.Value
+end)
+
+CameraDisplayBox:AddSlider("MotionBlurIntensitySlider", { Text = "Motion Blur Intensity", Default = 1.5, Min = 0.5, Max = 5.0, Rounding = 1 })
+Options.MotionBlurIntensitySlider:OnChanged(function()
+    MotionBlurIntensity = Options.MotionBlurIntensitySlider.Value
+end)
+
+CameraDisplayBox:AddSlider("FpsCapSlider", { Text = "FPS Cap Limit", Default = 60, Min = 60, Max = 999, Rounding = 0 })
+Options.FpsCapSlider:OnChanged(function()
+    if setfpscap then setfpscap(Options.FpsCapSlider.Value) end
+end)
+
+local BlacklistPlayersGroup = Tabs.Addons:AddLeftGroupbox("Loaders Scripts")
+
+BlacklistPlayersGroup:AddButton({ Text = "walkspeed", Func = function()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/19mdSkibidi/19sMooze-Mobile-Rework/refs/heads/main/Mooze%20Mob'))()
+    end)
+    if success then
+        Library:Notify("successfully!")
+    else
+        Library:Notify("Error loading script: " .. tostring(err))
+    end
+end })
+
+local InterfaceGroup = Tabs.UI:AddLeftGroupbox("Menu Customization")
+local MenuGroup = Tabs.UI:AddLeftGroupbox("Menu Settings")
+
+InterfaceGroup:AddDropdown("UIFontDropdown", { Text = "UI Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "Cartoon") or 1, Multi = false })
+
+Options.UIFontDropdown:OnChanged(function()
+    pcall(function()
+        local targetFont = Enum.Font[Options.UIFontDropdown.Value]
+        if not targetFont then return end
+        GlobalFontSetting = targetFont
+        local parentGui = Library.ScreenGui or Library.Main
+        if parentGui then
+            for _, desc in ipairs(parentGui:GetDescendants()) do
+                if desc:IsA("TextLabel") or desc:IsA("TextButton") or desc:IsA("TextBox") then 
+                    desc.Font = targetFont 
+                end
+            end
+        end
+    end)
+end)
+
+MenuGroup:AddToggle("KeybindMenuOpen", { Default = false, Text = "Open Keybind Menu", Callback = function(value) Library.KeybindFrame.Visible = value end})
+MenuGroup:AddToggle("ShowCustomCursor", {Text = "Custom Cursor", Default = true, Callback = function(Value) Library.ShowCustomCursor = Value end})
+MenuGroup:AddDivider()
+MenuGroup:AddLabel("Menu bind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
+MenuGroup:AddButton("Unload", function() Library:Unload() end)
+
+Library.ToggleKeybind = Options.MenuKeybind
+
+Library.OnUnload(function()
+    for player, _ in pairs(ESP_Drawing_Storage) do
+        RemoveDrawingESP(player)
+    end
+    table.clear(ESP_Drawing_Storage)
+    if BoxFillGui then BoxFillGui:Destroy() end
+    if SelfHighlightInstance then SelfHighlightInstance:Destroy() end
+    if FOVCircleOutline then FOVCircleOutline:Remove() end
+    if FOVCircle then FOVCircle:Remove() end
+    
+    Library.Unloaded = true
+end)
+
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({ "MenuKeybind", "UIFontDropdown", "EspFontDropdown" })
+ThemeManager:SetFolder("hooksensev2")
+SaveManager:SetFolder("hooksensev2/configs")
+SaveManager:BuildConfigSection(Tabs.UI)
+ThemeManager:ApplyToTab(Tabs.UI)
+SaveManager:LoadAutoloadConfig()
