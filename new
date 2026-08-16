@@ -221,6 +221,10 @@ local AtmosphereHaze = 1.2
 local AtmosphereOffset = 0.25
 local AtmosphereDensity = 0.35
 
+-- VIEW PLAYER VARIABLES
+local ViewingPlayer = nil
+local ViewPlayerConnection = nil
+
 local Camera = workspace.CurrentCamera
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -2056,6 +2060,7 @@ Options.FpsCapSlider:OnChanged(function()
 end)
 
 local BlacklistPlayersGroup = Tabs.Addons:AddLeftGroupbox("Loaders Scripts")
+local ViewPlayerGroup = Tabs.Addons:AddLeftGroupbox("View Player")
 
 BlacklistPlayersGroup:AddButton({ Text = "walkspeed", Func = function()
     local success, err = pcall(function()
@@ -2065,6 +2070,118 @@ BlacklistPlayersGroup:AddButton({ Text = "walkspeed", Func = function()
         Library:Notify("successfully!")
     else
         Library:Notify("Error loading script: " .. tostring(err))
+    end
+end })
+
+-- VIEW & TELEPORT PLAYER IMPLEMENTATION
+local function StopViewingPlayer()
+    if ViewPlayerConnection then
+        ViewPlayerConnection:Disconnect()
+        ViewPlayerConnection = nil
+    end
+    ViewingPlayer = nil
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+        Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    end
+end
+
+-- HELPER TO EXTRACT USERNAME FROM DISPLAY NAME ENTRY
+local function GetUsernameFromEntry(entryText)
+    if not entryText or entryText == "No Players Online" then return nil end
+    local username = string.match(entryText, "%(@([^%)]+)%)")
+    return username or entryText
+end
+
+-- DISPLAY NAME FORMATTED PLAYER LIST
+local function GetPlayerNamesList()
+    local list = {}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            table.insert(list, p.DisplayName .. " (@" .. p.Name .. ")")
+        end
+    end
+    if #list == 0 then
+        table.insert(list, "No Players Online")
+    end
+    return list
+end
+
+ViewPlayerGroup:AddDropdown("ViewPlayerDropdown", { Text = "Select Player to View", Values = GetPlayerNamesList(), Default = 1, Multi = false })
+
+local function RefreshViewPlayerList()
+    local currentList = GetPlayerNamesList()
+    Options.ViewPlayerDropdown:SetValues(currentList)
+    if currentList[1] then
+        Options.ViewPlayerDropdown:SetValue(currentList[1])
+    end
+end
+
+Players.PlayerAdded:Connect(function()
+    task.wait(0.2)
+    RefreshViewPlayerList()
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    if ViewingPlayer == player then
+        StopViewingPlayer()
+        Library:Notify("View Player: Target left the game, camera reset.")
+    end
+    task.wait(0.2)
+    RefreshViewPlayerList()
+end)
+
+ViewPlayerGroup:AddButton({ Text = "View Target", Func = function()
+    local rawSelected = Options.ViewPlayerDropdown.Value
+    local selectedName = GetUsernameFromEntry(rawSelected)
+    if not selectedName then
+        Library:Notify("Please select a valid player!")
+        return
+    end
+
+    local targetPlayer = Players:FindFirstChild(selectedName)
+    if targetPlayer then
+        ViewingPlayer = targetPlayer
+        if ViewPlayerConnection then ViewPlayerConnection:Disconnect() end
+
+        ViewPlayerConnection = RunService.RenderStepped:Connect(function()
+            if ViewingPlayer and ViewingPlayer.Character and ViewingPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                Camera.CameraSubject = ViewingPlayer.Character:FindFirstChildOfClass("Humanoid")
+            else
+                StopViewingPlayer()
+                Library:Notify("View Player: Target lost or died.")
+            end
+        end)
+        Library:Notify("Now viewing: " .. targetPlayer.DisplayName)
+    else
+        Library:Notify("Player not found!")
+    end
+end })
+
+ViewPlayerGroup:AddButton({ Text = "Unview Target", Func = function()
+    StopViewingPlayer()
+    Library:Notify("Stopped viewing player.")
+end })
+
+-- ADDED: GO TO PLAYER TELEPORT BUTTON
+ViewPlayerGroup:AddButton({ Text = "Go to Player", Func = function()
+    local rawSelected = Options.ViewPlayerDropdown.Value
+    local selectedName = GetUsernameFromEntry(rawSelected)
+    if not selectedName then
+        Library:Notify("Please select a valid player!")
+        return
+    end
+
+    local targetPlayer = Players:FindFirstChild(selectedName)
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if myRoot then
+            myRoot.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+            Library:Notify("Teleported to: " .. targetPlayer.DisplayName)
+        else
+            Library:Notify("Your character root part not found!")
+        end
+    else
+        Library:Notify("Target character not found or dead!")
     end
 end })
 
@@ -2099,6 +2216,7 @@ MenuGroup:AddButton("Unload", function() Library:Unload() end)
 Library.ToggleKeybind = Options.MenuKeybind
 
 Library.OnUnload(function()
+    StopViewingPlayer()
     for player, _ in pairs(ESP_Drawing_Storage) do
         RemoveDrawingESP(player)
     end
