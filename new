@@ -123,6 +123,10 @@ local PredictionValue = 0.1
 local PermLockEnabled = false
 local PermTargetList = {}
 
+-- TARGET LOCK BUTTON VARIABLES
+local ManualLockEnabled = false
+local ManualLockedTarget = nil
+
 local CustomFOVValue = 70
 
 local RobloxFontsList = {}
@@ -198,7 +202,7 @@ local TargetPartMode = "Head"
 local TransitionSpeed = 5
 local MaxTargetDistance = 10000
 
--- ANTI AIM CONFIG VARIABLES (UPDATED)
+-- ANTI AIM CONFIG VARIABLES
 local AntiAimEnabled = false
 local AntiAimMode = "Spin"
 local AntiAimSpeed = 15
@@ -472,6 +476,139 @@ local function isDead(humanoid, char)
     return false
 end
 
+-- HELPER: FIND TARGET INSIDE FOV
+local function GetTargetInFOV()
+    local TempTargetChar = nil
+    local TempPlayer = nil
+    local MaxDistance = FOVSize
+    local Center = getScreenCenter()
+    local MyRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local char = player.Character
+            local rootPart = char:FindFirstChild("HumanoidRootPart")
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            if rootPart and humanoid then
+                if isDead(humanoid, char) then continue end
+                if MyRoot and (rootPart.Position - MyRoot.Position).Magnitude > MaxTargetDistance then continue end
+                if isBehindWall(rootPart) then continue end
+                if TeamCheckEnabled and player.Team == LocalPlayer.Team then continue end
+                
+                local ScreenPosition, OnScreen = Camera:WorldToViewportPoint(rootPart.Position)
+                if OnScreen then
+                    local DistanceToCenter = (Vector2.new(ScreenPosition.X, ScreenPosition.Y) - Center).Magnitude
+                    if DistanceToCenter < MaxDistance then
+                        TempTargetChar = char
+                        TempPlayer = player
+                        MaxDistance = DistanceToCenter
+                    end
+                end
+            end
+        end
+    end
+    return TempPlayer, TempTargetChar
+end
+
+-- CREATE BEAUTIFUL FLOATING TARGET LOCK BUTTON
+local LockButtonGui = Instance.new("ScreenGui")
+LockButtonGui.Name = "hooksense_TargetLockButtonGui"
+LockButtonGui.ResetOnSpawn = false
+LockButtonGui.IgnoreGuiInset = true
+LockButtonGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+LockButtonGui.Parent = TargetGuiParent
+
+local TargetBtn = Instance.new("TextButton")
+TargetBtn.Name = "TargetLockButton"
+TargetBtn.Size = UDim2.new(0, 150, 0, 42)
+TargetBtn.Position = UDim2.new(0.5, -75, 0.75, 0)
+TargetBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
+TargetBtn.BackgroundTransparency = 0.15
+TargetBtn.BorderSizePixel = 0
+TargetBtn.Font = GlobalFontSetting
+TargetBtn.Text = "LOCK TARGET: OFF"
+TargetBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+TargetBtn.TextSize = 14
+TargetBtn.AutoButtonColor = false
+TargetBtn.Parent = LockButtonGui
+
+local BtnCorner = Instance.new("UICorner")
+BtnCorner.CornerRadius = UDim.new(0, 8)
+BtnCorner.Parent = TargetBtn
+
+local BtnStroke = Instance.new("UIStroke")
+BtnStroke.Thickness = 1.5
+BtnStroke.Color = Color3.fromRGB(60, 60, 70)
+BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+BtnStroke.Parent = TargetBtn
+
+-- MAKE BUTTON DRAGGABLE
+local dragging, dragInput, dragStart, startPos
+local function updateDrag(input)
+    local delta = input.Position - dragStart
+    TargetBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+TargetBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = TargetBtn.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+TargetBtn.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        updateDrag(input)
+    end
+end)
+
+-- CLICK TOGGLE LOGIC
+TargetBtn.MouseButton1Click:Connect(function()
+    ManualLockEnabled = not ManualLockEnabled
+    if ManualLockEnabled then
+        local foundPlayer, foundChar = GetTargetInFOV()
+        if foundPlayer and foundChar then
+            ManualLockedTarget = foundPlayer
+            TargetBtn.Text = "Unlock"
+            TargetBtn.TextColor3 = Color3.fromRGB(0, 255, 150)
+            BtnStroke.Color = Color3.fromRGB(0, 255, 150)
+            Library:Notify("Set target to " .. foundPlayer.Name, 2.5)
+        else
+            ManualLockEnabled = false
+            ManualLockedTarget = nil
+            TargetBtn.Text = "NO TARGET IN FOV"
+            TargetBtn.TextColor3 = Color3.fromRGB(255, 75, 75)
+            BtnStroke.Color = Color3.fromRGB(255, 75, 75)
+            Library:Notify("No target found in FOV!", 2.0)
+            task.delay(1.5, function()
+                if not ManualLockEnabled then
+                    TargetBtn.Text = "LOCK TARGET: OFF"
+                    TargetBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+                    BtnStroke.Color = Color3.fromRGB(60, 60, 70)
+                end
+            end)
+        end
+    else
+        ManualLockedTarget = nil
+        TargetBtn.Text = "LOCK TARGET: OFF"
+        TargetBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        BtnStroke.Color = Color3.fromRGB(60, 60, 70)
+        Library:Notify("Unlocked Target", 2.0)
+    end
+end)
+
 local CurrentAimTargetPosition = nil
 local CurrentTargetPlayer = nil
 local CurrentTargetCharacter = nil
@@ -508,12 +645,29 @@ task.spawn(function()
         else
             local TempTargetChar = nil
             local TempPlayer = nil
-            local MaxDistance = FOVSize
-            local Center = getScreenCenter()
-            local MyRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            local PotentialTargets = {}
 
-            if PermLockEnabled and #PermTargetList > 0 then
+            -- 1. MANUAL FLOATING BUTTON TARGET LOCK OVERRIDE
+            if ManualLockEnabled and ManualLockedTarget then
+                if ManualLockedTarget.Character then
+                    local char = ManualLockedTarget.Character
+                    local rootPart = char:FindFirstChild("HumanoidRootPart")
+                    local humanoid = char:FindFirstChildOfClass("Humanoid")
+                    if rootPart and humanoid and not isDead(humanoid, char) then
+                        TempTargetChar = char
+                        TempPlayer = ManualLockedTarget
+                    else
+                        ManualLockEnabled = false
+                        ManualLockedTarget = nil
+                        TargetBtn.Text = "LOCK TARGET: OFF"
+                        TargetBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+                        BtnStroke.Color = Color3.fromRGB(60, 60, 70)
+                        Library:Notify("Target Lost / Respawned!", 2.0)
+                    end
+                end
+            end
+
+            -- 2. PERMANENT TARGET LIST LOCK OVERRIDE
+            if not TempTargetChar and PermLockEnabled and #PermTargetList > 0 then
                 for _, pName in ipairs(PermTargetList) do
                     local targetPlayerObject = Players:FindFirstChild(pName)
                     if targetPlayerObject and targetPlayerObject.Character then
@@ -535,32 +689,9 @@ task.spawn(function()
                 end
             end
 
+            -- 3. AUTO FOV TARGETING
             if not TempTargetChar then
-                for _, player in ipairs(Players:GetPlayers()) do
-                    if player ~= LocalPlayer and player.Character then
-                        table.insert(PotentialTargets, player.Character)
-                    end
-                end
-                for _, char in ipairs(PotentialTargets) do
-                    local rootPart = char:FindFirstChild("HumanoidRootPart")
-                    local humanoid = char:FindFirstChildOfClass("Humanoid")
-                    if rootPart and humanoid then
-                        if isDead(humanoid, char) then continue end
-                        if MyRoot and (rootPart.Position - MyRoot.Position).Magnitude > MaxTargetDistance then continue end
-                        if isBehindWall(rootPart) then continue end
-                        local targetPlayerObject = Players:GetPlayerFromCharacter(char)
-                        if TeamCheckEnabled and targetPlayerObject and targetPlayerObject.Team == LocalPlayer.Team then continue end
-                        local ScreenPosition, OnScreen = Camera:WorldToViewportPoint(rootPart.Position)
-                        if OnScreen then
-                            local DistanceToCenter = (Vector2.new(ScreenPosition.X, ScreenPosition.Y) - Center).Magnitude
-                            if DistanceToCenter < MaxDistance then
-                                TempTargetChar = char
-                                TempPlayer = targetPlayerObject
-                                MaxDistance = DistanceToCenter
-                            end
-                        end
-                    end
-                end
+                TempPlayer, TempTargetChar = GetTargetInFOV()
             end
 
             CurrentTargetPlayer = TempPlayer
@@ -574,6 +705,7 @@ task.spawn(function()
                 if TargetPartMode == "Closet" then
                     local closestPart = nil
                     local minPartDist = math.huge
+                    local Center = getScreenCenter()
                     for _, part in ipairs(TempTargetChar:GetChildren()) do
                         if part:IsA("BasePart") then
                             local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
@@ -758,7 +890,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- UPDATED: Anti Aim Mechanics (Spin, Jitter, Static)
+    -- Anti Aim Mechanics
     if AntiAimEnabled and LocalPlayer.Character then
         local Root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
@@ -1431,7 +1563,6 @@ RunService.RenderStepped:Connect(function()
                 if character and rootPart and humanoid and humanoid.Health > 0 then
                     local currentDist = (Camera.CFrame.Position - rootPart.Position).Magnitude
                     
-                    -- ป้องกันการบัคค้างเวลามีผู้เล่นอยู่ไกลเกินขอบเขต MaxTargetDistance
                     if currentDist > MaxTargetDistance or (TeamCheckEnabled and player.Team == LocalPlayer.Team) then
                         esp.SmoothHealth = nil
                         SetVisibilityFalse(esp)
@@ -1734,7 +1865,7 @@ SkeletonToggle:AddColorPicker("SkeletonOutlineColor", { Default = Color3.fromRGB
 EspSkeletonGroup:AddSlider("SkeletonThicknessSlider", { Text = "Skeleton Line Thickness", Default = 1.5, Min = 0.5, Max = 5.0, Rounding = 1 })
 EspSkeletonGroup:AddSlider("SkeletonOutlineThicknessSlider", { Text = "Skeleton Outline Thickness", Default = 3.5, Min = 1.0, Max = 8.0, Rounding = 1 })
 
--- UPDATED MOVEMENT / ANTI AIM CONTROLS
+-- MOVEMENT / ANTI AIM CONTROLS
 local MoveLeftBox = Tabs.Movement:AddLeftGroupbox("Anti Aim")
 
 MoveLeftBox:AddToggle("AntiAimToggle", { Text = "Enable Anti Aim", Default = false })
@@ -1935,6 +2066,7 @@ Options.UIFontDropdown:OnChanged(function()
         local targetFont = Enum.Font[Options.UIFontDropdown.Value]
         if not targetFont then return end
         GlobalFontSetting = targetFont
+        TargetBtn.Font = targetFont
         local parentGui = Library.ScreenGui or Library.Main
         if parentGui then
             for _, desc in ipairs(parentGui:GetDescendants()) do
@@ -1959,6 +2091,7 @@ Library.OnUnload(function()
         RemoveDrawingESP(player)
     end
     table.clear(ESP_Drawing_Storage)
+    if LockButtonGui then LockButtonGui:Destroy() end
     if BoxFillGui then BoxFillGui:Destroy() end
     if SelfHighlightInstance then SelfHighlightInstance:Destroy() end
     if FOVCircleOutline then FOVCircleOutline:Remove() end
