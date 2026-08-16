@@ -516,6 +516,7 @@ LockButtonGui.Name = "hooksense_TargetLockButtonGui"
 LockButtonGui.ResetOnSpawn = false
 LockButtonGui.IgnoreGuiInset = true
 LockButtonGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+LockButtonGui.Enabled = false -- Controlled by Toggle
 LockButtonGui.Parent = TargetGuiParent
 
 local TargetBtn = Instance.new("TextButton")
@@ -574,17 +575,17 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- CLICK TOGGLE LOGIC
+-- CLICK TOGGLE LOGIC (FIXED: PERMANENT LOCK UNTIL MANUAL UNLOCK)
 TargetBtn.MouseButton1Click:Connect(function()
     ManualLockEnabled = not ManualLockEnabled
     if ManualLockEnabled then
         local foundPlayer, foundChar = GetTargetInFOV()
-        if foundPlayer and foundChar then
+        if foundPlayer then
             ManualLockedTarget = foundPlayer
-            TargetBtn.Text = "Unlock"
+            TargetBtn.Text = "Unlock: " .. foundPlayer.Name
             TargetBtn.TextColor3 = Color3.fromRGB(0, 255, 150)
             BtnStroke.Color = Color3.fromRGB(0, 255, 150)
-            Library:Notify("Set target to " .. foundPlayer.Name, 2.5)
+            Library:Notify("Locked target: " .. foundPlayer.Name, 2.5)
         else
             ManualLockEnabled = false
             ManualLockedTarget = nil
@@ -606,6 +607,18 @@ TargetBtn.MouseButton1Click:Connect(function()
         TargetBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
         BtnStroke.Color = Color3.fromRGB(60, 60, 70)
         Library:Notify("Unlocked Target", 2.0)
+    end
+end)
+
+-- IF PLAYER LEAVES THE SERVER, CLEAR LOCK
+Players.PlayerRemoving:Connect(function(plr)
+    if ManualLockedTarget == plr then
+        ManualLockEnabled = false
+        ManualLockedTarget = nil
+        TargetBtn.Text = "LOCK TARGET: OFF"
+        TargetBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        BtnStroke.Color = Color3.fromRGB(60, 60, 70)
+        Library:Notify("Target left the server!", 2.0)
     end
 end)
 
@@ -646,22 +659,15 @@ task.spawn(function()
             local TempTargetChar = nil
             local TempPlayer = nil
 
-            -- 1. MANUAL FLOATING BUTTON TARGET LOCK OVERRIDE
+            -- 1. MANUAL FLOATING BUTTON TARGET LOCK OVERRIDE (PERSISTENT RESPAWN FIX)
             if ManualLockEnabled and ManualLockedTarget then
+                TempPlayer = ManualLockedTarget
                 if ManualLockedTarget.Character then
                     local char = ManualLockedTarget.Character
                     local rootPart = char:FindFirstChild("HumanoidRootPart")
                     local humanoid = char:FindFirstChildOfClass("Humanoid")
                     if rootPart and humanoid and not isDead(humanoid, char) then
                         TempTargetChar = char
-                        TempPlayer = ManualLockedTarget
-                    else
-                        ManualLockEnabled = false
-                        ManualLockedTarget = nil
-                        TargetBtn.Text = "LOCK TARGET: OFF"
-                        TargetBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-                        BtnStroke.Color = Color3.fromRGB(60, 60, 70)
-                        Library:Notify("Target Lost / Respawned!", 2.0)
                     end
                 end
             end
@@ -690,7 +696,7 @@ task.spawn(function()
             end
 
             -- 3. AUTO FOV TARGETING
-            if not TempTargetChar then
+            if not TempTargetChar and not ManualLockEnabled then
                 TempPlayer, TempTargetChar = GetTargetInFOV()
             end
 
@@ -1025,6 +1031,12 @@ LeftGroupBox:AddToggle("SilentAimToggle", { Text = "Enable Silent Aim", Default 
 
 Toggles.SilentAimToggle:OnChanged(function()
     SilentAimEnabled = Toggles.SilentAimToggle.Value
+end)
+
+-- ADDED TOGGLE FOR SHOW LOCK BUTTON
+LeftGroupBox:AddToggle("ShowLockButtonToggle", { Text = "Show Lock Target Button", Default = false })
+Toggles.ShowLockButtonToggle:OnChanged(function()
+    LockButtonGui.Enabled = Toggles.ShowLockButtonToggle.Value
 end)
 
 LeftGroupBox:AddToggle("ResolverToggle", { Text = "Enable Resolver", Default = false })
