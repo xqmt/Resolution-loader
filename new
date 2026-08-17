@@ -18,7 +18,6 @@ task.spawn(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
     end)
 end)
-task.wait(2.1)
 
 task.spawn(function()
     pcall(function()
@@ -172,11 +171,11 @@ local SelectedSkybox = "Minecraft"
 local SkyboxIDs = {
     ["Minecraft"] = "rbxassetid://96736589365838",
     ["Minecraft 2"] = "rbxassetid://117301665698887",
-    ["Skyblox 1"] = "rbxassetid://4951222008",
-    ["Skyblox 2"] = "rbxassetid://4604073339",
-    ["Skyblox 3"] = "rbxassetid://8464073887",
-    ["Skyblox 4"] = "rbxassetid://12300321824",
-    ["Skyblox 5"] = "rbxassetid://90988519"
+    ["dark star"] = "rbxassetid://4951222008",
+    ["snow"] = "rbxassetid://4604073339",
+    ["realistic"] = "rbxassetid://8464073887",
+    ["solid black"] = "rbxassetid://12300321824",
+    ["blue"] = "rbxassetid://90988519"
 }
 
 local FOVCircleColor = Color3.fromRGB(255, 255, 255)
@@ -1953,7 +1952,7 @@ Toggles.SkyboxToggle:OnChanged(function()
     UpdateSkybox()
 end)
 
-WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox", Values = {"Minecraft", "Minecraft 2", "Skyblox 1", "Skyblox 2", "Skyblox 3", "Skyblox 4", "Skyblox 5"}, Default = 1, Multi = false })
+WorldSkyboxBox:AddDropdown("SkyboxDropdown", { Text = "Select Skybox", Values = {"Minecraft", "Minecraft 2", "dark star", "snow", "realistic", "solid black", "blue"}, Default = 1, Multi = false })
 Options.SkyboxDropdown:OnChanged(function()
     SelectedSkybox = Options.SkyboxDropdown.Value
     UpdateSkybox()
