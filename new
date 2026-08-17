@@ -1744,7 +1744,7 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         if Toggles.EspHealth and Toggles.EspHealth.Value then
-                            local barWidth = 2.3
+                            local barWidth = 2.5
                             local outlinePadding = 1
                             local barX = boxX - 6
                             local barY = boxY
