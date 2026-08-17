@@ -1605,7 +1605,7 @@ RunService.RenderStepped:Connect(function()
                         local feetPos = Camera:WorldToViewportPoint(feetOffset.Position)
                         
                         local height = math.abs(headPos.Y - feetPos.Y)
-                        local width = height * 0.48
+                        local width = height * 0.65
                         local boxX = math.round(rootPos.X - (width / 2))
                         local boxY = math.round(headPos.Y)
                         
@@ -1627,7 +1627,7 @@ RunService.RenderStepped:Connect(function()
                                 esp.BoxOutline.Position = Vector2.new(boxX, boxY)
                                 esp.BoxOutline.Size = Vector2.new(mathWidth, mathHeight)
                                 esp.BoxOutline.Color = boxOutlineColor
-                                esp.BoxOutline.Thickness = 3
+                                esp.BoxOutline.Thickness = 2.5
                                 esp.BoxOutline.Visible = true
                             end
 
@@ -1720,8 +1720,8 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         local dynamicNameSize = math.clamp(math.round(13 * (40 / math.max(currentDist, 10))), 10, 14)
-                        local hpTextSize = 10
-                        local distTextSize = 10
+                        local hpTextSize = 9
+                        local distTextSize = 9
 
                         if boxFillEnabled and esp.BoxFillFrame then
                             esp.BoxFillFrame.Position = UDim2.new(0, boxX, 0, boxY)
@@ -1744,7 +1744,7 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         if Toggles.EspHealth and Toggles.EspHealth.Value then
-                            local barWidth = 3
+                            local barWidth = 2.2
                             local outlinePadding = 1
                             local barX = boxX - 6
                             local barY = boxY
@@ -1831,10 +1831,10 @@ BoxToggle:AddColorPicker("BoxColor", { Default = Color3.fromRGB(255, 255, 255), 
 BoxToggle:AddColorPicker("BoxOutlineColor", { Default = Color3.fromRGB(0, 0, 0), Title = "Box Outline Color" })
 
 EspMainGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill", Default = false })
-EspMainGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.5, Min = 0, Max = 1, Rounding = 2 })
-EspMainGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 0, 0) })
-EspMainGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(0, 255, 0) })
-EspMainGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(0, 0, 255) })
+EspMainGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.65, Min = 0, Max = 1, Rounding = 2 })
+EspMainGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 255, 255) })
+EspMainGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(255, 255, 255) })
+EspMainGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(255, 255, 255) })
 EspMainGroup:AddToggle("EspBoxFillRotate", { Text = "Rotate Box Fill Gradient", Default = false })
 EspMainGroup:AddSlider("EspBoxFillRotateSpeed", { Text = "Box Fill Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
 
@@ -1877,8 +1877,8 @@ local SkeletonToggle = EspSkeletonGroup:AddToggle("EspSkeleton", { Text = "Enabl
 SkeletonToggle:AddColorPicker("SkeletonColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Skeleton Main Color" })
 SkeletonToggle:AddColorPicker("SkeletonOutlineColor", { Default = Color3.fromRGB(0, 0, 0), Title = "Skeleton Outline Color" })
 
-EspSkeletonGroup:AddSlider("SkeletonThicknessSlider", { Text = "Skeleton Line Thickness", Default = 1.5, Min = 0.5, Max = 5.0, Rounding = 1 })
-EspSkeletonGroup:AddSlider("SkeletonOutlineThicknessSlider", { Text = "Skeleton Outline Thickness", Default = 3.5, Min = 1.0, Max = 8.0, Rounding = 1 })
+EspSkeletonGroup:AddSlider("SkeletonThicknessSlider", { Text = "Skeleton Line Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
+EspSkeletonGroup:AddSlider("SkeletonOutlineThicknessSlider", { Text = "Skeleton Outline Thickness", Default = 2.5, Min = 1.0, Max = 8.0, Rounding = 1 })
 
 -- MOVEMENT / ANTI AIM CONTROLS
 local MoveLeftBox = Tabs.Movement:AddLeftGroupbox("Anti Aim")
