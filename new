@@ -3,7 +3,6 @@ for _, v in pairs(getgc(true)) do
         local idx = rawget(v, "indexInstance")
         if type(idx) == "table" and idx[1] == "kick" then
             setreadonly(v, false)
-            -- ปรับฟังก์ชันให้คืนค่า nil หรือกระจายรอยต่อแทนการสร้าง WaitForChild ค้างไว้
             v.tvk = {
                 "kick",
                 newcclosure(function()
@@ -38,7 +37,6 @@ local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
 local GlobalFontSetting = Enum.Font.Cartoon
 
--- HOOK FORCE NOTIFY FONT TO CARTOON
 local OldNotify = Library.Notify
 Library.Notify = function(self, text, time)
     local notification = OldNotify(self, text, time)
