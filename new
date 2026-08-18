@@ -1,16 +1,20 @@
-for k, v in pairs(getgc(true)) do
-    if pcall(function()
-        return rawget(v, "indexInstance")
-    end) and type(rawget(v, "indexInstance")) == "table" and (rawget(v, "indexInstance"))[1] == "kick" then
-        setreadonly(v, false)
-        v.tvk = {
-            "kick",
-            function()
-                return game.Workspace:WaitForChild("")
-            end
-        }
+for _, v in pairs(getgc(true)) do
+    if type(v) == "table" and rawget(v, "indexInstance") then
+        local idx = rawget(v, "indexInstance")
+        if type(idx) == "table" and idx[1] == "kick" then
+            setreadonly(v, false)
+            -- ปรับฟังก์ชันให้คืนค่า nil หรือกระจายรอยต่อแทนการสร้าง WaitForChild ค้างไว้
+            v.tvk = {
+                "kick",
+                newcclosure(function()
+                    return task.wait(999e9)
+                end)
+            }
+            setreadonly(v, true) -- ล็อกกลับเป็น Read-Only กันตรวจเจอ
+        end
     end
 end
+
 task.wait(4.8)
 
 task.spawn(function()
