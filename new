@@ -1746,9 +1746,9 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         if Toggles.EspHealth and Toggles.EspHealth.Value then
-                            local barWidth = 2.65
+                            local barWidth = 2.5
                             local outlinePadding = 1
-                            local barX = boxX - 5.5
+                            local barX = boxX - 6
                             local barY = boxY
 
                             esp.GuiHealthBg.Position = UDim2.new(0, barX - outlinePadding, 0, barY - outlinePadding)
