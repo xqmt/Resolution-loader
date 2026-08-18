@@ -1025,10 +1025,10 @@ local Options = getgenv().Options
 local Toggles = getgenv().Toggles
 
 local LeftGroupBox = Tabs.Main:AddLeftGroupbox("Silent Aim")
-local PermLockGroupBox = Tabs.Main:AddLeftGroupbox("Permanent Lock Settings")
+local PermLockGroupBox = Tabs.Main:AddLeftGroupbox("Permanent Lock")
 local TargetGroupBox = Tabs.Main:AddLeftGroupbox("Targeting Options")
 local FOVGroupBox = Tabs.Main:AddRightGroupbox("FOV Settings")
-local FOVFillGroupBox = Tabs.Main:AddRightGroupbox("FOV Dynamic Gradient Fill")
+local FOVFillGroupBox = Tabs.Main:AddRightGroupbox("FOV Fill")
 local TracerGroupBox = Tabs.Main:AddRightGroupbox("Tracer Line Settings")
 
 LeftGroupBox:AddToggle("SilentAimToggle", { Text = "Enable Silent Aim", Default = false })
@@ -1149,7 +1149,7 @@ PermLockGroupBox:AddButton({Text = "Target Player", Func = function()
     end
 end})
 
-TargetGroupBox:AddDropdown("TargetPartDropdown", { Text = "Target Lock Part", Values = {"Head", "HumanoidRootPart", "Root to Head", "Closet"}, Default = 1, Multi = false })
+TargetGroupBox:AddDropdown("TargetPartDropdown", { Text = "Hitbox", Values = {"Head", "HumanoidRootPart", "Root to Head", "Closet"}, Default = 1, Multi = false })
 Options.TargetPartDropdown:OnChanged(function()
     TargetPartMode = Options.TargetPartDropdown.Value
 end)
@@ -1380,7 +1380,7 @@ local function CreateTitleLabel(name)
     label.BorderSizePixel = 0
     label.Font = Enum.Font.Cartoon
     label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-    label.TextStrokeTransparency = 0
+    label.TextStrokeTransparency = 0.2
     label.Visible = false
     label.Parent = BoxFillGui
     return label
@@ -1629,7 +1629,7 @@ RunService.RenderStepped:Connect(function()
                                 esp.BoxOutline.Position = Vector2.new(boxX, boxY)
                                 esp.BoxOutline.Size = Vector2.new(mathWidth, mathHeight)
                                 esp.BoxOutline.Color = boxOutlineColor
-                                esp.BoxOutline.Thickness = 2
+                                esp.BoxOutline.Thickness = 2.25
                                 esp.BoxOutline.Visible = true
                             end
 
@@ -1767,14 +1767,20 @@ RunService.RenderStepped:Connect(function()
                             })
 
                             if Toggles.EspHealthText and Toggles.EspHealthText.Value then
-                                esp.HealthText.Text = tostring(math.round(targetHp))
-                                esp.HealthText.TextSize = hpTextSize
-                                esp.HealthText.TextColor3 = hpTextColor
-                                esp.HealthText.Size = UDim2.new(0, 30, 0, 15)
-                                local targetY = math.clamp(barY + (mathHeight - healthHeight) - 7, boxY - 7, boxY + mathHeight - 10)
-                                esp.HealthText.Position = UDim2.new(0, barX - 32, 0, targetY)
-                                esp.HealthText.Visible = true
+                            esp.HealthText.Text = tostring(math.round(targetHp))
+                            esp.HealthText.TextSize = hpTextSize
+                            esp.HealthText.TextColor3 = hpTextColor
+                            esp.HealthText.Size = UDim2.new(0, 30, 0, 15)
+    
+                            -- ปรับตำแหน่งแกน Y ให้อยู่กึ่งกลางหัวหลอดเลือดพอดี (เดิม offset -7 เปลี่ยนเป็น -3)
+                            local targetY = math.clamp(barY + (mathHeight - healthHeight) - 3, boxY - 3, boxY + mathHeight - 10)
+    
+                            -- ปรับระยะห่างแกน X ให้อยู่ทางซ้ายขอบหลอดเลือดสวยงาม
+                            esp.HealthText.Position = UDim2.new(0, barX - 28, 0, targetY)
+                            esp.HealthText.Visible = true
                             else
+
+
                                 esp.HealthText.Visible = false
                             end
                         else
