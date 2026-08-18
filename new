@@ -1353,7 +1353,7 @@ local function GetColor(optionName, defaultColor)
     return fallback
 end
 
-local function CreateSquare(thickness, color)
+ local function CreateSquare(thickness, color)
     local square = Drawing.new("Square")
     square.Thickness = thickness or 1
     square.Color = color or Color3.fromRGB(255, 255, 255)
@@ -1516,8 +1516,13 @@ RunService.RenderStepped:Connect(function()
         local Camera = workspace.CurrentCamera
         if not Camera then return end
 
-        local viewportSize = Camera.ViewportSize
-        local screenW, screenH = viewportSize.X, viewportSize.Y
+        local currentCFrame = Camera.CFrame
+        if currentCFrame ~= LastCameraCFrame then
+            LastCameraCFrame = currentCFrame
+            for _, esp in pairs(ESP_Drawing_Storage) do
+                esp.NeedsRefresh = true
+            end
+        end
 
         local espMaster = Toggles.EspMaster and Toggles.EspMaster.Value
         if not espMaster then
@@ -1581,22 +1586,20 @@ RunService.RenderStepped:Connect(function()
                         return
                     end
 
+                    if highlightEnabled and esp.Highlight then
+                        esp.Highlight.Adornee = character
+                        esp.Highlight.FillColor = highlightMainColor
+                        esp.Highlight.OutlineColor = highlightOutlineColor
+                        esp.Highlight.FillTransparency = highlightFillTrans
+                        esp.Highlight.OutlineTransparency = highlightOutlineTrans
+                        esp.Highlight.Enabled = true
+                    else
+                        if esp.Highlight then esp.Highlight.Enabled = false end
+                    end
+
                     local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
                     
-                    -- ตรวจสอบเงื่อนไขการมองเห็น และเช็คว่าอยู่ในขอบเขต Screen แบบเคร่งครัด
-                    if onScreen and rootPos.Z > 0 and rootPos.X >= -100 and rootPos.X <= screenW + 100 and rootPos.Y >= -100 and rootPos.Y <= screenH + 100 then
-                        
-                        if highlightEnabled and esp.Highlight then
-                            esp.Highlight.Adornee = character
-                            esp.Highlight.FillColor = highlightMainColor
-                            esp.Highlight.OutlineColor = highlightOutlineColor
-                            esp.Highlight.FillTransparency = highlightFillTrans
-                            esp.Highlight.OutlineTransparency = highlightOutlineTrans
-                            esp.Highlight.Enabled = true
-                        else
-                            if esp.Highlight then esp.Highlight.Enabled = false end
-                        end
-
+                    if onScreen and rootPos.Z > 0 then
                         local headOffset = rootPart.CFrame * CFrame.new(0, 2.5, 0)
                         local feetOffset = rootPart.CFrame * CFrame.new(0, -3.0, 0)
                         
@@ -1621,12 +1624,6 @@ RunService.RenderStepped:Connect(function()
                         local pct = math.clamp(esp.SmoothHealth / maxHp, 0, 1)
                         local mathWidth, mathHeight = math.round(width), math.round(height)
 
-                        -- ป้องกันค่าเพี้ยนจนทำให้วาดหลุดขอบ
-                        if mathWidth <= 0 or mathHeight <= 0 then
-                            SetVisibilityFalse(esp)
-                            return
-                        end
-
                         if boxEnabled then
                             if esp.BoxOutline then
                                 esp.BoxOutline.Position = Vector2.new(boxX, boxY)
@@ -1649,11 +1646,11 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         if lineESPEnabled then
-                            local lineStartPos = Vector2.new(screenW / 2, screenH)
+                            local lineStartPos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                             if lineESPPosMode == "Center" then
-                                lineStartPos = Vector2.new(screenW / 2, screenH / 2)
+                                lineStartPos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
                             elseif lineESPPosMode == "Top" then
-                                lineStartPos = Vector2.new(screenW / 2, 0)
+                                lineStartPos = Vector2.new(Camera.ViewportSize.X / 2, 0)
                             end
 
                             local targetPos2D = Vector2.new(rootPos.X, rootPos.Y)
@@ -1687,7 +1684,7 @@ RunService.RenderStepped:Connect(function()
                                     local posA, visA = Camera:WorldToViewportPoint(partA.Position)
                                     local posB, visB = Camera:WorldToViewportPoint(partB.Position)
 
-                                    if visA and visB and posA.Z > 0 and posB.Z > 0 then
+                                    if visA and visB then
                                         local fromVector = Vector2.new(posA.X, posA.Y)
                                         local toVector = Vector2.new(posB.X, posB.Y)
 
@@ -1749,9 +1746,9 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         if Toggles.EspHealth and Toggles.EspHealth.Value then
-                            local barWidth = 2.6
+                            local barWidth = 2.5
                             local outlinePadding = 1
-                            local barX = boxX - 5
+                            local barX = boxX - 6
                             local barY = boxY
 
                             esp.GuiHealthBg.Position = UDim2.new(0, barX - outlinePadding, 0, barY - outlinePadding)
@@ -1770,15 +1767,20 @@ RunService.RenderStepped:Connect(function()
                             })
 
                             if Toggles.EspHealthText and Toggles.EspHealthText.Value then
-                                esp.HealthText.Text = tostring(math.round(targetHp))
-                                esp.HealthText.TextSize = hpTextSize
-                                esp.HealthText.TextColor3 = hpTextColor
-                                esp.HealthText.Size = UDim2.new(0, 30, 0, 15)
-        
-                                local targetY = math.clamp(barY + (mathHeight - healthHeight) - 3, boxY - 3, boxY + mathHeight - 10)
-                                esp.HealthText.Position = UDim2.new(0, barX - 28, 0, targetY)
-                                esp.HealthText.Visible = true
+                            esp.HealthText.Text = tostring(math.round(targetHp))
+                            esp.HealthText.TextSize = hpTextSize
+                            esp.HealthText.TextColor3 = hpTextColor
+                            esp.HealthText.Size = UDim2.new(0, 30, 0, 15)
+    
+                            -- ปรับตำแหน่งแกน Y ให้อยู่กึ่งกลางหัวหลอดเลือดพอดี (เดิม offset -7 เปลี่ยนเป็น -3)
+                            local targetY = math.clamp(barY + (mathHeight - healthHeight) - 3, boxY - 3, boxY + mathHeight - 10)
+    
+                            -- ปรับระยะห่างแกน X ให้อยู่ทางซ้ายขอบหลอดเลือดสวยงาม
+                            esp.HealthText.Position = UDim2.new(0, barX - 28, 0, targetY)
+                            esp.HealthText.Visible = true
                             else
+
+
                                 esp.HealthText.Visible = false
                             end
                         else
