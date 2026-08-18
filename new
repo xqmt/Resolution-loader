@@ -15,7 +15,7 @@ for _, v in pairs(getgc(true)) do
     end
 end
 
-task.wait(4.8)
+task.wait(2)
 
 task.spawn(function()
     pcall(function()
