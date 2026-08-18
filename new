@@ -9,7 +9,7 @@ for _, v in pairs(getgc(true)) do
                     return task.wait(999e9)
                 end)
             }
-            setreadonly(v, true) -- ล็อกกลับเป็น Read-Only กันตรวจเจอ
+            setreadonly(v, true)
         end
     end
 end
