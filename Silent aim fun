@@ -224,7 +224,7 @@ local function CreateESP(player)
     }
 
     -- Box Setup
-    objects.BoxOutline.Thickness = 2
+    objects.BoxOutline.Thickness = 3
     objects.BoxOutline.Color = Color3.fromRGB(0, 0, 0)
     objects.BoxOutline.Filled = false
     objects.BoxOutline.Visible = false
