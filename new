@@ -69,43 +69,6 @@ local Window = Library:CreateWindow({
     MenuFadeTime = 0
 })
 
-task.spawn(function()
-    local MainFrame = Library.Main
-    if MainFrame then
-        local TabContainer = MainFrame:FindFirstChild("TabContainer") or MainFrame:FindFirstChildOfClass("Frame")
-        if TabContainer then
-            local ScrollFrame = Instance.new("ScrollingFrame")
-            ScrollFrame.Name = "ScrollingTabContainer"
-            ScrollFrame.Size = UDim2.new(1, -20, 0, 32)
-            ScrollFrame.Position = UDim2.new(0, 10, 0, 38)
-            ScrollFrame.BackgroundTransparency = 1
-            ScrollFrame.BorderSizePixel = 0
-            ScrollFrame.ScrollBarThickness = 2
-            ScrollFrame.ScrollingDirection = Enum.ScrollingDirection.X
-            ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-            ScrollFrame.ClipsDescendants = true
-            ScrollFrame.Parent = MainFrame
-
-            local Layout = Instance.new("UIListLayout")
-            Layout.FillDirection = Enum.FillDirection.Horizontal
-            Layout.SortOrder = Enum.SortOrder.LayoutOrder
-            Layout.Padding = UDim.new(0, 6)
-            Layout.Parent = ScrollFrame
-
-            for _, child in ipairs(TabContainer:GetChildren()) do
-                if child:IsA("TextButton") or child:IsA("GuiButton") then
-                    child.Parent = ScrollFrame
-                end
-            end
-            TabContainer:Destroy()
-
-            Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                ScrollFrame.CanvasSize = UDim2.new(0, Layout.AbsoluteContentSize.X + 15, 0, 0)
-            end)
-        end
-    end
-end)
-
 -- LOCAL CONFIG VARIABLES
 local SilentAimEnabled = false
 local ResolverEnabled = false
@@ -113,6 +76,7 @@ local BulletTPEnabled = false
 local WallCheckEnabled = false
 local TeamCheckEnabled = false
 local DieCheckEnabled = true
+local KnockCheckEnabled = false -- New variable for Da Hood Knock Check
 local LookAtEnabled = false
 local FOVSize = 100
 local FOVVisible = true
@@ -120,9 +84,6 @@ local TracerEnabled = true
 
 local AutoPredictionEnabled = false
 local PredictionValue = 0.1
-
-local PermLockEnabled = false
-local PermTargetList = {}
 
 -- TARGET LOCK BUTTON VARIABLES
 local ManualLockEnabled = false
@@ -184,6 +145,8 @@ local FOVCircleColor = Color3.fromRGB(255, 255, 255)
 local FOVCircleOutlineColor = Color3.fromRGB(0, 0, 0)
 local FOVThickness = 1.0
 local FOVOutlineThickness = 3.0
+local FOVTransparency = 1.0
+local FOVOutlineTransparency = 1.0
 
 local TracerLineColor = Color3.fromRGB(255, 0, 0)
 local TracerLineOutlineColor = Color3.fromRGB(0, 0, 0)
@@ -474,6 +437,22 @@ local function isBehindWall(targetPart)
     return raycastResult ~= nil
 end
 
+local function isKnocked(char)
+    if not KnockCheckEnabled or not char then return false end
+    local koValue = char:FindFirstChild("KO") or char:FindFirstChild("K.O")
+    if koValue and koValue:IsA("BoolValue") and koValue.Value then
+        return true
+    end
+    local bodyEffects = char:FindFirstChild("BodyEffects")
+    if bodyEffects then
+        local ko = bodyEffects:FindFirstChild("K.O") or bodyEffects:FindFirstChild("KO")
+        if ko and ko:IsA("BoolValue") and ko.Value then
+            return true
+        end
+    end
+    return false
+end
+
 local function isDead(humanoid, char)
     if not DieCheckEnabled then return false end
     if humanoid and humanoid.Health <= 0 then return true end
@@ -496,6 +475,7 @@ local function GetTargetInFOV()
             local humanoid = char:FindFirstChildOfClass("Humanoid")
             if rootPart and humanoid then
                 if isDead(humanoid, char) then continue end
+                if isKnocked(char) then continue end
                 if MyRoot and (rootPart.Position - MyRoot.Position).Magnitude > MaxTargetDistance then continue end
                 if isBehindWall(rootPart) then continue end
                 if TeamCheckEnabled and player.Team == LocalPlayer.Team then continue end
@@ -580,7 +560,7 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- CLICK TOGGLE LOGIC (FIXED: PERMANENT LOCK UNTIL MANUAL UNLOCK)
+-- CLICK TOGGLE LOGIC
 TargetBtn.MouseButton1Click:Connect(function()
     ManualLockEnabled = not ManualLockEnabled
     if ManualLockEnabled then
@@ -664,43 +644,20 @@ task.spawn(function()
             local TempTargetChar = nil
             local TempPlayer = nil
 
-            -- 1. MANUAL FLOATING BUTTON TARGET LOCK OVERRIDE (PERSISTENT RESPAWN FIX)
+            -- 1. MANUAL FLOATING BUTTON TARGET LOCK OVERRIDE
             if ManualLockEnabled and ManualLockedTarget then
                 TempPlayer = ManualLockedTarget
                 if ManualLockedTarget.Character then
                     local char = ManualLockedTarget.Character
                     local rootPart = char:FindFirstChild("HumanoidRootPart")
                     local humanoid = char:FindFirstChildOfClass("Humanoid")
-                    if rootPart and humanoid and not isDead(humanoid, char) then
+                    if rootPart and humanoid and not isDead(humanoid, char) and not isKnocked(char) then
                         TempTargetChar = char
                     end
                 end
             end
 
-            -- 2. PERMANENT TARGET LIST LOCK OVERRIDE
-            if not TempTargetChar and PermLockEnabled and #PermTargetList > 0 then
-                for _, pName in ipairs(PermTargetList) do
-                    local targetPlayerObject = Players:FindFirstChild(pName)
-                    if targetPlayerObject and targetPlayerObject.Character then
-                        local char = targetPlayerObject.Character
-                        local rootPart = char:FindFirstChild("HumanoidRootPart")
-                        local humanoid = char:FindFirstChildOfClass("Humanoid")
-                        if rootPart and humanoid and not isDead(humanoid, char) then
-                            if MyRoot and (rootPart.Position - MyRoot.Position).Magnitude <= MaxTargetDistance then
-                                if not isBehindWall(rootPart) then
-                                    if not (TeamCheckEnabled and targetPlayerObject.Team == LocalPlayer.Team) then
-                                        TempTargetChar = char
-                                        TempPlayer = targetPlayerObject
-                                        break
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-
-            -- 3. AUTO FOV TARGETING
+            -- 2. AUTO FOV TARGETING
             if not TempTargetChar and not ManualLockEnabled then
                 TempPlayer, TempTargetChar = GetTargetInFOV()
             end
@@ -829,12 +786,14 @@ RunService.RenderStepped:Connect(function()
     FOVCircleOutline.Position = Center
     FOVCircleOutline.Radius = FOVSize
     FOVCircleOutline.Thickness = FOVOutlineThickness
+    FOVCircleOutline.Transparency = FOVOutlineTransparency
     FOVCircleOutline.Visible = ShowCircle
     FOVCircleOutline.Color = FOVCircleOutlineColor
 
     FOVCircle.Position = Center
     FOVCircle.Radius = FOVSize
     FOVCircle.Thickness = FOVThickness
+    FOVCircle.Transparency = FOVTransparency
     FOVCircle.Visible = ShowCircle
     FOVCircle.Color = FOVCircleColor
 
@@ -1025,11 +984,11 @@ local Options = getgenv().Options
 local Toggles = getgenv().Toggles
 
 local LeftGroupBox = Tabs.Main:AddLeftGroupbox("Silent Aim")
-local PermLockGroupBox = Tabs.Main:AddLeftGroupbox("Permanent Lock")
 local TargetGroupBox = Tabs.Main:AddLeftGroupbox("Targeting Options")
+local TracerGroupBox = Tabs.Main:AddLeftGroupbox("Tracer Line Settings")
+
 local FOVGroupBox = Tabs.Main:AddRightGroupbox("FOV Settings")
 local FOVFillGroupBox = Tabs.Main:AddRightGroupbox("FOV Fill")
-local TracerGroupBox = Tabs.Main:AddRightGroupbox("Tracer Line Settings")
 
 LeftGroupBox:AddToggle("SilentAimToggle", { Text = "Enable Silent Aim", Default = false })
     :AddKeyPicker("SilentAimKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Silent Aim Bind" })
@@ -1073,81 +1032,11 @@ Toggles.TeamCheckToggle:OnChanged(function()
     TeamCheckEnabled = Toggles.TeamCheckToggle.Value
 end)
 
-PermLockGroupBox:AddToggle("PermLockToggle", { Text = "Enable Perm Lock-On", Default = false })
-    :AddKeyPicker("PermLockKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Perm Lock Bind" })
-
-Toggles.PermLockToggle:OnChanged(function()
-    PermLockEnabled = Toggles.PermLockToggle.Value
+-- ADDED DA HOOD KNOCK CHECK TOGGLE
+LeftGroupBox:AddToggle("KnockCheckToggle", { Text = "Enable Knock Check", Default = false })
+Toggles.KnockCheckToggle:OnChanged(function()
+    KnockCheckEnabled = Toggles.KnockCheckToggle.Value
 end)
-
-PermLockGroupBox:AddDropdown("PermTargetDropdown", { Text = "Targets Queue List", Values = {"No Targets Added"}, Default = 1, Multi = false })
-
-local function RefreshDropdownValues()
-    if #PermTargetList == 0 then
-        Options.PermTargetDropdown:SetValues({"No Targets Added"})
-        Options.PermTargetDropdown:SetValue(1)
-    else
-        for i = #PermTargetList, 1, -1 do
-            if not Players:FindFirstChild(PermTargetList[i]) then
-                table.remove(PermTargetList, i)
-            end
-        end
-        if #PermTargetList == 0 then
-            Options.PermTargetDropdown:SetValues({"No Targets Added"})
-            Options.PermTargetDropdown:SetValue(1)
-        else
-            Options.PermTargetDropdown:SetValues(PermTargetList)
-            Options.PermTargetDropdown:SetValue(PermTargetList[1])
-        end
-    end
-end
-
-Players.PlayerRemoving:Connect(function(player)
-    task.wait(0.1)
-    RefreshDropdownValues()
-end)
-Players.PlayerAdded:Connect(function(player)
-    task.wait(0.1)
-    RefreshDropdownValues()
-end)
-
-PermLockGroupBox:AddButton({Text = "Clear All Targets", Func = function()
-    PermTargetList = {}
-    RefreshDropdownValues()
-    Library:Notify("Permanent Target List Cleared!")
-end})
-
-PermLockGroupBox:AddInput("PermTargetInput", { Placeholder = "Enter Display or Username...", Text = "", Numeric = false, Finished = false, })
-PermLockGroupBox:AddButton({Text = "Target Player", Func = function()
-    local enteredText = Options.PermTargetInput.Value
-    if enteredText and enteredText ~= "" then
-        enteredText = string.gsub(enteredText, "%s+", "")
-        local matchFound = nil
-        for _, p in ipairs(Players:GetPlayers()) do
-            local nameMatch = string.find(string.lower(p.Name), string.lower(enteredText))
-            local dispMatch = string.find(string.lower(p.DisplayName), string.lower(enteredText))
-            if nameMatch or dispMatch then
-                matchFound = p.Name
-                break
-            end
-        end
-        if matchFound then
-            if not table.find(PermTargetList, matchFound) then
-                table.insert(PermTargetList, matchFound)
-                RefreshDropdownValues()
-                Options.PermTargetDropdown:SetValue(matchFound)
-                Library:Notify("Successfully Targeted: " .. matchFound)
-            else
-                Library:Notify("Player already exists in list!")
-            end
-        else
-            Library:Notify("No matching player found on this server!")
-        end
-        Options.PermTargetInput:SetValue("")
-    else
-        Library:Notify("Please enter a valid player name.")
-    end
-end})
 
 TargetGroupBox:AddDropdown("TargetPartDropdown", { Text = "Hitbox", Values = {"Head", "HumanoidRootPart", "Root to Head", "Closet"}, Default = 1, Multi = false })
 Options.TargetPartDropdown:OnChanged(function()
@@ -1159,9 +1048,34 @@ Options.TransitionSpeedSlider:OnChanged(function()
     TransitionSpeed = Options.TransitionSpeedSlider.Value
 end)
 
-TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Lock Distance (Studs)", Default = 10000, Min = 1, Max = 9999999999999999999999999999999999999999999999999999, Rounding = 0 })
+TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Lock Distance (Studs)", Default = 10000, Min = 1, Max = 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999, Rounding = 0 })
 Options.MaxDistanceSlider:OnChanged(function()
     MaxTargetDistance = Options.MaxDistanceSlider.Value
+end)
+
+TracerGroupBox:AddToggle("TracerVisibleToggle", { Text = "Enable Tracer Line", Default = true })
+Toggles.TracerVisibleToggle:OnChanged(function()
+    TracerEnabled = Toggles.TracerVisibleToggle.Value
+end)
+
+TracerGroupBox:AddSlider("TracerThicknessSlider", { Text = "Tracer Line Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
+Options.TracerThicknessSlider:OnChanged(function()
+    TracerThickness = Options.TracerThicknessSlider.Value
+end)
+
+TracerGroupBox:AddSlider("TracerOutlineThicknessSlider", { Text = "Tracer Outline Thickness", Default = 3.0, Min = 1.0, Max = 8.0, Rounding = 1 })
+Options.TracerOutlineThicknessSlider:OnChanged(function()
+    TracerOutlineThickness = Options.TracerOutlineThicknessSlider.Value
+end)
+
+TracerGroupBox:AddLabel("Tracer Main Color"):AddColorPicker("TracerLineColorPicker", { Default = Color3.fromRGB(255, 0, 0) })
+Options.TracerLineColorPicker:OnChanged(function()
+    TracerLineColor = Options.TracerLineColorPicker.Value
+end)
+
+TracerGroupBox:AddLabel("Tracer Outline Color"):AddColorPicker("TracerLineOutlineColorPicker", { Default = Color3.fromRGB(0, 0, 0) })
+Options.TracerLineOutlineColorPicker:OnChanged(function()
+    TracerLineOutlineColor = Options.TracerLineOutlineColorPicker.Value
 end)
 
 FOVGroupBox:AddToggle("FOVVisibleToggle", { Text = "Show FOV Circle", Default = true })
@@ -1179,9 +1093,20 @@ Options.FOVThicknessSlider:OnChanged(function()
     FOVThickness = Options.FOVThicknessSlider.Value
 end)
 
-FOVGroupBox:AddSlider("FOVOutlineThicknessSlider", { Text = "FOV Outline Thickness", Default = 3, Min = 1.0, Max = 8.0, Rounding = 1 })
+FOVGroupBox:AddSlider("FOVOutlineThicknessSlider", { Text = "FOV Outline Thickness", Default = 4, Min = 1.0, Max = 8.0, Rounding = 1 })
 Options.FOVOutlineThicknessSlider:OnChanged(function()
     FOVOutlineThickness = Options.FOVOutlineThicknessSlider.Value
+end)
+
+-- ADDED FOV TRANSPARENCY SLIDERS
+FOVGroupBox:AddSlider("FOVTransparencySlider", { Text = "FOV Transparency", Default = 0.85, Min = 0.0, Max = 1.0, Rounding = 2 })
+Options.FOVTransparencySlider:OnChanged(function()
+    FOVTransparency = Options.FOVTransparencySlider.Value
+end)
+
+FOVGroupBox:AddSlider("FOVOutlineTransparencySlider", { Text = "FOV Outline Transparency", Default = 0.55, Min = 0.0, Max = 1.0, Rounding = 2 })
+Options.FOVOutlineTransparencySlider:OnChanged(function()
+    FOVOutlineTransparency = Options.FOVOutlineTransparencySlider.Value
 end)
 
 FOVGroupBox:AddLabel("FOV Line Color"):AddColorPicker("FOVCircleColorPicker", { Default = Color3.fromRGB(255, 255, 255) })
@@ -1227,31 +1152,6 @@ end)
 FOVFillGroupBox:AddSlider("FOVFillRotateSpeedSlider", { Text = "Gradient Rotation Speed", Default = 3, Min = 1, Max = 10, Rounding = 1 })
 Options.FOVFillRotateSpeedSlider:OnChanged(function()
     FOVFillRotateSpeed = Options.FOVFillRotateSpeedSlider.Value
-end)
-
-TracerGroupBox:AddToggle("TracerVisibleToggle", { Text = "Enable Tracer Line", Default = true })
-Toggles.TracerVisibleToggle:OnChanged(function()
-    TracerEnabled = Toggles.TracerVisibleToggle.Value
-end)
-
-TracerGroupBox:AddSlider("TracerThicknessSlider", { Text = "Tracer Line Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
-Options.TracerThicknessSlider:OnChanged(function()
-    TracerThickness = Options.TracerThicknessSlider.Value
-end)
-
-TracerGroupBox:AddSlider("TracerOutlineThicknessSlider", { Text = "Tracer Outline Thickness", Default = 3.0, Min = 1.0, Max = 8.0, Rounding = 1 })
-Options.TracerOutlineThicknessSlider:OnChanged(function()
-    TracerOutlineThickness = Options.TracerOutlineThicknessSlider.Value
-end)
-
-TracerGroupBox:AddLabel("Tracer Main Color"):AddColorPicker("TracerLineColorPicker", { Default = Color3.fromRGB(255, 0, 0) })
-Options.TracerLineColorPicker:OnChanged(function()
-    TracerLineColor = Options.TracerLineColorPicker.Value
-end)
-
-TracerGroupBox:AddLabel("Tracer Outline Color"):AddColorPicker("TracerLineOutlineColorPicker", { Default = Color3.fromRGB(0, 0, 0) })
-Options.TracerLineOutlineColorPicker:OnChanged(function()
-    TracerLineOutlineColor = Options.TracerLineOutlineColorPicker.Value
 end)
 
 local SoundLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Sound")
@@ -1767,20 +1667,16 @@ RunService.RenderStepped:Connect(function()
                             })
 
                             if Toggles.EspHealthText and Toggles.EspHealthText.Value then
-                            esp.HealthText.Text = tostring(math.round(targetHp))
-                            esp.HealthText.TextSize = hpTextSize
-                            esp.HealthText.TextColor3 = hpTextColor
-                            esp.HealthText.Size = UDim2.new(0, 30, 0, 15)
-    
-                            -- ปรับตำแหน่งแกน Y ให้อยู่กึ่งกลางหัวหลอดเลือดพอดี (เดิม offset -7 เปลี่ยนเป็น -3)
-                            local targetY = math.clamp(barY + (mathHeight - healthHeight) - 3, boxY - 3, boxY + mathHeight - 10)
-    
-                            -- ปรับระยะห่างแกน X ให้อยู่ทางซ้ายขอบหลอดเลือดสวยงาม
-                            esp.HealthText.Position = UDim2.new(0, barX - 28, 0, targetY)
-                            esp.HealthText.Visible = true
+                                esp.HealthText.Text = tostring(math.round(targetHp))
+                                esp.HealthText.TextSize = hpTextSize
+                                esp.HealthText.TextColor3 = hpTextColor
+                                esp.HealthText.Size = UDim2.new(0, 30, 0, 15)
+        
+                                local targetY = math.clamp(barY + (mathHeight - healthHeight) - 3, boxY - 3, boxY + mathHeight - 10)
+        
+                                esp.HealthText.Position = UDim2.new(0, barX - 28, 0, targetY)
+                                esp.HealthText.Visible = true
                             else
-
-
                                 esp.HealthText.Visible = false
                             end
                         else
