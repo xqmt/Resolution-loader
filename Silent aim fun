@@ -725,7 +725,7 @@ SettingsTab:CreateSection("Theme Presets")
 
 SettingsTab:CreateDropdown({
     Name = "Select Theme",
-    Options = {"Default", "AmberGlow", "Amethyst", "Bloom", "DarkBlue", "Ember", "Ocean", "Serenity"},
+    Options = {"Default", "Frost", "Amethyst", "Rose", "Cobalt", "Ember"},
     CurrentOption = {"Ember"},
     MultipleOptions = false,
     Flag = "ThemePresetDropdown",
