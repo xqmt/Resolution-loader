@@ -1524,7 +1524,7 @@ RunService.RenderStepped:Connect(function()
                                 esp.BoxOutline.Position = Vector2.new(boxX, boxY)
                                 esp.BoxOutline.Size = Vector2.new(mathWidth, mathHeight)
                                 esp.BoxOutline.Color = boxOutlineColor
-                                esp.BoxOutline.Thickness = 2
+                                esp.BoxOutline.Thickness = 2.35
                                 esp.BoxOutline.Visible = true
                             end
 
@@ -1617,8 +1617,8 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         local dynamicNameSize = math.clamp(math.round(13 * (40 / math.max(currentDist, 10))), 10, 14)
-                        local hpTextSize = 9
-                        local distTextSize = 9
+                        local hpTextSize = 9.5
+                        local distTextSize = 9.5
 
                         if boxFillEnabled and esp.BoxFillFrame then
                             esp.BoxFillFrame.Position = UDim2.new(0, boxX, 0, boxY)
