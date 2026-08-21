@@ -14,7 +14,7 @@ for _, v in pairs(getgc(true)) do
     end
 end
 
-task.wait(4)
+task.wait(3.5)
 
 task.spawn(function()
     pcall(function()
@@ -28,7 +28,7 @@ task.spawn(function()
     end)
 end)
 
-task.wait(2)
+task.wait(2.5)
 
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
