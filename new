@@ -36,6 +36,7 @@ local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))
 local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
 local GlobalFontSetting = Enum.Font.Cartoon
+local ESPFontSetting = Enum.Font.Cartoon
 
 local OldNotify = Library.Notify
 Library.Notify = function(self, text, time)
@@ -76,7 +77,7 @@ local BulletTPEnabled = false
 local WallCheckEnabled = false
 local TeamCheckEnabled = false
 local DieCheckEnabled = true
-local KnockCheckEnabled = false -- New variable for Da Hood Knock Check
+local KnockCheckEnabled = false
 local LookAtEnabled = false
 local FOVSize = 100
 local FOVVisible = true
@@ -501,7 +502,7 @@ LockButtonGui.Name = "hooksense_TargetLockButtonGui"
 LockButtonGui.ResetOnSpawn = false
 LockButtonGui.IgnoreGuiInset = true
 LockButtonGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-LockButtonGui.Enabled = false -- Controlled by Toggle
+LockButtonGui.Enabled = false
 LockButtonGui.Parent = TargetGuiParent
 
 local TargetBtn = Instance.new("TextButton")
@@ -644,7 +645,6 @@ task.spawn(function()
             local TempTargetChar = nil
             local TempPlayer = nil
 
-            -- 1. MANUAL FLOATING BUTTON TARGET LOCK OVERRIDE
             if ManualLockEnabled and ManualLockedTarget then
                 TempPlayer = ManualLockedTarget
                 if ManualLockedTarget.Character then
@@ -657,7 +657,6 @@ task.spawn(function()
                 end
             end
 
-            -- 2. AUTO FOV TARGETING
             if not TempTargetChar and not ManualLockEnabled then
                 TempPlayer, TempTargetChar = GetTargetInFOV()
             end
@@ -860,7 +859,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Anti Aim Mechanics
     if AntiAimEnabled and LocalPlayer.Character then
         local Root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
@@ -997,7 +995,6 @@ Toggles.SilentAimToggle:OnChanged(function()
     SilentAimEnabled = Toggles.SilentAimToggle.Value
 end)
 
--- ADDED TOGGLE FOR SHOW LOCK BUTTON
 LeftGroupBox:AddToggle("ShowLockButtonToggle", { Text = "Show Lock Target Button", Default = false })
 Toggles.ShowLockButtonToggle:OnChanged(function()
     LockButtonGui.Enabled = Toggles.ShowLockButtonToggle.Value
@@ -1032,7 +1029,6 @@ Toggles.TeamCheckToggle:OnChanged(function()
     TeamCheckEnabled = Toggles.TeamCheckToggle.Value
 end)
 
--- ADDED DA HOOD KNOCK CHECK TOGGLE
 LeftGroupBox:AddToggle("KnockCheckToggle", { Text = "Enable Knock Check", Default = false })
 Toggles.KnockCheckToggle:OnChanged(function()
     KnockCheckEnabled = Toggles.KnockCheckToggle.Value
@@ -1098,7 +1094,6 @@ Options.FOVOutlineThicknessSlider:OnChanged(function()
     FOVOutlineThickness = Options.FOVOutlineThicknessSlider.Value
 end)
 
--- ADDED FOV TRANSPARENCY SLIDERS
 FOVGroupBox:AddSlider("FOVTransparencySlider", { Text = "FOV Transparency", Default = 0.85, Min = 0.0, Max = 1.0, Rounding = 2 })
 Options.FOVTransparencySlider:OnChanged(function()
     FOVTransparency = Options.FOVTransparencySlider.Value
@@ -1272,13 +1267,13 @@ local function CreateLine(thickness, color)
     return line
 end
 
--- HELPER: Create TextLabel with Outline and Cartoon Font
+-- HELPER: Create TextLabel with Outline and Custom ESP Font
 local function CreateTitleLabel(name)
     local label = Instance.new("TextLabel")
     label.Name = name or "ESP_TitleLabel"
     label.BackgroundTransparency = 1
     label.BorderSizePixel = 0
-    label.Font = Enum.Font.Cartoon
+    label.Font = ESPFontSetting
     label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
     label.TextStrokeTransparency = 0.2
     label.Visible = false
@@ -1648,7 +1643,7 @@ RunService.RenderStepped:Connect(function()
                         if Toggles.EspHealth and Toggles.EspHealth.Value then
                             local barWidth = 2.5
                             local outlinePadding = 1
-                            local barX = boxX - 5.5
+                            local barX = boxX - 5.75
                             local barY = boxY
 
                             esp.GuiHealthBg.Position = UDim2.new(0, barX - outlinePadding, 0, barY - outlinePadding)
@@ -1667,6 +1662,7 @@ RunService.RenderStepped:Connect(function()
                             })
 
                             if Toggles.EspHealthText and Toggles.EspHealthText.Value then
+                                esp.HealthText.Font = ESPFontSetting
                                 esp.HealthText.Text = tostring(math.round(targetHp))
                                 esp.HealthText.TextSize = hpTextSize
                                 esp.HealthText.TextColor3 = hpTextColor
@@ -1685,6 +1681,7 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         if Toggles.EspName and Toggles.EspName.Value then
+                            esp.Name.Font = ESPFontSetting
                             esp.Name.Text = selectedName
                             esp.Name.TextSize = dynamicNameSize
                             esp.Name.TextColor3 = nameColor
@@ -1696,6 +1693,7 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         if Toggles.EspDistance and Toggles.EspDistance.Value then
+                            esp.Distance.Font = ESPFontSetting
                             local dist = math.floor(currentDist)
                             esp.Distance.Text = "[ " .. tostring(dist) .. "m ]"
                             esp.Distance.TextSize = distTextSize
@@ -1720,7 +1718,6 @@ RunService.RenderStepped:Connect(function()
         end
     end)
 end)
-
 
 -- ESP TAB LAYOUT RESTRUCTURED
 local EspMainGroup = Tabs.ESP:AddLeftGroupbox("ESP Main")
@@ -1757,6 +1754,21 @@ HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromR
 
 EspLineGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
 EspLineGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.95, Min = 0, Max = 1, Rounding = 2 })
+
+EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "ESP Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "Cartoon") or 1, Multi = false })
+
+Options.ESPFontDropdown:OnChanged(function()
+    pcall(function()
+        local targetFont = Enum.Font[Options.ESPFontDropdown.Value]
+        if not targetFont then return end
+        ESPFontSetting = targetFont
+        for _, esp in pairs(ESP_Drawing_Storage) do
+            if esp.Name then esp.Name.Font = targetFont end
+            if esp.HealthText then esp.HealthText.Font = targetFont end
+            if esp.Distance then esp.Distance.Font = targetFont end
+        end
+    end)
+end)
 
 EspTextGroup:AddToggle("EspName", { Text = "Name", Default = false }):AddColorPicker("NameColor", { Default = Color3.fromRGB(255, 255, 255) })
 EspTextGroup:AddDropdown("NameStyleDropdown", { Text = "Name Style", Values = {"Username", "Display Name"}, Default = 1, Multi = false })
@@ -1977,7 +1989,6 @@ BlacklistPlayersGroup:AddButton({ Text = "walkspeed", Func = function()
     end
 end })
 
--- VIEW & TELEPORT PLAYER IMPLEMENTATION
 local function StopViewingPlayer()
     if ViewPlayerConnection then
         ViewPlayerConnection:Disconnect()
@@ -1989,14 +2000,12 @@ local function StopViewingPlayer()
     end
 end
 
--- HELPER TO EXTRACT USERNAME FROM DISPLAY NAME ENTRY
 local function GetUsernameFromEntry(entryText)
     if not entryText or entryText == "No Players Online" then return nil end
     local username = string.match(entryText, "%(@([^%)]+)%)")
     return username or entryText
 end
 
--- DISPLAY NAME FORMATTED PLAYER LIST
 local function GetPlayerNamesList()
     local list = {}
     for _, p in ipairs(Players:GetPlayers()) do
@@ -2066,7 +2075,6 @@ ViewPlayerGroup:AddButton({ Text = "Unview Target", Func = function()
     Library:Notify("Stopped viewing player.")
 end })
 
--- ADDED: GO TO PLAYER TELEPORT BUTTON
 ViewPlayerGroup:AddButton({ Text = "Go to Player", Func = function()
     local rawSelected = Options.ViewPlayerDropdown.Value
     local selectedName = GetUsernameFromEntry(rawSelected)
@@ -2137,7 +2145,7 @@ end)
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
 SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({ "MenuKeybind", "UIFontDropdown" })
+SaveManager:SetIgnoreIndexes({ "MenuKeybind", "UIFontDropdown", "ESPFontDropdown" })
 ThemeManager:SetFolder("hooksensev2")
 SaveManager:SetFolder("hooksensev2/configs")
 SaveManager:BuildConfigSection(Tabs.UI)
