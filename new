@@ -1034,17 +1034,17 @@ Toggles.KnockCheckToggle:OnChanged(function()
     KnockCheckEnabled = Toggles.KnockCheckToggle.Value
 end)
 
-TargetGroupBox:AddDropdown("TargetPartDropdown", { Text = "Hitbox", Values = {"Head", "HumanoidRootPart", "Root to Head", "Closet"}, Default = 1, Multi = false })
+TargetGroupBox:AddDropdown("TargetPartDropdown", { Text = "Hitbox", Values = {"Head", "HumanoidRootPart", "Root", "Closet"}, Default = 1, Multi = false })
 Options.TargetPartDropdown:OnChanged(function()
     TargetPartMode = Options.TargetPartDropdown.Value
 end)
 
-TargetGroupBox:AddSlider("TransitionSpeedSlider", { Text = "Root Transfer Speed (Root to Head)", Default = 5, Min = 1, Max = 30, Rounding = 1 })
+TargetGroupBox:AddSlider("TransitionSpeedSlider", { Text = "Root Speed", Default = 5, Min = 1, Max = 30, Rounding = 1 })
 Options.TransitionSpeedSlider:OnChanged(function()
     TransitionSpeed = Options.TransitionSpeedSlider.Value
 end)
 
-TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Lock Distance (Studs)", Default = 10000, Min = 1, Max = 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999, Rounding = 0 })
+TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Distance", Default = 10000, Min = 1, Max = 99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999, Rounding = 0 })
 Options.MaxDistanceSlider:OnChanged(function()
     MaxTargetDistance = Options.MaxDistanceSlider.Value
 end)
