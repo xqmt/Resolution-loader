@@ -425,7 +425,6 @@ wallCheckParams.FilterType = Enum.RaycastFilterType.Exclude
 wallCheckParams.IgnoreWater = true
 
 local function isBehindWall(targetPart)
-    if not WallCheckEnabled then return false end
     if not targetPart or not LocalPlayer.Character then return false end
 
     local origin = Camera.CFrame.Position
@@ -478,7 +477,7 @@ local function GetTargetInFOV()
                 if isDead(humanoid, char) then continue end
                 if isKnocked(char) then continue end
                 if MyRoot and (rootPart.Position - MyRoot.Position).Magnitude > MaxTargetDistance then continue end
-                if isBehindWall(rootPart) then continue end
+                if WallCheckEnabled and isBehindWall(rootPart) then continue end
                 if TeamCheckEnabled and player.Team == LocalPlayer.Team then continue end
                 
                 local ScreenPosition, OnScreen = Camera:WorldToViewportPoint(rootPart.Position)
@@ -1461,7 +1460,8 @@ RunService.RenderStepped:Connect(function()
         local fillRotateSpeed = Options.EspBoxFillRotateSpeed and Options.EspBoxFillRotateSpeed.Value or 1
 
         local highlightEnabled = Toggles.EspHighlight and Toggles.EspHighlight.Value
-        local highlightMainColor = GetColor("HighlightMainColor", Color3.fromRGB(255, 0, 0))
+        local highlightVisibleColor = GetColor("HighlightVisibleColor", Color3.fromRGB(0, 255, 0))
+        local highlightInvisibleColor = GetColor("HighlightInvisibleColor", Color3.fromRGB(255, 0, 0))
         local highlightOutlineColor = GetColor("HighlightOutlineColor", Color3.fromRGB(255, 255, 255))
         local highlightFillTrans = Options.HighlightFillTransSlider and Options.HighlightFillTransSlider.Value or 0.5
         local highlightOutlineTrans = Options.HighlightOutlineTransSlider and Options.HighlightOutlineTransSlider.Value or 0.0
@@ -1482,8 +1482,9 @@ RunService.RenderStepped:Connect(function()
                     end
 
                     if highlightEnabled and esp.Highlight then
+                        local hidden = isBehindWall(rootPart)
                         esp.Highlight.Adornee = character
-                        esp.Highlight.FillColor = highlightMainColor
+                        esp.Highlight.FillColor = hidden and highlightInvisibleColor or highlightVisibleColor
                         esp.Highlight.OutlineColor = highlightOutlineColor
                         esp.Highlight.FillTransparency = highlightFillTrans
                         esp.Highlight.OutlineTransparency = highlightOutlineTrans
@@ -1734,9 +1735,9 @@ BoxToggle:AddColorPicker("BoxOutlineColor", { Default = Color3.fromRGB(0, 0, 0),
 
 EspMainGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill", Default = false })
 EspMainGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.65, Min = 0, Max = 1, Rounding = 2 })
-EspMainGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 255, 255) })
-EspMainGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(255, 255, 255) })
-EspMainGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(255, 255, 255) })
+EspMainGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 0, 0) })
+EspMainGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(0, 255, 0) })
+EspMainGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(0, 0, 255) })
 EspMainGroup:AddToggle("EspBoxFillRotate", { Text = "Rotate Box Fill Gradient", Default = false })
 EspMainGroup:AddSlider("EspBoxFillRotateSpeed", { Text = "Box Fill Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
 
@@ -1748,14 +1749,15 @@ EspLineGroup:AddDropdown("LineESPPosDropdown", { Text = "Line ESP Position", Val
 EspLineGroup:AddSlider("LineESPThicknessSlider", { Text = "Line ESP Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
 EspLineGroup:AddSlider("LineESPOutlineThicknessSlider", { Text = "Line ESP Outline Thickness", Default = 2.5, Min = 1.0, Max = 8.0, Rounding = 1 })
 
-local HighlightToggle = EspLineGroup:AddToggle("EspHighlight", { Text = "Enable Highlights ESP", Default = false })
-HighlightToggle:AddColorPicker("HighlightMainColor", { Default = Color3.fromRGB(255, 0, 0), Title = "Main Color" })
+local HighlightToggle = EspLineGroup:AddToggle("EspHighlight", { Text = "Enable Highlights", Default = false })
+HighlightToggle:AddColorPicker("HighlightVisibleColor", { Default = Color3.fromRGB(0, 255, 0), Title = "Visible Color" })
+HighlightToggle:AddColorPicker("HighlightInvisibleColor", { Default = Color3.fromRGB(255, 0, 0), Title = "Invisible Color" })
 HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Outline Color" })
 
 EspLineGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
 EspLineGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.95, Min = 0, Max = 1, Rounding = 2 })
 
-EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "ESP Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "PermanentMarker") or 1, Multi = false })
+EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "ESP Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "Cartoon") or 1, Multi = false })
 
 Options.ESPFontDropdown:OnChanged(function()
     pcall(function()
