@@ -1123,17 +1123,17 @@ Options.FOVFillTransparencySlider:OnChanged(function()
     FOVFillTransparency = Options.FOVFillTransparencySlider.Value
 end)
 
-FOVFillGroupBox:AddLabel("Fill Color 1"):AddColorPicker("FOVFillColor1Picker", { Default = Color3.fromRGB(0, 0, 0) })
+FOVFillGroupBox:AddLabel("Fill Color 1"):AddColorPicker("FOVFillColor1Picker", { Default = Color3.fromRGB(255, 255, 255) })
 Options.FOVFillColor1Picker:OnChanged(function()
     FOVFillColor1 = Options.FOVFillColor1Picker.Value
 end)
 
-FOVFillGroupBox:AddLabel("Fill Color 2"):AddColorPicker("FOVFillColor2Picker", { Default = Color3.fromRGB(0, 0, 0) })
+FOVFillGroupBox:AddLabel("Fill Color 2"):AddColorPicker("FOVFillColor2Picker", { Default = Color3.fromRGB(255, 255, 255) })
 Options.FOVFillColor2Picker:OnChanged(function()
     FOVFillColor2 = Options.FOVFillColor2Picker.Value
 end)
 
-FOVFillGroupBox:AddLabel("Fill Color 3"):AddColorPicker("FOVFillColor3Picker", { Default = Color3.fromRGB(0, 0, 0) })
+FOVFillGroupBox:AddLabel("Fill Color 3"):AddColorPicker("FOVFillColor3Picker", { Default = Color3.fromRGB(255, 255, 255) })
 Options.FOVFillColor3Picker:OnChanged(function()
     FOVFillColor3 = Options.FOVFillColor3Picker.Value
 end)
@@ -1503,7 +1503,7 @@ RunService.RenderStepped:Connect(function()
                         local feetPos = Camera:WorldToViewportPoint(feetOffset.Position)
                         
                         local height = math.abs(headPos.Y - feetPos.Y)
-                        local width = height * 0.7
+                        local width = height * 0.65
                         local boxX = math.round(rootPos.X - (width / 2))
                         local boxY = math.round(headPos.Y)
                         
@@ -1735,9 +1735,9 @@ BoxToggle:AddColorPicker("BoxOutlineColor", { Default = Color3.fromRGB(0, 0, 0),
 
 EspMainGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill", Default = false })
 EspMainGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.65, Min = 0, Max = 1, Rounding = 2 })
-EspMainGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(0, 0, 0) })
-EspMainGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(0, 0, 0) })
-EspMainGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(0, 0, 0) })
+EspMainGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 255, 255) })
+EspMainGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(255, 255, 255) })
+EspMainGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(255, 255, 255) })
 EspMainGroup:AddToggle("EspBoxFillRotate", { Text = "Rotate Box Fill Gradient", Default = false })
 EspMainGroup:AddSlider("EspBoxFillRotateSpeed", { Text = "Box Fill Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
 
