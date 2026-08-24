@@ -1817,9 +1817,10 @@ EspLineGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Tr
 
 EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "ESP Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "SourceSansBold") or 1, Multi = false })
 
-Options.ESPFontDropdown:OnChanged(function()
+Options.ESPFontDropdown:OnChanged(function(val)
     pcall(function()
-        local targetFont = Enum.Font[Options.ESPFontDropdown.Value]
+        local selectedFontName = type(val) == "string" and val or Options.ESPFontDropdown.Value
+        local targetFont = Enum.Font[selectedFontName]
         if not targetFont then return end
         ESPFontSetting = targetFont
         for _, esp in pairs(ESP_Drawing_Storage) do
@@ -2183,13 +2184,19 @@ local MenuGroup = Tabs.UI:AddLeftGroupbox("Menu Settings")
 
 InterfaceGroup:AddDropdown("UIFontDropdown", { Text = "UI Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "Cartoon") or 1, Multi = false })
 
-Options.UIFontDropdown:OnChanged(function()
+Options.UIFontDropdown:OnChanged(function(val)
     pcall(function()
-        local targetFont = Enum.Font[Options.UIFontDropdown.Value]
+        local selectedFontName = type(val) == "string" and val or Options.UIFontDropdown.Value
+        local targetFont = Enum.Font[selectedFontName]
         if not targetFont then return end
         GlobalFontSetting = targetFont
         TargetBtn.Font = targetFont
+        
         local parentGui = Library.ScreenGui or Library.Main
+        if not parentGui then
+            parentGui = CoreGui:FindFirstChild("Linoria") or CoreGui:FindFirstChild("ScreenGui")
+        end
+        
         if parentGui then
             for _, desc in ipairs(parentGui:GetDescendants()) do
                 if desc:IsA("TextLabel") or desc:IsA("TextButton") or desc:IsA("TextBox") then 
