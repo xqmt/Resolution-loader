@@ -82,6 +82,8 @@ local FOVSize = 100
 local FOVVisible = true
 local TracerEnabled = true
 
+local VoidEnabled = false
+
 local AutoPredictionEnabled = false
 local PredictionValue = 0.1
 
@@ -766,6 +768,16 @@ local jitterToggle = false
 local LastCameraRotation = Camera.CFrame.LookVector
 
 RunService.RenderStepped:Connect(function()
+    if VoidEnabled and LocalPlayer.Character then
+        local Root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if Root then
+            local randomX = math.random(-40000000, 40000000)
+            local randomY = math.random(-40000000, 40000000)
+            local randomZ = math.random(-40000000, 40000000)
+            Root.CFrame = CFrame.new(randomX, randomY, randomZ)
+        end
+    end
+
     local Center = getScreenCenter()
     local ShowCircle = FOVVisible and SilentAimEnabled
     
@@ -1851,6 +1863,7 @@ TextTransparencyGroup:AddSlider("DistanceTransparencySlider", { Text = "Distance
 TextTransparencyGroup:AddSlider("ToolEquippedTransparencySlider", { Text = "Tool Equipped Transparency", Default = 0.15, Min = 0, Max = 1, Rounding = 2 })
 
 local MoveLeftBox = Tabs.Movement:AddLeftGroupbox("Anti Aim")
+local CharacterModifierBox = Tabs.Movement:AddRightGroupbox("Void Hide")
 
 MoveLeftBox:AddToggle("AntiAimToggle", { Text = "Enable Anti Aim", Default = false })
     :AddKeyPicker("AntiAimKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Anti Aim Bind" })
@@ -1882,6 +1895,13 @@ end)
 MoveLeftBox:AddSlider("SpinSpeedSlider", { Text = "Rotation Spin Speed", Default = 15, Min = 5, Max = 50, Rounding = 0 })
 Options.SpinSpeedSlider:OnChanged(function()
     AntiAimSpeed = Options.SpinSpeedSlider.Value
+end)
+
+CharacterModifierBox:AddToggle("VoidToggle", { Text = "Enable Void", Default = false })
+    :AddKeyPicker("VoidKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Void Bind" })
+
+Toggles.VoidToggle:OnChanged(function()
+    VoidEnabled = Toggles.VoidToggle.Value
 end)
 
 local LightingColorsGroup = Tabs.World:AddLeftGroupbox("Lighting & Time")
