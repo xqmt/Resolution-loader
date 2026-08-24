@@ -1623,12 +1623,8 @@ RunService.RenderStepped:Connect(function()
                             end
                         end
 
-                        local targetNameSize
-                        if currentDist <= 480 then
-                            targetNameSize = 11
-                        else
-                            targetNameSize = math.clamp(13 * (18 / math.max(currentDist, 10)), 10, 12)
-                        end
+                        -- [BALANCED ESP TEXT SIZES] Perfect balance: clean, sharp, not too big or too small
+                        local targetNameSize = math.clamp(math.floor(10 + (220 / math.max(currentDist, 15))), 10, 13)
 
                         if not esp.SmoothNameSize then 
                             esp.SmoothNameSize = targetNameSize 
@@ -1637,8 +1633,7 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         local dynamicNameSize = math.round(esp.SmoothNameSize)
-                        local hpTextSize = 9.5
-                        local distTextSize = 9.5
+                        local subTextSize = 10 -- Balanced size for sub-elements (Distance, Tool, HP Number)
 
                         if boxFillEnabled and esp.BoxFillFrame then
                             esp.BoxFillFrame.Position = UDim2.new(0, boxX, 0, boxY)
@@ -1684,13 +1679,13 @@ RunService.RenderStepped:Connect(function()
                             if Toggles.EspHealthText and Toggles.EspHealthText.Value then
                                 esp.HealthText.Font = ESPFontSetting
                                 esp.HealthText.Text = tostring(math.round(targetHp))
-                                esp.HealthText.TextSize = hpTextSize
+                                esp.HealthText.TextSize = subTextSize
                                 esp.HealthText.TextColor3 = hpTextColor
                                 esp.HealthText.Size = UDim2.new(0, 30, 0, 15)
         
                                 local targetY = math.clamp(barY + (mathHeight - healthHeight) - 3, boxY - 3, boxY + mathHeight - 10)
         
-                                esp.HealthText.Position = UDim2.new(0, barX - 28, 0, targetY)
+                                esp.HealthText.Position = UDim2.new(0, barX - 31, 0, targetY)
                                 esp.HealthText.Visible = true
                             else
                                 esp.HealthText.Visible = false
@@ -1706,7 +1701,7 @@ RunService.RenderStepped:Connect(function()
                             esp.Name.TextSize = dynamicNameSize
                             esp.Name.TextColor3 = nameColor
                             esp.Name.Size = UDim2.new(0, 200, 0, dynamicNameSize + 4)
-                            esp.Name.Position = UDim2.new(0, boxX + (mathWidth / 2) - 100, 0, boxY - (dynamicNameSize + 4))
+                            esp.Name.Position = UDim2.new(0, boxX + (mathWidth / 2) - 100, 0, boxY - (dynamicNameSize + 5))
                             esp.Name.Visible = true
                         else
                             esp.Name.Visible = false
@@ -1718,12 +1713,12 @@ RunService.RenderStepped:Connect(function()
                             esp.Distance.Font = ESPFontSetting
                             local dist = math.floor(currentDist)
                             esp.Distance.Text = "[ " .. tostring(dist) .. "m ]"
-                            esp.Distance.TextSize = distTextSize
+                            esp.Distance.TextSize = subTextSize
                             esp.Distance.TextColor3 = distColor
                             esp.Distance.Size = UDim2.new(0, 200, 0, 15)
                             esp.Distance.Position = UDim2.new(0, boxX + (mathWidth / 2) - 100, 0, bottomOffset)
                             esp.Distance.Visible = true
-                            bottomOffset = bottomOffset + 14
+                            bottomOffset = bottomOffset + 13
                         else
                             esp.Distance.Visible = false
                         end
@@ -1734,7 +1729,7 @@ RunService.RenderStepped:Connect(function()
 
                             esp.Tool.Font = ESPFontSetting
                             esp.Tool.Text = toolName
-                            esp.Tool.TextSize = distTextSize
+                            esp.Tool.TextSize = subTextSize
                             esp.Tool.TextColor3 = toolColor
                             esp.Tool.Size = UDim2.new(0, 200, 0, 15)
                             esp.Tool.Position = UDim2.new(0, boxX + (mathWidth / 2) - 100, 0, bottomOffset)
