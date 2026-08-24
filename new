@@ -79,8 +79,8 @@ local DieCheckEnabled = true
 local KnockCheckEnabled = false
 local LookAtEnabled = false
 local FOVSize = 100
-local FOVVisible = true
-local TracerEnabled = true
+local FOVVisible = false
+local TracerEnabled = false
 
 local VoidEnabled = false
 
@@ -91,6 +91,8 @@ local ManualLockEnabled = false
 local ManualLockedTarget = nil
 
 local CustomFOVValue = 70
+local FOVOriginMode = "Center"
+local FOVLerpSpeed = 0.5
 
 local RobloxFontsList = {}
 for _, font in ipairs(Enum.Font:GetEnumItems()) do
@@ -602,6 +604,7 @@ local CurrentTargetPlayer = nil
 local CurrentTargetCharacter = nil
 local lastTarget = nil
 local interpolationProgress = 0
+local CurrentFOVCenterPos = Vector2.new(0, 0)
 
 task.spawn(function()
     while task.wait(0.03) do
@@ -778,17 +781,32 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    local Center = getScreenCenter()
+    local RealCenter = getScreenCenter()
+    local TargetCenter = RealCenter
+
+    if FOVOriginMode == "Target" and CurrentAimTargetPosition then
+        local screenPos, onScreen = Camera:WorldToViewportPoint(CurrentAimTargetPosition)
+        if onScreen then
+            TargetCenter = Vector2.new(screenPos.X, screenPos.Y)
+        end
+    elseif FOVOriginMode == "Mouse" then
+        local mousePos = UserInputService:GetMouseLocation()
+        TargetCenter = Vector2.new(mousePos.X, mousePos.Y)
+    end
+
+    local lerpFactor = math.clamp(FOVLerpSpeed, 0.01, 1.0)
+    CurrentFOVCenterPos = CurrentFOVCenterPos:Lerp(TargetCenter, lerpFactor)
+
     local ShowCircle = FOVVisible and SilentAimEnabled
     
-    FOVCircleOutline.Position = Center
+    FOVCircleOutline.Position = CurrentFOVCenterPos
     FOVCircleOutline.Radius = FOVSize
     FOVCircleOutline.Thickness = FOVOutlineThickness
     FOVCircleOutline.Transparency = FOVOutlineTransparency
     FOVCircleOutline.Visible = ShowCircle
     FOVCircleOutline.Color = FOVCircleOutlineColor
 
-    FOVCircle.Position = Center
+    FOVCircle.Position = CurrentFOVCenterPos
     FOVCircle.Radius = FOVSize
     FOVCircle.Thickness = FOVThickness
     FOVCircle.Transparency = FOVTransparency
@@ -796,7 +814,7 @@ RunService.RenderStepped:Connect(function()
     FOVCircle.Color = FOVCircleColor
 
     if ShowCircle and FOVFillEnabled then
-        FOVFillFrame.Position = UDim2.new(0, Center.X, 0, Center.Y)
+        FOVFillFrame.Position = UDim2.new(0, CurrentFOVCenterPos.X, 0, CurrentFOVCenterPos.Y)
         FOVFillFrame.Size = UDim2.new(0, FOVSize * 2, 0, FOVSize * 2)
         
         FOVFillGradient.Color = ColorSequence.new({
@@ -820,13 +838,13 @@ RunService.RenderStepped:Connect(function()
         local TargetPos, OnScreen = Camera:WorldToViewportPoint(CurrentAimTargetPosition)
         if OnScreen then
             local ToPos = Vector2.new(TargetPos.X, TargetPos.Y)
-            TracerLineOutline.From = Center
+            TracerLineOutline.From = RealCenter
             TracerLineOutline.To = ToPos
             TracerLineOutline.Visible = true
             TracerLineOutline.Color = TracerLineOutlineColor
             TracerLineOutline.Thickness = TracerOutlineThickness
 
-            TracerLine.From = Center
+            TracerLine.From = RealCenter
             TracerLine.To = ToPos
             TracerLine.Visible = true
             TracerLine.Color = TracerLineColor
@@ -1048,9 +1066,20 @@ Options.MaxDistanceSlider:OnChanged(function()
     MaxTargetDistance = Options.MaxDistanceSlider.Value
 end)
 
-TracerGroupBox:AddToggle("TracerVisibleToggle", { Text = "Enable Tracer Line", Default = true })
+local TracerVisibleToggle = TracerGroupBox:AddToggle("TracerVisibleToggle", { Text = "Enable Tracer Line", Default = true })
+TracerVisibleToggle:AddColorPicker("TracerLineColorPicker", { Default = Color3.fromRGB(255, 0, 0), Title = "Tracer Color" })
+TracerVisibleToggle:AddColorPicker("TracerLineOutlineColorPicker", { Default = Color3.fromRGB(0, 0, 0), Title = "Tracer Outline Color" })
+
 Toggles.TracerVisibleToggle:OnChanged(function()
     TracerEnabled = Toggles.TracerVisibleToggle.Value
+end)
+
+Options.TracerLineColorPicker:OnChanged(function()
+    TracerLineColor = Options.TracerLineColorPicker.Value
+end)
+
+Options.TracerLineOutlineColorPicker:OnChanged(function()
+    TracerLineOutlineColor = Options.TracerLineOutlineColorPicker.Value
 end)
 
 TracerGroupBox:AddSlider("TracerThicknessSlider", { Text = "Tracer Line Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
@@ -1063,19 +1092,20 @@ Options.TracerOutlineThicknessSlider:OnChanged(function()
     TracerOutlineThickness = Options.TracerOutlineThicknessSlider.Value
 end)
 
-TracerGroupBox:AddLabel("Tracer Main Color"):AddColorPicker("TracerLineColorPicker", { Default = Color3.fromRGB(255, 0, 0) })
-Options.TracerLineColorPicker:OnChanged(function()
-    TracerLineColor = Options.TracerLineColorPicker.Value
-end)
+local FOVVisibleToggle = FOVGroupBox:AddToggle("FOVVisibleToggle", { Text = "Enable Fov", Default = true })
+FOVVisibleToggle:AddColorPicker("FOVCircleColorPicker", { Default = Color3.fromRGB(255, 255, 255), Title = "FOV Color" })
+FOVVisibleToggle:AddColorPicker("FOVCircleOutlineColorPicker", { Default = Color3.fromRGB(0, 0, 0), Title = "FOV Outline Color" })
 
-TracerGroupBox:AddLabel("Tracer Outline Color"):AddColorPicker("TracerLineOutlineColorPicker", { Default = Color3.fromRGB(0, 0, 0) })
-Options.TracerLineOutlineColorPicker:OnChanged(function()
-    TracerLineOutlineColor = Options.TracerLineOutlineColorPicker.Value
-end)
-
-FOVGroupBox:AddToggle("FOVVisibleToggle", { Text = "Show FOV Circle", Default = true })
 Toggles.FOVVisibleToggle:OnChanged(function()
     FOVVisible = Toggles.FOVVisibleToggle.Value
+end)
+
+Options.FOVCircleColorPicker:OnChanged(function()
+    FOVCircleColor = Options.FOVCircleColorPicker.Value
+end)
+
+Options.FOVCircleOutlineColorPicker:OnChanged(function()
+    FOVCircleOutlineColor = Options.FOVCircleOutlineColorPicker.Value
 end)
 
 FOVGroupBox:AddSlider("FOVSlider", { Text = "FOV Size Radius", Default = 100, Min = 40, Max = 800, Rounding = 0 })
@@ -1103,14 +1133,14 @@ Options.FOVOutlineTransparencySlider:OnChanged(function()
     FOVOutlineTransparency = Options.FOVOutlineTransparencySlider.Value
 end)
 
-FOVGroupBox:AddLabel("FOV Line Color"):AddColorPicker("FOVCircleColorPicker", { Default = Color3.fromRGB(255, 255, 255) })
-Options.FOVCircleColorPicker:OnChanged(function()
-    FOVCircleColor = Options.FOVCircleColorPicker.Value
+FOVGroupBox:AddDropdown("FOVOriginDropdown", { Text = "FOV Origin", Values = {"Center", "Target", "Mouse"}, Default = 1, Multi = false })
+Options.FOVOriginDropdown:OnChanged(function()
+    FOVOriginMode = Options.FOVOriginDropdown.Value
 end)
 
-FOVGroupBox:AddLabel("FOV Outline Color"):AddColorPicker("FOVCircleOutlineColorPicker", { Default = Color3.fromRGB(0, 0, 0) })
-Options.FOVCircleOutlineColorPicker:OnChanged(function()
-    FOVCircleOutlineColor = Options.FOVCircleOutlineColorPicker.Value
+FOVGroupBox:AddSlider("FOVLerpSlider", { Text = "FOV Lerp", Default = 0.5, Min = 0.01, Max = 1.0, Rounding = 2 })
+Options.FOVLerpSlider:OnChanged(function()
+    FOVLerpSpeed = Options.FOVLerpSlider.Value
 end)
 
 FOVFillGroupBox:AddToggle("FOVFillToggle", { Text = "Enable FOV Fill", Default = false })
@@ -1860,7 +1890,7 @@ SkeletonToggle:AddColorPicker("SkeletonOutlineColor", { Default = Color3.fromRGB
 EspSkeletonGroup:AddSlider("SkeletonThicknessSlider", { Text = "Skeleton Line Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
 EspSkeletonGroup:AddSlider("SkeletonOutlineThicknessSlider", { Text = "Skeleton Outline Thickness", Default = 2.5, Min = 1.0, Max = 8.0, Rounding = 1 })
 
-TextTransparencyGroup:AddToggle("CustomTextTransparency", { Text = "Custom Text Transparency", Default = ture })
+TextTransparencyGroup:AddToggle("CustomTextTransparency", { Text = "Custom Text Transparency", Default = false })
 TextTransparencyGroup:AddSlider("NameTransparencySlider", { Text = "Name Transparency", Default = 0.15, Min = 0, Max = 1, Rounding = 2 })
 TextTransparencyGroup:AddSlider("HpTextTransparencySlider", { Text = "HP Text Transparency", Default = 0.2, Min = 0, Max = 1, Rounding = 2 })
 TextTransparencyGroup:AddSlider("DistanceTransparencySlider", { Text = "Distance Transparency", Default = 0.15, Min = 0, Max = 1, Rounding = 2 })
