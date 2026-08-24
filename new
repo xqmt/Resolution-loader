@@ -1043,7 +1043,7 @@ Options.TransitionSpeedSlider:OnChanged(function()
     TransitionSpeed = Options.TransitionSpeedSlider.Value
 end)
 
-TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Distance", Default = 10000, Min = 1, Max = 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999, Rounding = 0 })
+TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Distance", Default = 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999, Min = 1, Max = 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999, Rounding = 0 })
 Options.MaxDistanceSlider:OnChanged(function()
     MaxTargetDistance = Options.MaxDistanceSlider.Value
 end)
@@ -1485,7 +1485,10 @@ RunService.RenderStepped:Connect(function()
                 local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 
                 if character and rootPart and humanoid and humanoid.Health > 0 then
-                    local currentDist = (Camera.CFrame.Position - rootPart.Position).Magnitude
+                    local myChar = LocalPlayer.Character
+                    local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+                    local originPos = myRoot and myRoot.Position or Camera.CFrame.Position
+                    local currentDist = (originPos - rootPart.Position).Magnitude
                     
                     if (TeamCheckEnabled and player.Team == LocalPlayer.Team) then
                         SetVisibilityFalse(esp)
@@ -1812,7 +1815,7 @@ HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromR
 EspLineGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
 EspLineGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.95, Min = 0, Max = 1, Rounding = 2 })
 
-EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "ESP Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "Cartoon") or 1, Multi = false })
+EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "ESP Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "SourceSansBold") or 1, Multi = false })
 
 Options.ESPFontDropdown:OnChanged(function()
     pcall(function()
