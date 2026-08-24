@@ -1496,7 +1496,7 @@ RunService.RenderStepped:Connect(function()
                         local feetPos = Camera:WorldToViewportPoint(feetOffset.Position)
                         
                         local height = math.clamp(math.abs(headPos.Y - feetPos.Y), 10, 2000)
-                        local width = height * 0.75
+                        local width = height * 0.65
                         local boxX = math.round(rootPos.X - (width / 2))
                         local boxY = math.round(headPos.Y)
                         
@@ -1656,7 +1656,7 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         if Toggles.EspHealth and Toggles.EspHealth.Value then
-                            local barWidth = 2.5
+                            local barWidth = 2.65
                             local outlinePadding = 1
                             local barX = boxX - 5.75
                             local barY = boxY
@@ -1786,7 +1786,7 @@ HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromR
 EspLineGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
 EspLineGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.95, Min = 0, Max = 1, Rounding = 2 })
 
-EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "ESP Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "Code") or 1, Multi = false })
+EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "ESP Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "PermannentMarker") or 1, Multi = false })
 
 Options.ESPFontDropdown:OnChanged(function()
     pcall(function()
