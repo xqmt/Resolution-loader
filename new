@@ -1440,6 +1440,12 @@ RunService.RenderStepped:Connect(function()
         local hpTextColor = GetColor("HPTextColor", Color3.fromRGB(255, 255, 255))
         local selectedNameStyles = Options.NameStyleDropdown and Options.NameStyleDropdown.Value or {}
 
+        local customTextTransEnabled = Toggles.CustomTextTransparency and Toggles.CustomTextTransparency.Value or false
+        local nameTrans = customTextTransEnabled and (Options.NameTransparencySlider and Options.NameTransparencySlider.Value or 0) or 0
+        local hpTextTrans = customTextTransEnabled and (Options.HpTextTransparencySlider and Options.HpTextTransparencySlider.Value or 0) or 0
+        local distTrans = customTextTransEnabled and (Options.DistanceTransparencySlider and Options.DistanceTransparencySlider.Value or 0) or 0
+        local toolTrans = customTextTransEnabled and (Options.ToolEquippedTransparencySlider and Options.ToolEquippedTransparencySlider.Value or 0) or 0
+
         local hpFullColor = GetColor("HPFullColor", Color3.fromRGB(0, 255, 0))
         local hpHalfColor = GetColor("HPHalfColor", Color3.fromRGB(255, 170, 0))
         local hpLowColor = GetColor("HPLowColor", Color3.fromRGB(255, 0, 0))
@@ -1623,7 +1629,6 @@ RunService.RenderStepped:Connect(function()
                             end
                         end
 
-                        -- [BALANCED ESP TEXT SIZES] Perfect balance: clean, sharp, not too big or too small
                         local targetNameSize = math.clamp(math.floor(10 + (220 / math.max(currentDist, 15))), 10, 13)
 
                         if not esp.SmoothNameSize then 
@@ -1633,7 +1638,7 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         local dynamicNameSize = math.round(esp.SmoothNameSize)
-                        local subTextSize = 10 -- Balanced size for sub-elements (Distance, Tool, HP Number)
+                        local subTextSize = 10
 
                         if boxFillEnabled and esp.BoxFillFrame then
                             esp.BoxFillFrame.Position = UDim2.new(0, boxX, 0, boxY)
@@ -1681,6 +1686,8 @@ RunService.RenderStepped:Connect(function()
                                 esp.HealthText.Text = tostring(math.round(targetHp))
                                 esp.HealthText.TextSize = subTextSize
                                 esp.HealthText.TextColor3 = hpTextColor
+                                esp.HealthText.TextTransparency = hpTextTrans
+                                esp.HealthText.TextStrokeTransparency = 0.2 + (0.8 * hpTextTrans)
                                 esp.HealthText.Size = UDim2.new(0, 30, 0, 15)
         
                                 local targetY = math.clamp(barY + (mathHeight - healthHeight) - 3, boxY - 3, boxY + mathHeight - 10)
@@ -1700,6 +1707,8 @@ RunService.RenderStepped:Connect(function()
                             esp.Name.Text = selectedName
                             esp.Name.TextSize = dynamicNameSize
                             esp.Name.TextColor3 = nameColor
+                            esp.Name.TextTransparency = nameTrans
+                            esp.Name.TextStrokeTransparency = 0.2 + (0.8 * nameTrans)
                             esp.Name.Size = UDim2.new(0, 200, 0, dynamicNameSize + 4)
                             esp.Name.Position = UDim2.new(0, boxX + (mathWidth / 2) - 100, 0, boxY - (dynamicNameSize + 5))
                             esp.Name.Visible = true
@@ -1715,6 +1724,8 @@ RunService.RenderStepped:Connect(function()
                             esp.Distance.Text = "[ " .. tostring(dist) .. "m ]"
                             esp.Distance.TextSize = subTextSize
                             esp.Distance.TextColor3 = distColor
+                            esp.Distance.TextTransparency = distTrans
+                            esp.Distance.TextStrokeTransparency = 0.2 + (0.8 * distTrans)
                             esp.Distance.Size = UDim2.new(0, 200, 0, 15)
                             esp.Distance.Position = UDim2.new(0, boxX + (mathWidth / 2) - 100, 0, bottomOffset)
                             esp.Distance.Visible = true
@@ -1731,6 +1742,8 @@ RunService.RenderStepped:Connect(function()
                             esp.Tool.Text = toolName
                             esp.Tool.TextSize = subTextSize
                             esp.Tool.TextColor3 = toolColor
+                            esp.Tool.TextTransparency = toolTrans
+                            esp.Tool.TextStrokeTransparency = 0.2 + (0.8 * toolTrans)
                             esp.Tool.Size = UDim2.new(0, 200, 0, 15)
                             esp.Tool.Position = UDim2.new(0, boxX + (mathWidth / 2) - 100, 0, bottomOffset)
                             esp.Tool.Visible = true
@@ -1755,6 +1768,7 @@ local EspLineGroup = Tabs.ESP:AddLeftGroupbox("Line & Highlight")
 
 local EspTextGroup = Tabs.ESP:AddRightGroupbox("Text & Display")
 local EspSkeletonGroup = Tabs.ESP:AddRightGroupbox("Skeleton")
+local TextTransparencyGroup = Tabs.ESP:AddRightGroupbox("Text Transparency")
 
 EspMainGroup:AddToggle("EspMaster", { Text = "Enable Esp", Default = false })
 
@@ -1829,6 +1843,12 @@ SkeletonToggle:AddColorPicker("SkeletonOutlineColor", { Default = Color3.fromRGB
 
 EspSkeletonGroup:AddSlider("SkeletonThicknessSlider", { Text = "Skeleton Line Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
 EspSkeletonGroup:AddSlider("SkeletonOutlineThicknessSlider", { Text = "Skeleton Outline Thickness", Default = 2.5, Min = 1.0, Max = 8.0, Rounding = 1 })
+
+TextTransparencyGroup:AddToggle("CustomTextTransparency", { Text = "Custom Text Transparency", Default = ture })
+TextTransparencyGroup:AddSlider("NameTransparencySlider", { Text = "Name Transparency", Default = 0.15, Min = 0, Max = 1, Rounding = 2 })
+TextTransparencyGroup:AddSlider("HpTextTransparencySlider", { Text = "HP Text Transparency", Default = 0.2, Min = 0, Max = 1, Rounding = 2 })
+TextTransparencyGroup:AddSlider("DistanceTransparencySlider", { Text = "Distance Transparency", Default = 0.15, Min = 0, Max = 1, Rounding = 2 })
+TextTransparencyGroup:AddSlider("ToolEquippedTransparencySlider", { Text = "Tool Equipped Transparency", Default = 0.15, Min = 0, Max = 1, Rounding = 2 })
 
 local MoveLeftBox = Tabs.Movement:AddLeftGroupbox("Anti Aim")
 
