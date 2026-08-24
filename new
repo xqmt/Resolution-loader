@@ -217,7 +217,6 @@ local SkeletonConnections = {
     {"Torso", "Right Leg"}
 }
 
--- SELF HIGHLIGHT INSTANCE SETUP
 local SelfHighlightInstance = Instance.new("Highlight")
 SelfHighlightInstance.Name = "hooksense_SelfHighlight"
 SelfHighlightInstance.Enabled = false
@@ -917,8 +916,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- HOOK
-
 local OldNamecall
 OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(Self, ...)
     if checkcaller() then return OldNamecall(Self, ...) end
@@ -1238,7 +1235,7 @@ local function GetColor(optionName, defaultColor)
     return fallback
 end
 
- local function CreateSquare(thickness, color)
+local function CreateSquare(thickness, color)
     local square = Drawing.new("Square")
     square.Thickness = thickness or 1
     square.Color = color or Color3.fromRGB(255, 255, 255)
@@ -1257,7 +1254,6 @@ local function CreateLine(thickness, color)
     return line
 end
 
--- HELPER: Create TextLabel with Outline and Custom ESP Font
 local function CreateTitleLabel(name)
     local label = Instance.new("TextLabel")
     label.Name = name or "ESP_TitleLabel"
@@ -1492,19 +1488,18 @@ RunService.RenderStepped:Connect(function()
 
                     local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
                     
-                    if onScreen and rootPos.Z > 0 then
+                    if onScreen then
                         local headOffset = rootPart.CFrame * CFrame.new(0, 2.5, 0)
                         local feetOffset = rootPart.CFrame * CFrame.new(0, -3.0, 0)
                         
                         local headPos = Camera:WorldToViewportPoint(headOffset.Position)
                         local feetPos = Camera:WorldToViewportPoint(feetOffset.Position)
                         
-                        local height = math.abs(headPos.Y - feetPos.Y)
+                        local height = math.clamp(math.abs(headPos.Y - feetPos.Y), 10, 2000)
                         local width = height * 0.65
                         local boxX = math.round(rootPos.X - (width / 2))
                         local boxY = math.round(headPos.Y)
                         
-                        -- MULTI DROPDOWN NAME SYSTEM
                         local selectedName = ""
                         local hasDisplayName = selectedNameStyles["Display Name"]
                         local hasUsername = selectedNameStyles["Username"]
@@ -1628,8 +1623,13 @@ RunService.RenderStepped:Connect(function()
                             end
                         end
 
-                        -- SMOOTH TEXT SIZE LERP SYSTEM
-                        local targetNameSize = math.clamp(13 * (40 / math.max(currentDist, 10)), 10, 14)
+                        local targetNameSize
+                        if currentDist <= 480 then
+                            targetNameSize = 11
+                        else
+                            targetNameSize = math.clamp(13 * (18 / math.max(currentDist, 10)), 10, 12)
+                        end
+
                         if not esp.SmoothNameSize then 
                             esp.SmoothNameSize = targetNameSize 
                         else
@@ -1728,7 +1728,6 @@ RunService.RenderStepped:Connect(function()
                             esp.Distance.Visible = false
                         end
 
-                        -- TOOL EQUIPPED ESP (อยู่ล่างสุดถัดจาก DISTANCE)
                         if Toggles.EspTool and Toggles.EspTool.Value then
                             local heldTool = character:FindFirstChildOfClass("Tool")
                             local toolName = heldTool and heldTool.Name or "None"
@@ -1756,7 +1755,6 @@ RunService.RenderStepped:Connect(function()
     end)
 end)
 
--- ESP TAB
 local EspMainGroup = Tabs.ESP:AddLeftGroupbox("ESP Main")
 local EspLineGroup = Tabs.ESP:AddLeftGroupbox("Line & Highlight")
 
@@ -1837,8 +1835,6 @@ SkeletonToggle:AddColorPicker("SkeletonOutlineColor", { Default = Color3.fromRGB
 EspSkeletonGroup:AddSlider("SkeletonThicknessSlider", { Text = "Skeleton Line Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
 EspSkeletonGroup:AddSlider("SkeletonOutlineThicknessSlider", { Text = "Skeleton Outline Thickness", Default = 2.5, Min = 1.0, Max = 8.0, Rounding = 1 })
 
--- ANTI AIM TAB
-
 local MoveLeftBox = Tabs.Movement:AddLeftGroupbox("Anti Aim")
 
 MoveLeftBox:AddToggle("AntiAimToggle", { Text = "Enable Anti Aim", Default = false })
@@ -1872,8 +1868,6 @@ MoveLeftBox:AddSlider("SpinSpeedSlider", { Text = "Rotation Spin Speed", Default
 Options.SpinSpeedSlider:OnChanged(function()
     AntiAimSpeed = Options.SpinSpeedSlider.Value
 end)
-
--- WORLD TAB
 
 local LightingColorsGroup = Tabs.World:AddLeftGroupbox("Lighting & Time")
 local WorldSkyboxBox = Tabs.World:AddLeftGroupbox("Custom Skybox")
@@ -2018,8 +2012,6 @@ Options.FpsCapSlider:OnChanged(function()
     if setfpscap then setfpscap(Options.FpsCapSlider.Value) end
 end)
 
--- MISC TAB
-
 local BlacklistPlayersGroup = Tabs.Addons:AddLeftGroupbox("Loaders Scripts")
 local ViewPlayerGroup = Tabs.Addons:AddLeftGroupbox("View Player")
 
@@ -2141,8 +2133,6 @@ ViewPlayerGroup:AddButton({ Text = "Go to Player", Func = function()
         Library:Notify("Target character not found or dead!")
     end
 end })
-
--- SETTING TAB
 
 local InterfaceGroup = Tabs.UI:AddLeftGroupbox("Menu Customization")
 local MenuGroup = Tabs.UI:AddLeftGroupbox("Menu Settings")
