@@ -1800,7 +1800,7 @@ HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromR
 EspLineGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
 EspLineGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.95, Min = 0, Max = 1, Rounding = 2 })
 
-EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "ESP Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "SourceSansBold") or 1, Multi = false })
+EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "ESP Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "Cartoon") or 1, Multi = false })
 
 Options.ESPFontDropdown:OnChanged(function()
     pcall(function()
@@ -2109,11 +2109,17 @@ ViewPlayerGroup:AddButton({ Text = "View Target", Func = function()
         if ViewPlayerConnection then ViewPlayerConnection:Disconnect() end
 
         ViewPlayerConnection = RunService.RenderStepped:Connect(function()
-            if ViewingPlayer and ViewingPlayer.Character and ViewingPlayer.Character:FindFirstChildOfClass("Humanoid") then
-                Camera.CameraSubject = ViewingPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if ViewingPlayer and ViewingPlayer.Parent then
+                local char = ViewingPlayer.Character
+                if char then
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if hum then
+                        Camera.CameraSubject = hum
+                    end
+                end
             else
                 StopViewingPlayer()
-                Library:Notify("View Player: Target lost or died.")
+                Library:Notify("View Player: Target left the game.")
             end
         end)
         Library:Notify("Now viewing: " .. targetPlayer.DisplayName)
