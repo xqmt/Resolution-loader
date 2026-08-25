@@ -417,6 +417,30 @@ local function getScreenCenter()
     return Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 end
 
+local function getGunPosition()
+    if LocalPlayer.Character then
+        local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+        if tool then
+            -- 1. ค้นหา Muzzle/Barrel Parts ตรงๆ ก่อน
+            local muzzleNames = {"Muzzle", "GunBarrel", "Barrel", "Flash", "Tip"}
+            for _, name in ipairs(muzzleNames) do
+                local part = tool:FindFirstChild(name, true)
+                if part and part:IsA("BasePart") then
+                    return part.Position
+                end
+            end
+            
+            -- 2. ค้นหา Handle หรือ Part ธรรมดา แล้วเพิ่ม Offset ยื่นไปทางปลายปืน
+            local handle = tool:FindFirstChild("Handle") or tool:FindFirstChildOfClass("BasePart")
+            if handle then
+                -- เลื่อนตำแหน่ง CFrame ยื่นไปทางด้านหน้าของตัวปืนประมาณ 1.5 - 2 หน่วย
+                return (handle.CFrame * CFrame.new(0, 0, -1.8)).Position
+            end
+        end
+    end
+    return nil
+end
+
 local wallCheckParams = RaycastParams.new()
 wallCheckParams.FilterType = Enum.RaycastFilterType.Exclude
 wallCheckParams.IgnoreWater = true
@@ -792,6 +816,14 @@ RunService.RenderStepped:Connect(function()
     elseif FOVOriginMode == "Mouse" then
         local mousePos = UserInputService:GetMouseLocation()
         TargetCenter = Vector2.new(mousePos.X, mousePos.Y)
+    elseif FOVOriginMode == "Gun" then
+        local gunPos = getGunPosition()
+        if gunPos then
+            local screenPos, onScreen = Camera:WorldToViewportPoint(gunPos)
+            if onScreen then
+                TargetCenter = Vector2.new(screenPos.X, screenPos.Y)
+            end
+        end
     end
 
     local lerpFactor = math.clamp(FOVLerpSpeed, 0.01, 1.0)
@@ -1000,7 +1032,7 @@ local Toggles = getgenv().Toggles
 
 local LeftGroupBox = Tabs.Main:AddLeftGroupbox("Silent Aim")
 local TargetGroupBox = Tabs.Main:AddLeftGroupbox("Targeting Options")
-local TracerGroupBox = Tabs.Main:AddLeftGroupbox("Tracer Line Settings")
+local TracerGroupBox = Tabs.Main:AddLeftGroupbox("Target Visual")
 
 local FOVGroupBox = Tabs.Main:AddRightGroupbox("FOV Settings")
 local FOVFillGroupBox = Tabs.Main:AddRightGroupbox("FOV Fill")
@@ -1133,7 +1165,7 @@ Options.FOVOutlineTransparencySlider:OnChanged(function()
     FOVOutlineTransparency = Options.FOVOutlineTransparencySlider.Value
 end)
 
-FOVGroupBox:AddDropdown("FOVOriginDropdown", { Text = "FOV Origin", Values = {"Center", "Target", "Mouse"}, Default = 1, Multi = false })
+FOVGroupBox:AddDropdown("FOVOriginDropdown", { Text = "FOV Origin", Values = {"Center", "Target", "Mouse", "Gun"}, Default = 1, Multi = false })
 Options.FOVOriginDropdown:OnChanged(function()
     FOVOriginMode = Options.FOVOriginDropdown.Value
 end)
@@ -1823,9 +1855,9 @@ BoxToggle:AddColorPicker("BoxOutlineColor", { Default = Color3.fromRGB(0, 0, 0),
 
 EspMainGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill", Default = false })
 EspMainGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.65, Min = 0, Max = 1, Rounding = 2 })
-EspMainGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 255, 255) })
-EspMainGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(255, 255, 255) })
-EspMainGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(255, 255, 255) })
+EspMainGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 0, 0) })
+EspMainGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(0, 255, 0) })
+EspMainGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(0, 0, 255) })
 EspMainGroup:AddToggle("EspBoxFillRotate", { Text = "Rotate Box Fill Gradient", Default = false })
 EspMainGroup:AddSlider("EspBoxFillRotateSpeed", { Text = "Box Fill Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
 
@@ -1845,7 +1877,7 @@ HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromR
 EspLineGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
 EspLineGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.95, Min = 0, Max = 1, Rounding = 2 })
 
-EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "ESP Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "SourceSansBold") or 1, Multi = false })
+EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "ESP Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "Cartoon") or 1, Multi = false })
 
 Options.ESPFontDropdown:OnChanged(function(val)
     pcall(function()
