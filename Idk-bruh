@@ -1162,7 +1162,7 @@ Options.FOVOutlineTransparencySlider:OnChanged(function()
     FOVOutlineTransparency = Options.FOVOutlineTransparencySlider.Value
 end)
 
-FOVGroupBox:AddDropdown("FOVOriginDropdown", { Text = "FOV Origin", Values = {"Center", "Target", "Mouse", "Gun"}, Default = 1, Multi = false })
+FOVGroupBox:AddDropdown("FOVOriginDropdown", { Text = "FOV Position", Values = {"Center", "Target", "Mouse", "Gun"}, Default = 1, Multi = false })
 Options.FOVOriginDropdown:OnChanged(function()
     FOVOriginMode = Options.FOVOriginDropdown.Value
 end)
@@ -1921,9 +1921,9 @@ BoxToggle:AddColorPicker("BoxOutlineColor", { Default = Color3.fromRGB(0, 0, 0),
 
 EspMainGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill", Default = false })
 EspMainGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.65, Min = 0, Max = 1, Rounding = 2 })
-EspMainGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 0, 0) })
-EspMainGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(0, 255, 0) })
-EspMainGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(0, 0, 255) })
+EspMainGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 255, 255) })
+EspMainGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(255, 255, 255) })
+EspMainGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(255, 255, 255) })
 EspMainGroup:AddToggle("EspBoxFillRotate", { Text = "Rotate Box Fill Gradient", Default = false })
 EspMainGroup:AddSlider("EspBoxFillRotateSpeed", { Text = "Box Fill Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
 
