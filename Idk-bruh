@@ -1384,7 +1384,7 @@ local function ImplementESPSetup(holder)
         holder.GuiHealthGradient.Rotation = 90
         holder.GuiHealthGradient.Parent = holder.GuiHealthBar
 
-        -- Neverlose Style Horizontal Armor Bar at Bottom of Box ESP
+        -- Neverlose Style Horizontal Armor Bar with 2-Color Gradient
         holder.GuiArmorBg = Instance.new("Frame")
         holder.GuiArmorBg.Name = "ArmorBg"
         holder.GuiArmorBg.BorderSizePixel = 0
@@ -1395,8 +1395,12 @@ local function ImplementESPSetup(holder)
         holder.GuiArmorBar = Instance.new("Frame")
         holder.GuiArmorBar.Name = "ArmorBar"
         holder.GuiArmorBar.BorderSizePixel = 0
-        holder.GuiArmorBar.BackgroundColor3 = Color3.fromRGB(50, 150, 255)
+        holder.GuiArmorBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         holder.GuiArmorBar.Parent = holder.GuiArmorBg
+
+        holder.GuiArmorGradient = Instance.new("UIGradient")
+        holder.GuiArmorGradient.Rotation = 0
+        holder.GuiArmorGradient.Parent = holder.GuiArmorBar
 
         holder.Highlight = Instance.new("Highlight")
         holder.Highlight.Name = "hooksense_Highlight"
@@ -1540,6 +1544,9 @@ RunService.RenderStepped:Connect(function()
         local hpLowColor = GetColor("HPLowColor", Color3.fromRGB(255, 0, 0))
         local lerpAlpha = Options.HealthLerpSlider and Options.HealthLerpSlider.Value or 0.2
 
+        local armorCol1 = GetColor("ArmorColor1", Color3.fromRGB(0, 150, 255))
+        local armorCol2 = GetColor("ArmorColor2", Color3.fromRGB(0, 255, 200))
+
         local boxFillEnabled = Toggles.EspBoxFill and Toggles.EspBoxFill.Value
         local boxFillTrans = Options.EspBoxFillTransparency and Options.EspBoxFillTransparency.Value or 0.5
         local fillCol1 = GetColor("EspBoxFillColor1", Color3.fromRGB(255, 0, 0))
@@ -1623,7 +1630,6 @@ RunService.RenderStepped:Connect(function()
 
                         local pct = math.clamp(esp.SmoothHealth / maxHp, 0, 1)
 
-                        -- Da Hood Armor Extraction Logic
                         local targetArmor = 0
                         local maxArmor = 100
                         local bodyEffects = character:FindFirstChild("BodyEffects")
@@ -1813,7 +1819,7 @@ RunService.RenderStepped:Connect(function()
                             esp.HealthText.Visible = false
                         end
 
-                        -- Render Neverlose-Style Bottom Horizontal Armor Bar (Hides when armor <= 0)
+                        -- Render Neverlose-Style Bottom Horizontal Armor Bar with 2-Color Gradient
                         if Toggles.EspArmor and Toggles.EspArmor.Value and targetArmor > 0 then
                             local barHeight = 2.65
                             local outlinePadding = 1
@@ -1827,6 +1833,11 @@ RunService.RenderStepped:Connect(function()
                             local armorWidth = math.clamp(math.round(mathWidth * armorPct), 0, mathWidth)
                             esp.GuiArmorBar.Position = UDim2.new(0, outlinePadding, 0, outlinePadding)
                             esp.GuiArmorBar.Size = UDim2.new(0, armorWidth, 0, barHeight)
+
+                            esp.GuiArmorGradient.Color = ColorSequence.new({
+                                ColorSequenceKeypoint.new(0, armorCol1),
+                                ColorSequenceKeypoint.new(1, armorCol2)
+                            })
                         else
                             esp.GuiArmorBg.Visible = false
                         end
@@ -1932,7 +1943,7 @@ HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromR
 EspLineGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
 EspLineGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.95, Min = 0, Max = 1, Rounding = 2 })
 
-EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "ESP Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "Cartoon") or 1, Multi = false })
+EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "ESP Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "SourceSansBold") or 1, Multi = false })
 
 Options.ESPFontDropdown:OnChanged(function(val)
     pcall(function()
@@ -1953,9 +1964,9 @@ EspTextGroup:AddToggle("EspName", { Text = "Name", Default = false }):AddColorPi
 EspTextGroup:AddDropdown("NameStyleDropdown", { Text = "Name Style", Values = {"Username", "Display Name"}, Default = {"Username"}, Multi = true })
 
 local EspHealthToggle = EspTextGroup:AddToggle("EspHealth", { Text = "Health Bar", Default = false })
-EspHealthToggle:AddColorPicker("HPFullColor", { Default = Color3.fromRGB(0, 255, 0), Title = "Full HP Color" })
-EspHealthToggle:AddColorPicker("HPHalfColor", { Default = Color3.fromRGB(0, 255, 0), Title = "Half HP Color" })
-EspHealthToggle:AddColorPicker("HPLowColor", { Default = Color3.fromRGB(0, 255, 0), Title = "Low HP Color" })
+EspHealthToggle:AddColorPicker("HPFullColor", { Default = Color3.fromRGB(0, 255, 170), Title = "Full HP Color" })
+EspHealthToggle:AddColorPicker("HPHalfColor", { Default = Color3.fromRGB(0, 255, 186), Title = "Half HP Color" })
+EspHealthToggle:AddColorPicker("HPLowColor", { Default = Color3.fromRGB(0, 255, 193), Title = "Low HP Color" })
 
 EspTextGroup:AddSlider("HealthLerpSlider", {
     Text = "Health Lerp",
@@ -1968,8 +1979,10 @@ EspTextGroup:AddSlider("HealthLerpSlider", {
 
 EspTextGroup:AddToggle("EspHealthText", { Text = "Show HP Number", Default = false }):AddColorPicker("HPTextColor", { Default = Color3.fromRGB(255, 255, 255) })
 
--- Armor Bar Toggle Added to ESP Menu
-EspTextGroup:AddToggle("EspArmor", { Text = "Armor Bar", Default = false })
+-- Armor Bar Toggle พร้อม Color Picker 2 สี Gradient
+local EspArmorToggle = EspTextGroup:AddToggle("EspArmor", { Text = "Armor Bar", Default = false })
+EspArmorToggle:AddColorPicker("ArmorColor1", { Default = Color3.fromRGB(0, 255, 232), Title = "Armor Color 1" })
+EspArmorToggle:AddColorPicker("ArmorColor2", { Default = Color3.fromRGB(0, 216, 255), Title = "Armor Color 2" })
 
 EspTextGroup:AddToggle("EspDistance", { Text = "Draw Distance", Default = false }):AddColorPicker("DistColor", { Default = Color3.fromRGB(255, 255, 255) })
 EspTextGroup:AddToggle("EspTool", { Text = "Tool Equipped", Default = false }):AddColorPicker("ToolColor", { Default = Color3.fromRGB(255, 255, 255) })
