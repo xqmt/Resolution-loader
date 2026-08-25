@@ -421,7 +421,6 @@ local function getGunPosition()
     if LocalPlayer.Character then
         local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
         if tool then
-            -- 1. ค้นหา Muzzle/Barrel Parts ตรงๆ ก่อน
             local muzzleNames = {"Muzzle", "GunBarrel", "Barrel", "Flash", "Tip"}
             for _, name in ipairs(muzzleNames) do
                 local part = tool:FindFirstChild(name, true)
@@ -430,10 +429,8 @@ local function getGunPosition()
                 end
             end
             
-            -- 2. ค้นหา Handle หรือ Part ธรรมดา แล้วเพิ่ม Offset ยื่นไปทางปลายปืน
             local handle = tool:FindFirstChild("Handle") or tool:FindFirstChildOfClass("BasePart")
             if handle then
-                -- เลื่อนตำแหน่ง CFrame ยื่นไปทางด้านหน้าของตัวปืนประมาณ 1.5 - 2 หน่วย
                 return (handle.CFrame * CFrame.new(0, 0, -1.8)).Position
             end
         end
@@ -1387,6 +1384,20 @@ local function ImplementESPSetup(holder)
         holder.GuiHealthGradient.Rotation = 90
         holder.GuiHealthGradient.Parent = holder.GuiHealthBar
 
+        -- Neverlose Style Horizontal Armor Bar at Bottom of Box ESP
+        holder.GuiArmorBg = Instance.new("Frame")
+        holder.GuiArmorBg.Name = "ArmorBg"
+        holder.GuiArmorBg.BorderSizePixel = 0
+        holder.GuiArmorBg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        holder.GuiArmorBg.Visible = false
+        holder.GuiArmorBg.Parent = BoxFillGui
+
+        holder.GuiArmorBar = Instance.new("Frame")
+        holder.GuiArmorBar.Name = "ArmorBar"
+        holder.GuiArmorBar.BorderSizePixel = 0
+        holder.GuiArmorBar.BackgroundColor3 = Color3.fromRGB(50, 150, 255)
+        holder.GuiArmorBar.Parent = holder.GuiArmorBg
+
         holder.Highlight = Instance.new("Highlight")
         holder.Highlight.Name = "hooksense_Highlight"
         holder.Highlight.Enabled = false
@@ -1399,6 +1410,7 @@ local function ImplementESPSetup(holder)
         holder.Tool = CreateTitleLabel("ESP_ToolLabel")
         
         holder.SmoothHealth = nil
+        holder.SmoothArmor = nil
         holder.SmoothNameSize = nil
         holder.NeedsRefresh = true
     end)
@@ -1416,6 +1428,7 @@ local function RemoveDrawingESP(player)
         pcall(function()
             if ESP_Drawing_Storage[player].BoxFillFrame then ESP_Drawing_Storage[player].BoxFillFrame:Destroy() end
             if ESP_Drawing_Storage[player].GuiHealthBg then ESP_Drawing_Storage[player].GuiHealthBg:Destroy() end
+            if ESP_Drawing_Storage[player].GuiArmorBg then ESP_Drawing_Storage[player].GuiArmorBg:Destroy() end
             if ESP_Drawing_Storage[player].Highlight then ESP_Drawing_Storage[player].Highlight:Destroy() end
             if ESP_Drawing_Storage[player].Name then ESP_Drawing_Storage[player].Name:Destroy() end
             if ESP_Drawing_Storage[player].Distance then ESP_Drawing_Storage[player].Distance:Destroy() end
@@ -1461,12 +1474,14 @@ local function SetVisibilityFalse(esp)
 
         if esp.BoxFillFrame then esp.BoxFillFrame.Visible = false end
         if esp.GuiHealthBg then esp.GuiHealthBg.Visible = false end
+        if esp.GuiArmorBg then esp.GuiArmorBg.Visible = false end
         if esp.Highlight then esp.Highlight.Enabled = false end
         if esp.HealthText then esp.HealthText.Visible = false end
         if esp.Name then esp.Name.Visible = false end
         if esp.Distance then esp.Distance.Visible = false end
         if esp.Tool then esp.Tool.Visible = false end
         esp.SmoothHealth = nil
+        esp.SmoothArmor = nil
         esp.SmoothNameSize = nil
         esp.NeedsRefresh = true
     end)
@@ -1607,6 +1622,25 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         local pct = math.clamp(esp.SmoothHealth / maxHp, 0, 1)
+
+                        -- Da Hood Armor Extraction Logic
+                        local targetArmor = 0
+                        local maxArmor = 100
+                        local bodyEffects = character:FindFirstChild("BodyEffects")
+                        if bodyEffects then
+                            local armorVal = bodyEffects:FindFirstChild("Armor")
+                            if armorVal then
+                                targetArmor = armorVal.Value
+                            end
+                        end
+
+                        if not esp.SmoothArmor then
+                            esp.SmoothArmor = targetArmor
+                        else
+                            esp.SmoothArmor = esp.SmoothArmor + (targetArmor - esp.SmoothArmor) * lerpAlpha
+                        end
+                        local armorPct = math.clamp(esp.SmoothArmor / maxArmor, 0, 1)
+
                         local mathWidth, mathHeight = math.round(width), math.round(height)
 
                         if boxEnabled then
@@ -1779,6 +1813,24 @@ RunService.RenderStepped:Connect(function()
                             esp.HealthText.Visible = false
                         end
 
+                        -- Render Neverlose-Style Bottom Horizontal Armor Bar (Hides when armor <= 0)
+                        if Toggles.EspArmor and Toggles.EspArmor.Value and targetArmor > 0 then
+                            local barHeight = 2.65
+                            local outlinePadding = 1
+                            local armorBarX = boxX
+                            local armorBarY = boxY + mathHeight + 3.5
+
+                            esp.GuiArmorBg.Position = UDim2.new(0, armorBarX - outlinePadding, 0, armorBarY - outlinePadding)
+                            esp.GuiArmorBg.Size = UDim2.new(0, mathWidth + (outlinePadding * 2), 0, barHeight + (outlinePadding * 2))
+                            esp.GuiArmorBg.Visible = true
+
+                            local armorWidth = math.clamp(math.round(mathWidth * armorPct), 0, mathWidth)
+                            esp.GuiArmorBar.Position = UDim2.new(0, outlinePadding, 0, outlinePadding)
+                            esp.GuiArmorBar.Size = UDim2.new(0, armorWidth, 0, barHeight)
+                        else
+                            esp.GuiArmorBg.Visible = false
+                        end
+
                         if Toggles.EspName and Toggles.EspName.Value then
                             esp.Name.Font = ESPFontSetting
                             esp.Name.Text = selectedName
@@ -1794,6 +1846,9 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         local bottomOffset = boxY + mathHeight + 2
+                        if Toggles.EspArmor and Toggles.EspArmor.Value and targetArmor > 0 then
+                            bottomOffset = bottomOffset + 7
+                        end
 
                         if Toggles.EspDistance and Toggles.EspDistance.Value then
                             esp.Distance.Font = ESPFontSetting
@@ -1912,6 +1967,10 @@ EspTextGroup:AddSlider("HealthLerpSlider", {
 })
 
 EspTextGroup:AddToggle("EspHealthText", { Text = "Show HP Number", Default = false }):AddColorPicker("HPTextColor", { Default = Color3.fromRGB(255, 255, 255) })
+
+-- Armor Bar Toggle Added to ESP Menu
+EspTextGroup:AddToggle("EspArmor", { Text = "Armor Bar", Default = false })
+
 EspTextGroup:AddToggle("EspDistance", { Text = "Draw Distance", Default = false }):AddColorPicker("DistColor", { Default = Color3.fromRGB(255, 255, 255) })
 EspTextGroup:AddToggle("EspTool", { Text = "Tool Equipped", Default = false }):AddColorPicker("ToolColor", { Default = Color3.fromRGB(255, 255, 255) })
 
