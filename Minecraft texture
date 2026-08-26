@@ -1,0 +1,90 @@
+-- Roblox Client Texture Replacement Script (Auto-Run)
+
+-- Fallback functions ในกรณีที่รันด้วย Executor ทั่วไป
+local cloneref = cloneref or function(obj) return obj end
+local LPH_NO_VIRTUALIZE = LPH_NO_VIRTUALIZE or function(f) return f end
+local LPH_JIT_MAX = LPH_JIT_MAX or function(f) return f end
+local destroy = destroy or function(obj) if obj and obj.Destroy then obj:Destroy() end end
+local create_instance = Instance.new
+local color3_fromrgb = Color3.fromRGB
+
+local material_service = cloneref(game:GetService("MaterialService"))
+
+local texture_packs = {
+    ["minecraft"] = {
+        ["Slate"] = "http://www.roblox.com/asset/?id=8676746437",
+        ["Grass"] = "http://www.roblox.com/asset/?id=9267183930",
+        ["Sand"] = "http://www.roblox.com/asset/?id=12624140843",
+        ["Wood"] = "http://www.roblox.com/asset/?id=3258599312",
+        ["Brick"] = "http://www.roblox.com/asset/?id=10777285622",
+        ["Concrete"] = "http://www.roblox.com/asset/?id=15622710576",
+        ["CorrodedMetal"] = "rbxassetid://78612695839404",
+        ["Metal"] = "http://www.roblox.com/asset/?id=121650613091353",
+        ["WoodPlanks"] = "http://www.roblox.com/asset/?id=867681022"
+    },
+}
+
+local restores = {}
+local textures = texture_packs["minecraft"]
+local variants = {}
+local textures_connection = nil
+
+-- ฟังก์ชันปรับแต่งพาร์ตเดี่ยว
+local apply_texture = LPH_NO_VIRTUALIZE(function(descendant)
+    local class_name = descendant.ClassName
+    local white = color3_fromrgb(254, 253, 255)
+
+    if class_name == "MeshPart" or class_name == "Part" then
+        local texture = textures[descendant.Material.Name]
+
+        if (texture or descendant.Color == white) and descendant.Transparency < 0.8 then
+            if not restores[descendant] then
+                restores[descendant] = descendant.Color
+                descendant.Color = white
+            end
+        end
+    end
+end)
+
+-- ฟังก์ชันสร้าง MaterialVariant และค้นหาพาร์ตในแผนที่
+local apply_textures = LPH_NO_VIRTUALIZE(function()
+    for i = 1, #variants do
+        destroy(variants[i])
+        variants[i] = nil
+    end
+
+    for name, id in pairs(textures) do
+        if name ~= "Glass" then
+            local success, enum_material = pcall(function() return Enum.Material[name] end)
+            if success and enum_material then
+                local material = create_instance("MaterialVariant")
+                material.MetalnessMap = id
+                material.NormalMap = id
+                material.BaseMaterial = enum_material
+                material.Name = name
+                material.StudsPerTile = 5
+                material.RoughnessMap = id
+                material.ColorMap = id
+                material.Parent = material_service
+
+                variants[#variants + 1] = material
+            end
+        end
+    end
+
+    local map = workspace:FindFirstChild("MAP")
+    if map then
+        local descendants = map:GetDescendants()
+        for i = 1, #descendants do
+            apply_texture(descendants[i])
+        end
+    end
+end)
+
+-- เริ่มทำงานทันที
+apply_textures()
+
+local map = workspace:FindFirstChild("MAP")
+if map then
+    textures_connection = map.DescendantAdded:Connect(apply_texture)
+end
