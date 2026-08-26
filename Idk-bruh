@@ -1,34 +1,9 @@
-for _, v in pairs(getgc(true)) do
-    if type(v) == "table" and rawget(v, "indexInstance") then
-        local idx = rawget(v, "indexInstance")
-        if type(idx) == "table" and idx[1] == "kick" then
-            setreadonly(v, false)
-            v.tvk = {
-                "kick",
-                newcclosure(function()
-                    return task.wait(999e9)
-                end)
-            }
-            setreadonly(v, true)
-        end
-    end
-end
-
-task.wait(3.5)
 
 task.spawn(function()
     pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/xqmt/hooksense-loader/refs/heads/main/Bypass.lua", true))()
     end)
 end)
-
-task.spawn(function()
-    pcall(function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/SUUUUUS00000/MEGGD-Anti-kick/refs/heads/main/MEGGD%20Best%20Anti-kick.lua'))()
-    end)
-end)
-
-task.wait(2.5)
 
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
