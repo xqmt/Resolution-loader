@@ -1,11 +1,14 @@
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
-
 local LocalPlayer = Players.LocalPlayer
 
-local CORRECT_KEY = "H-65981-K"
-local SCRIPT_URL = "https://raw.githubusercontent.com/cattiz-glitch/PulseHubMM2/refs/heads/main/script.lua"
+local VALID_KEYS = {
+    ["H-65981-K"] = true,
+    ["H-42753-S"] = true 
+}
+
+local SCRIPT_URL = "https://raw.githubusercontent.com/xqmt/hooksense-loader/refs/heads/main/Idk-bruh"
 local SAVE_FILE_NAME = "hooksenseKeySaved.txt"
 
 local TARGET_FONT = Enum.Font.Arcade
@@ -22,7 +25,7 @@ end
 
 if isfile and readfile and isfile(SAVE_FILE_NAME) then
     local savedKey = readfile(SAVE_FILE_NAME)
-    if savedKey == CORRECT_KEY then
+    if VALID_KEYS[savedKey] then
         LoadMainScript()
         return
     end
@@ -98,7 +101,7 @@ local InfoLabel = Instance.new("TextLabel")
 InfoLabel.Size = UDim2.new(1, -20, 0, 20)
 InfoLabel.Position = UDim2.new(0, 10, 0, 35)
 InfoLabel.BackgroundTransparency = 1
-InfoLabel.Text = "Enter your key to access the script:"
+InfoLabel.Text = "Enter your key to access"
 InfoLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 InfoLabel.TextSize = TARGET_TEXT_SIZE
 InfoLabel.Font = TARGET_FONT
@@ -146,7 +149,7 @@ SubmitBtn.Parent = MainFrame
 SubmitBtn.MouseButton1Click:Connect(function()
     local InputtedKey = KeyInput.Text
 
-    if InputtedKey ~= CORRECT_KEY then
+    if not VALID_KEYS[InputtedKey] then
         StatusLabel.Text = "Status: Invalid Key!"
         StatusLabel.TextColor3 = Color3.fromRGB(255, 75, 75)
         return
