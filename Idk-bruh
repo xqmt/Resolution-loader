@@ -1814,8 +1814,7 @@ RunService.RenderStepped:Connect(function()
                             esp.GuiHealthBg.Visible = false
                             esp.HealthText.Visible = false
                         end
-
-                        -- Render Neverlose-Style Bottom Horizontal Armor Bar with 2-Color Gradient
+                        
                         if Toggles.EspArmor and Toggles.EspArmor.Value and targetArmor > 0 then
                             local barHeight = 2.65
                             local outlinePadding = 1
@@ -1975,7 +1974,6 @@ EspTextGroup:AddSlider("HealthLerpSlider", {
 
 EspTextGroup:AddToggle("EspHealthText", { Text = "Show HP Number", Default = false }):AddColorPicker("HPTextColor", { Default = Color3.fromRGB(255, 255, 255) })
 
--- Armor Bar Toggle พร้อม Color Picker 2 สี Gradient
 local EspArmorToggle = EspTextGroup:AddToggle("EspArmor", { Text = "Armor Bar", Default = false })
 EspArmorToggle:AddColorPicker("ArmorColor1", { Default = Color3.fromRGB(0, 255, 232), Title = "Armor Color 1" })
 EspArmorToggle:AddColorPicker("ArmorColor2", { Default = Color3.fromRGB(0, 216, 255), Title = "Armor Color 2" })
