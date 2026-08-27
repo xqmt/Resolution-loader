@@ -1196,17 +1196,36 @@ Options.HitSoundDropdown:OnChanged(function()
     HitSoundMode = Options.HitSoundDropdown.Value
 end)
 
-SoundLeftBox:AddSlider("HitSoundVolumeSlider", { Text = "Hit Sound Volume Level", Default = 2.0, Min = 0.0, Max = 5.0, Rounding = 1 })
+SoundLeftBox:AddSlider("HitSoundVolumeSlider", { Text = "Hit Sound Volume", Default = 2.0, Min = 0.0, Max = 5.0, Rounding = 1 })
 Options.HitSoundVolumeSlider:OnChanged(function()
     HitSoundVolume = Options.HitSoundVolumeSlider.Value
 end)
+
+SoundLeftBox:AddButton({
+    Text = "Preview Sound",
+    Func = function()
+        pcall(function()
+            if HitSoundMode == "None" or not SoundIDs[HitSoundMode] then return end
+            local PreviewSound = Instance.new("Sound")
+            PreviewSound.SoundId = SoundIDs[HitSoundMode]
+            PreviewSound.Volume = HitSoundVolume
+            PreviewSound.Parent = SoundService
+            
+            PreviewSound:Play()
+            PreviewSound.Ended:Connect(function()
+                PreviewSound:Destroy()
+            end)
+        end)
+    end
+})
+
 
 OverlayLeftBox:AddToggle("HitOverlayToggle", { Text = "Enable Hit Overlay", Default = false })
 Toggles.HitOverlayToggle:OnChanged(function()
     HitOverlayEnabled = Toggles.HitOverlayToggle.Value
 end)
 
-OverlayLeftBox:AddLabel("Overlay Border Color"):AddColorPicker("HitOverlayColorPicker", { Default = Color3.fromRGB(255, 0, 0) })
+OverlayLeftBox:AddLabel("Overlay Color"):AddColorPicker("HitOverlayColorPicker", { Default = Color3.fromRGB(255, 0, 0) })
 Options.HitOverlayColorPicker:OnChanged(function()
     HitOverlayColor = Options.HitOverlayColorPicker.Value
 end)
@@ -1903,8 +1922,8 @@ EspMainGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", De
 EspMainGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 255, 255) })
 EspMainGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(255, 255, 255) })
 EspMainGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(255, 255, 255) })
-EspMainGroup:AddToggle("EspBoxFillRotate", { Text = "Rotate Box Fill Gradient", Default = false })
-EspMainGroup:AddSlider("EspBoxFillRotateSpeed", { Text = "Box Fill Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
+EspMainGroup:AddToggle("EspBoxFillRotate", { Text = "Rotate Fill", Default = false })
+EspMainGroup:AddSlider("EspBoxFillRotateSpeed", { Text = "Fill Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
 
 local LineESPToggle = EspLineGroup:AddToggle("EspLine", { Text = "Enable Line ESP", Default = false })
 LineESPToggle:AddColorPicker("LineESPColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Line ESP Color" })
@@ -2022,12 +2041,12 @@ Toggles.VoidToggle:OnChanged(function()
 end)
 
 local LightingColorsGroup = Tabs.World:AddLeftGroupbox("Lighting & Time")
-local WorldSkyboxBox = Tabs.World:AddLeftGroupbox("Custom Skybox")
-local WorldFogBox = Tabs.World:AddLeftGroupbox("World Fog Customization")
-local WorldAtmosphereBox = Tabs.World:AddLeftGroupbox("World Atmosphere")
+local WorldSkyboxBox = Tabs.World:AddLeftGroupbox("Skybox")
+local WorldFogBox = Tabs.World:AddLeftGroupbox("World Fog")
+local WorldAtmosphereBox = Tabs.World:AddLeftGroupbox("Atmosphere")
 local CameraDisplayBox = Tabs.World:AddRightGroupbox("Camera & Display")
 
-LightingColorsGroup:AddSlider("ClockTimeSlider", { Text = "Game Clock Time", Default = Lighting.ClockTime, Min = 0, Max = 24, Rounding = 1 })
+LightingColorsGroup:AddSlider("ClockTimeSlider", { Text = "Clock Time", Default = Lighting.ClockTime, Min = 0, Max = 24, Rounding = 1 })
 Options.ClockTimeSlider:OnChanged(function()
     Lighting.ClockTime = Options.ClockTimeSlider.Value
 end)
