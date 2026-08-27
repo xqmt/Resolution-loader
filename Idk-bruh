@@ -45,7 +45,7 @@ local Window = Library:CreateWindow({
     UnlockMouseWhileOpen = true,
     NotifySide = "Center", 
     TabPadding = 8,
-    MenuFadeTime = 0
+    MenuFadeTime = 0.2
 })
 
 local SilentAimEnabled = false
