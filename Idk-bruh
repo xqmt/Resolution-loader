@@ -599,12 +599,12 @@ TargetBtn.Name = "TargetLockButton"
 TargetBtn.Size = UDim2.new(0, 150, 0, 42)
 TargetBtn.Position = UDim2.new(0.5, -75, 0.75, 0)
 TargetBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
-TargetBtn.BackgroundTransparency = 0.15
+TargetBtn.BackgroundTransparency = 1
 TargetBtn.BorderSizePixel = 0
 TargetBtn.Font = GlobalFontSetting
 TargetBtn.Text = "LOCK TARGET: OFF"
 TargetBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-TargetBtn.TextSize = 14
+TargetBtn.TextSize = 10
 TargetBtn.AutoButtonColor = false
 TargetBtn.Parent = LockButtonGui
 
@@ -613,7 +613,7 @@ BtnCorner.CornerRadius = UDim.new(0, 8)
 BtnCorner.Parent = TargetBtn
 
 local BtnStroke = Instance.new("UIStroke")
-BtnStroke.Thickness = 1.5
+BtnStroke.Thickness = 1
 BtnStroke.Color = Color3.fromRGB(60, 60, 70)
 BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 BtnStroke.Parent = TargetBtn
