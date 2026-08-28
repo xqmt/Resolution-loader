@@ -121,6 +121,25 @@ local SkyboxIDs = {
     ["blue"] = "rbxassetid://90988519"
 }
 
+-- === PARTICLE AURA VARIABLES & ASSETS ===
+local AuraEnabled = false
+local SelectedAuras = {} -- เปลี่ยนเป็น Table เก็บรายการที่เลือก
+local CurrentAuraColor = Color3.fromRGB(133, 220, 255)
+local ActiveParticles = {}
+
+local ParticleAuras = {
+	["starlight"] = game:GetObjects("rbxassetid://134645216613107")[1],
+	["heavenly"]  = game:GetObjects("rbxassetid://139300897520961")[1],
+	["ribbon"]    = game:GetObjects("rbxassetid://132069507632161")[1],
+	["sakura"]    = game:GetObjects("rbxassetid://81755778619404")[1],
+	["angel"]     = game:GetObjects("rbxassetid://97658130917593")[1],
+	["wind"]      = game:GetObjects("rbxassetid://80694081850877")[1],
+	["flow"]      = game:GetObjects("rbxassetid://119913533725648")[1],
+	["star"]      = game:GetObjects("rbxassetid://73754563740680")[1],
+}
+local AuraOptions = {"starlight", "heavenly", "ribbon", "sakura", "angel", "wind", "flow", "star"}
+
+
 local FOVCircleColor = Color3.fromRGB(255, 255, 255)
 local FOVCircleOutlineColor = Color3.fromRGB(0, 0, 0)
 local FOVThickness = 1.0
@@ -339,6 +358,84 @@ local function UpdateAtmosphere()
 end
 
 UpdateAtmosphere()
+
+
+-- === PARTICLE AURA CORE FUNCTIONS ===
+local function ClearAuraParticles()
+	for i = #ActiveParticles, 1, -1 do
+		if ActiveParticles[i] then
+			ActiveParticles[i]:Destroy()
+		end
+		table.remove(ActiveParticles, i)
+	end
+end
+
+local function ApplyColorToAura(inst, col)
+	local seq = ColorSequence.new(col)
+	if inst:IsA("PointLight") then
+		inst.Color = col
+	elseif inst:IsA("ParticleEmitter") or inst:IsA("Beam") or inst:IsA("Trail") then
+		inst.Color = seq
+	end
+	for _, child in ipairs(inst:GetDescendants()) do
+		ApplyColorToAura(child, col)
+	end
+end
+
+local function UpdateAuraSystem()
+	ClearAuraParticles()
+	if not AuraEnabled then return end
+
+	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	local hrp = char:WaitForChild("HumanoidRootPart", 5)
+	if not hrp then return end
+
+	for auraName, isSelected in pairs(SelectedAuras) do
+		if isSelected then
+			local template = ParticleAuras[auraName]
+			if template then
+				local cloned = template:Clone()
+				ApplyColorToAura(cloned, CurrentAuraColor)
+
+				for _, part in ipairs(cloned:GetChildren()) do
+					local targetPart = char:FindFirstChild(part.Name)
+					if targetPart then
+						for _, child in ipairs(part:GetChildren()) do
+							child.Name = "\0\0"
+							child.Parent = targetPart
+							table.insert(ActiveParticles, child)
+						end
+					end
+				end
+				cloned:Destroy()
+			end
+		end
+	end
+end
+
+-- ลอจิกจัดการการเกิดใหม่ (Respawn) เพื่อรีเซ็ต Aura เมื่อตัวละครตาย
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+	ClearAuraParticles()
+	local hum = newChar:WaitForChild("Humanoid", 5)
+	if hum then
+		hum.Died:Connect(function()
+			ClearAuraParticles()
+		end)
+	end
+	task.wait(0.5)
+	UpdateAuraSystem()
+end)
+
+if LocalPlayer.Character then
+	local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.Died:Connect(function()
+			ClearAuraParticles()
+		end)
+	end
+end
+
+
 
 local DeltaGradientGui = Instance.new("ScreenGui")
 DeltaGradientGui.Name = "hooksense_DeltaGradientGui"
@@ -1276,6 +1373,44 @@ Options.CustomHitNotifyInput:OnChanged(function()
         HitNotifyTemplate = Options.CustomHitNotifyInput.Value
     end
 end)
+
+-- === LINORIA GROUPBOX: PARTICLE AURA ===
+local AuraGroup = Tabs.HitEffects:AddRightGroupbox("Particle Aura")
+
+local AuraToggle = AuraGroup:AddToggle("AuraMasterToggle", { 
+    Text = "Enable Particle Aura", 
+    Default = false 
+})
+AuraToggle:AddColorPicker("AuraColorPicker", { 
+    Default = Color3.fromRGB(133, 220, 255), 
+    Title = "Aura Color" 
+})
+
+Toggles.AuraMasterToggle:OnChanged(function()
+    AuraEnabled = Toggles.AuraMasterToggle.Value
+    UpdateAuraSystem()
+end)
+
+Options.AuraColorPicker:OnChanged(function()
+    CurrentAuraColor = Options.AuraColorPicker.Value
+    for _, p in ipairs(ActiveParticles) do
+        ApplyColorToAura(p, CurrentAuraColor)
+    end
+end)
+
+-- Multi-Select Dropdown
+AuraGroup:AddDropdown("AuraSelectionDropdown", { 
+    Text = "Select Aura Presets", 
+    Values = AuraOptions, 
+    Default = { ["angel"] = true }, -- กำหนดค่าเริ่มต้นแบบ Multi
+    Multi = true 
+})
+
+Options.AuraSelectionDropdown:OnChanged(function()
+    SelectedAuras = Options.AuraSelectionDropdown.Value
+    UpdateAuraSystem()
+end)
+
 
 local LastCameraCFrame = workspace.CurrentCamera.CFrame
 
