@@ -1,0 +1,143 @@
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local Topbar = Instance.new("Frame")
+local GradientLine = Instance.new("Frame")
+local UIGradient = Instance.new("UIGradient")
+local Title = Instance.new("TextLabel")
+local ToggleButton = Instance.new("TextButton")
+
+ScreenGui.Name = "RapidFireGui"
+ScreenGui.Parent = game:GetService("CoreGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
+
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+MainFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+MainFrame.BorderSizePixel = 1
+MainFrame.Position = UDim2.new(0.05, 0, 0.2, 0)
+MainFrame.Size = UDim2.new(0, 180, 0, 85)
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+Topbar.Name = "Topbar"
+Topbar.Parent = MainFrame
+Topbar.BackgroundColor3 = Color3.fromRGB(23, 23, 23)
+Topbar.BorderColor3 = Color3.fromRGB(0, 0, 0)
+Topbar.BorderSizePixel = 1
+Topbar.Size = UDim2.new(1, 0, 0, 22)
+
+GradientLine.Name = "GradientLine"
+GradientLine.Parent = Topbar
+GradientLine.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+GradientLine.BorderSizePixel = 0
+GradientLine.Size = UDim2.new(1, 0, 0, 2)
+GradientLine.Position = UDim2.new(0, 0, 0, 0)
+
+UIGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(59, 177, 0)),
+    ColorSequenceKeypoint.new(0.25, Color3.fromRGB(167, 218, 56)),
+    ColorSequenceKeypoint.new(0.50, Color3.fromRGB(238, 203, 68)),
+    ColorSequenceKeypoint.new(0.75, Color3.fromRGB(224, 115, 55)),
+    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(199, 58, 58))
+})
+UIGradient.Parent = GradientLine
+
+Title.Name = "Title"
+Title.Parent = Topbar
+Title.BackgroundTransparency = 1.000
+Title.Position = UDim2.new(0, 8, 0, 2)
+Title.Size = UDim2.new(1, -16, 1, -2)
+Title.Font = Enum.Font.Code
+Title.Text = "rapid fire"
+Title.TextColor3 = Color3.fromRGB(200, 200, 200)
+Title.TextSize = 10
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+ToggleButton.Name = "ToggleButton"
+ToggleButton.Parent = MainFrame
+ToggleButton.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+ToggleButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+ToggleButton.BorderSizePixel = 1
+ToggleButton.Position = UDim2.new(0.05, 0, 0.42, 0)
+ToggleButton.Size = UDim2.new(0.9, 0, 0, 32)
+ToggleButton.Font = Enum.Font.Arcade
+ToggleButton.Text = "Rapid Fire [OFF]"
+ToggleButton.TextColor3 = Color3.fromRGB(160, 160, 160)
+ToggleButton.TextSize = 9
+
+local is_enabled = false
+local is_shooting = false
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+local modified_tools = {}
+
+local function apply_rapid_fire(tool)
+    if not tool or not tool:IsA("Tool") or modified_tools[tool] then return end
+    
+    if getconnections then
+        for _, conn in pairs(getconnections(tool.Activated)) do
+            local old = conn["Function"]
+            if old then
+                if getconstants and setconstant then
+                    for idx, constant in pairs(getconstants(old)) do
+                        if type(constant) == "number" and constant > 0 and constant < 2 then
+                            setconstant(old, idx, 0)
+                        end
+                    end
+                end
+
+                if getupvalues and setupvalue then
+                    for idx, upvalue in pairs(getupvalues(old)) do
+                        if type(upvalue) == "number" and upvalue > 0 and upvalue < 2 then
+                            setupvalue(old, idx, 0)
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    modified_tools[tool] = true
+end
+
+RunService.RenderStepped:Connect(function()
+    if is_enabled and is_shooting then
+        local character = LocalPlayer.Character
+        if character then
+            local tool = character:FindFirstChildOfClass("Tool")
+            if tool then
+                apply_rapid_fire(tool)
+                tool:Activate()
+            end
+        end
+    end
+end)
+
+Mouse.Button1Down:Connect(function()
+    if is_enabled then
+        is_shooting = true
+    end
+end)
+
+Mouse.Button1Up:Connect(function()
+    is_shooting = false
+end)
+
+ToggleButton.MouseButton1Click:Connect(function()
+    is_enabled = not is_enabled
+    
+    if is_enabled then
+        ToggleButton.Text = "Rapid Fire [ON]"
+        ToggleButton.TextColor3 = Color3.fromRGB(167, 218, 56)
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    else
+        ToggleButton.Text = "Rapid Fire [OFF]"
+        ToggleButton.TextColor3 = Color3.fromRGB(160, 160, 160)
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+        is_shooting = false
+    end
+end)
