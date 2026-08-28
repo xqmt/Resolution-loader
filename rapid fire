@@ -12,7 +12,7 @@ ScreenGui.ResetOnSpawn = false
 
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 MainFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 MainFrame.BorderSizePixel = 1
 MainFrame.Position = UDim2.new(0.05, 0, 0.2, 0)
@@ -37,8 +37,8 @@ UIGradient.Parent = GradientLine
 
 Topbar.Name = "Topbar"
 Topbar.Parent = MainFrame
-Topbar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-Topbar.BorderColor3 = Color3.fromRGB(40, 40, 40)
+Topbar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Topbar.BorderColor3 = Color3.fromRGB(0, 0, 0)
 Topbar.BorderSizePixel = 1
 Topbar.Position = UDim2.new(0, 0, 0, 2)
 Topbar.Size = UDim2.new(1, 0, 0, 20)
@@ -49,14 +49,14 @@ Title.BackgroundTransparency = 1.000
 Title.Position = UDim2.new(0, 6, 0, 0)
 Title.Size = UDim2.new(1, -12, 1, 0)
 Title.Font = Enum.Font.Arcade
-Title.Text = "skeet rapid fire"
+Title.Text = "rapid fire"
 Title.TextColor3 = Color3.fromRGB(220, 220, 220)
 Title.TextSize = 10
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
 ToggleButton.Name = "ToggleButton"
 ToggleButton.Parent = MainFrame
-ToggleButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
 ToggleButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
 ToggleButton.BorderSizePixel = 1
 ToggleButton.Position = UDim2.new(0.05, 0, 0.45, 0)
@@ -126,11 +126,11 @@ ToggleButton.MouseButton1Click:Connect(function()
     if is_enabled then
         ToggleButton.Text = "Rapid Fire [ON]"
         ToggleButton.TextColor3 = Color3.fromRGB(160, 215, 60)
-        ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
     else
         ToggleButton.Text = "Rapid Fire [OFF]"
         ToggleButton.TextColor3 = Color3.fromRGB(150, 150, 150)
-        ToggleButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
         is_shooting = false
     end
 end)
