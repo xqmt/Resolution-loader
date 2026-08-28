@@ -12,6 +12,9 @@ local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
 local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
+Library.Font = Enum.Font.Cartoon
+Library.MainFont = Enum.Font.Cartoon 
+
 local GlobalFontSetting = Enum.Font.Cartoon
 local ESPFontSetting = Enum.Font.Cartoon
 
@@ -121,7 +124,6 @@ local SkyboxIDs = {
     ["blue"] = "rbxassetid://90988519"
 }
 
--- === PARTICLE AURA VARIABLES & ASSETS ===
 local AuraEnabled = false
 local SelectedAuras = {} -- เปลี่ยนเป็น Table เก็บรายการที่เลือก
 local CurrentAuraColor = Color3.fromRGB(133, 220, 255)
@@ -359,8 +361,6 @@ end
 
 UpdateAtmosphere()
 
-
--- === PARTICLE AURA CORE FUNCTIONS ===
 local function ClearAuraParticles()
 	for i = #ActiveParticles, 1, -1 do
 		if ActiveParticles[i] then
@@ -413,7 +413,6 @@ local function UpdateAuraSystem()
 	end
 end
 
--- ลอจิกจัดการการเกิดใหม่ (Respawn) เพื่อรีเซ็ต Aura เมื่อตัวละครตาย
 LocalPlayer.CharacterAdded:Connect(function(newChar)
 	ClearAuraParticles()
 	local hum = newChar:WaitForChild("Humanoid", 5)
@@ -1374,7 +1373,6 @@ Options.CustomHitNotifyInput:OnChanged(function()
     end
 end)
 
--- === LINORIA GROUPBOX: PARTICLE AURA ===
 local AuraGroup = Tabs.HitEffects:AddRightGroupbox("Particle Aura")
 
 local AuraToggle = AuraGroup:AddToggle("AuraMasterToggle", { 
@@ -1398,11 +1396,10 @@ Options.AuraColorPicker:OnChanged(function()
     end
 end)
 
--- Multi-Select Dropdown
 AuraGroup:AddDropdown("AuraSelectionDropdown", { 
     Text = "Select Aura Presets", 
     Values = AuraOptions, 
-    Default = { ["angel"] = true }, -- กำหนดค่าเริ่มต้นแบบ Multi
+    Default = { ["angel"] = true },
     Multi = true 
 })
 
