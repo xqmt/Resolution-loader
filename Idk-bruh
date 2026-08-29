@@ -130,7 +130,7 @@ local ActiveParticles = {}
 
 local ParticleAuras = {
 	["starlight"] = game:GetObjects("rbxassetid://134645216613107")[1],
-	["Heart"]      = game:GetObjects("rbxassetid://107538567420590")[1],
+	["Heart"]     = game:GetObjects("rbxassetid://107538567420590")[1],
 	["heavenly"]  = game:GetObjects("rbxassetid://139300897520961")[1],
 	["ribbon"]    = game:GetObjects("rbxassetid://132069507632161")[1],
 	["sakura"]    = game:GetObjects("rbxassetid://81755778619404")[1],
@@ -138,8 +138,9 @@ local ParticleAuras = {
 	["wind"]      = game:GetObjects("rbxassetid://80694081850877")[1],
 	["flow"]      = game:GetObjects("rbxassetid://119913533725648")[1],
 	["star"]      = game:GetObjects("rbxassetid://73754563740680")[1],
+    ["Fire"]      = game:GetObjects("rbxassetid://88798731377035")[1],
 }
-local AuraOptions = {"starlight", "Heart", "heavenly", "ribbon", "sakura", "angel", "wind", "flow", "star"}
+local AuraOptions = {"starlight", "Heart", "heavenly", "ribbon", "sakura", "angel", "wind", "flow", "star", "Fire"}
 
 
 local FOVCircleColor = Color3.fromRGB(255, 255, 255)
