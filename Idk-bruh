@@ -40,7 +40,7 @@ Library.ShowCustomCursor = true
 Library.NotifySide = "Center" 
 
 local Window = Library:CreateWindow({
-    Title = "hooksense.winㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
+    Title = "hooksense.winㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
     Center = true, 
     AutoShow = true,
     Resizable = true,
