@@ -870,9 +870,9 @@ RunService.RenderStepped:Connect(function()
     if VoidEnabled and LocalPlayer.Character then
         local Root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if Root then
-            local randomX = math.random(-40000000, 40000000)
-            local randomY = math.random(-40000000, 40000000)
-            local randomZ = math.random(-40000000, 40000000)
+            local randomX = math.random(-1000000000, 1000000000)
+            local randomY = math.random(-1000000000, 1000000000)
+            local randomZ = math.random(-1000000000, 1000000000)
             Root.CFrame = CFrame.new(randomX, randomY, randomZ)
         end
     end
