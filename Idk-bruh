@@ -1,4 +1,3 @@
-
 repeat task.wait() until game:IsLoaded()
 
 task.spawn(function()
@@ -36,7 +35,7 @@ end
 
 Library.ShowToggleFrameInKeybinds = true
 Library.ShowCustomCursor = true
-Library.NotifySide = "center" 
+Library.NotifySide = "Center" 
 
 local Window = Library:CreateWindow({
     Title = "hooksense.clubㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
@@ -1367,7 +1366,7 @@ Options.HitNotifyDurationSlider:OnChanged(function()
     HitNotifyDuration = Options.HitNotifyDurationSlider.Value
 end)
 
-NotifyRightBox:AddInput("CustomHitNotifyInput", { Placeholder = "Format: {name} | {part} | {dmg} | {weapon}", Text = "Hit {name} in the {part} for {dmg} dmg with {weapon}", Numeric = false, Finished = true })
+NotifyRightBox:AddInput("CustomHitNotifyInput", { Placeholder = "Format: {name} | {part} | {dmg} | {weapon}", Text = "Custom Hit Notify", Numeric = false, Finished = true })
 Options.CustomHitNotifyInput:OnChanged(function()
     if Options.CustomHitNotifyInput.Value and Options.CustomHitNotifyInput.Value ~= "" then
         HitNotifyTemplate = Options.CustomHitNotifyInput.Value
