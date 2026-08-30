@@ -1515,8 +1515,7 @@ local function ImplementESPSetup(holder)
         holder.GuiHealthGradient = Instance.new("UIGradient")
         holder.GuiHealthGradient.Rotation = 90
         holder.GuiHealthGradient.Parent = holder.GuiHealthBar
-
-        -- Neverlose Style Horizontal Armor Bar with 2-Color Gradient
+        
         holder.GuiArmorBg = Instance.new("Frame")
         holder.GuiArmorBg.Name = "ArmorBg"
         holder.GuiArmorBg.BorderSizePixel = 0
@@ -2074,7 +2073,7 @@ HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromR
 EspLineGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
 EspLineGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.95, Min = 0, Max = 1, Rounding = 2 })
 
-EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "ESP Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "SourceSansBold") or 1, Multi = false })
+EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "SourceSansBold") or 1, Multi = false })
 
 Options.ESPFontDropdown:OnChanged(function(val)
     pcall(function()
@@ -2316,7 +2315,7 @@ Options.FpsCapSlider:OnChanged(function()
 end)
 
 local BlacklistPlayersGroup = Tabs.Addons:AddLeftGroupbox("Loaders Scripts")
-local ViewPlayerGroup = Tabs.Addons:AddLeftGroupbox("View Player")
+local ViewPlayerGroup = Tabs.Addons:AddRightGroupbox("View Player")
 
 BlacklistPlayersGroup:AddButton({ Text = "walkspeed", Func = function()
     local success, err = pcall(function()
