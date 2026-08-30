@@ -40,7 +40,7 @@ Library.ShowCustomCursor = true
 Library.NotifySide = "Center" 
 
 local Window = Library:CreateWindow({
-    Title = "hooksense.winㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
+    Title = "Resolution.winㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
     Center = true, 
     AutoShow = true,
     Resizable = true,
@@ -2519,8 +2519,8 @@ end)
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
 SaveManager:IgnoreThemeSettings()
-ThemeManager:SetFolder("hooksensev2")
-SaveManager:SetFolder("hooksensev2/configs")
+ThemeManager:SetFolder("Resolution")
+SaveManager:SetFolder("Resolution/configs")
 SaveManager:BuildConfigSection(Tabs.UI)
 ThemeManager:ApplyToTab(Tabs.UI)
 SaveManager:LoadAutoloadConfig()
