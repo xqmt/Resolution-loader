@@ -2314,8 +2314,8 @@ Options.FpsCapSlider:OnChanged(function()
     if setfpscap then setfpscap(Options.FpsCapSlider.Value) end
 end)
 
-local BlacklistPlayersGroup = Tabs.Addons:AddLeftGroupbox("Loaders Scripts")
-local ViewPlayerGroup = Tabs.Addons:AddRightGroupbox("View Player")
+local BlacklistPlayersGroup = Tabs.Addons:AddRightGroupbox("Loaders Scripts")
+local ViewPlayerGroup = Tabs.Addons:AddLeftGroupbox("View Player")
 
 BlacklistPlayersGroup:AddButton({ Text = "walkspeed", Func = function()
     local success, err = pcall(function()
@@ -2464,10 +2464,10 @@ ViewPlayerGroup:AddButton({ Text = "Go to Player", Func = function()
     end
 end })
 
-local InterfaceGroup = Tabs.UI:AddLeftGroupbox("Menu Customization")
+local InterfaceGroup = Tabs.UI:AddLeftGroupbox("Font menu")
 local MenuGroup = Tabs.UI:AddLeftGroupbox("Menu Settings")
 
-InterfaceGroup:AddDropdown("UIFontDropdown", { Text = "UI Custom Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "Cartoon") or 1, Multi = false })
+InterfaceGroup:AddDropdown("UIFontDropdown", { Text = "Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "Cartoon") or 1, Multi = false })
 
 Options.UIFontDropdown:OnChanged(function(val)
     pcall(function()
