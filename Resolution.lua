@@ -37,16 +37,16 @@ end
 
 Library.ShowToggleFrameInKeybinds = true
 Library.ShowCustomCursor = true
-Library.NotifySide = "Center" 
+Library.NotifySide = "Right" 
 
 local Window = Library:CreateWindow({
-    Title = "Resolution.winㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
+    Title = "Resolution.pubㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
     Center = true, 
     AutoShow = true,
     Resizable = true,
     ShowCustomCursor = true,
     UnlockMouseWhileOpen = true,
-    NotifySide = "Center", 
+    NotifySide = "Right", 
     TabPadding = 8,
     MenuFadeTime = 0.2
 })
