@@ -1762,7 +1762,7 @@ RunService.RenderStepped:Connect(function()
                         local pct = math.clamp(esp.SmoothHealth / maxHp, 0, 1)
 
                         local targetArmor = 0
-                        local maxArmor = 100
+                        local maxArmor = 200
                         local bodyEffects = character:FindFirstChild("BodyEffects")
                         if bodyEffects then
                             local armorVal = bodyEffects:FindFirstChild("Armor")
