@@ -2,7 +2,7 @@ repeat task.wait() until game:IsLoaded()
 
 task.spawn(function()
     pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/xqmt/hooksense-loader/refs/heads/main/Bypass.lua", true))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/Bypass.lua", true))()
     end)
 end)
 
