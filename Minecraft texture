@@ -1,6 +1,3 @@
--- Roblox Client Texture Replacement Script (Auto-Run)
-
--- Fallback functions ในกรณีที่รันด้วย Executor ทั่วไป
 local cloneref = cloneref or function(obj) return obj end
 local LPH_NO_VIRTUALIZE = LPH_NO_VIRTUALIZE or function(f) return f end
 local LPH_JIT_MAX = LPH_JIT_MAX or function(f) return f end
@@ -29,7 +26,6 @@ local textures = texture_packs["minecraft"]
 local variants = {}
 local textures_connection = nil
 
--- ฟังก์ชันปรับแต่งพาร์ตเดี่ยว
 local apply_texture = LPH_NO_VIRTUALIZE(function(descendant)
     local class_name = descendant.ClassName
     local white = color3_fromrgb(254, 253, 255)
@@ -46,7 +42,6 @@ local apply_texture = LPH_NO_VIRTUALIZE(function(descendant)
     end
 end)
 
--- ฟังก์ชันสร้าง MaterialVariant และค้นหาพาร์ตในแผนที่
 local apply_textures = LPH_NO_VIRTUALIZE(function()
     for i = 1, #variants do
         destroy(variants[i])
@@ -81,7 +76,6 @@ local apply_textures = LPH_NO_VIRTUALIZE(function()
     end
 end)
 
--- เริ่มทำงานทันที
 apply_textures()
 
 local map = workspace:FindFirstChild("MAP")
