@@ -2350,6 +2350,18 @@ BlacklistPlayersGroup:AddButton({ Text = "rapid fire", Func = function()
     end
 end })
 
+BlacklistPlayersGroup:AddButton({ Text = "China hat", Func = function()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/gamesense%20China%20hat'))()
+    end)
+    if success then
+        Library:Notify("successfully!")
+    else
+        Library:Notify("Error loading script: " .. tostring(err))
+    end
+end })
+
+
 local function StopViewingPlayer()
     if ViewPlayerConnection then
         ViewPlayerConnection:Disconnect()
