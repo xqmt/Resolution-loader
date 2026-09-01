@@ -1,0 +1,430 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+-- State
+local currentHat = nil
+local hatColor = Color3.fromHSV(0.5, 1, 1)
+local h, s, v = 0.5, 1, 1
+local isDraggingColor = false
+local isHatEnabled = true
+local hatConnection = nil
+
+-- Function
+local function destroyChinaHat()
+    if hatConnection then
+        hatConnection:Disconnect()
+        hatConnection = nil
+    end
+    local character = LocalPlayer.Character
+    if character then
+        local head = character:FindFirstChild("Head")
+        if head then
+            local existingHat = head:FindFirstChild("ChinaHatAdornment")
+            if existingHat then
+                existingHat:Destroy()
+            end
+        end
+    end
+    currentHat = nil
+end
+
+local function createChinaHat()
+    destroyChinaHat()
+    if not isHatEnabled then return end
+
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local head = character:WaitForChild("Head", 5)
+    if not head then return end
+
+    local hat = Instance.new("ConeHandleAdornment")
+    hat.Name = "ChinaHatAdornment"
+    hat.Adornee = head
+    hat.Parent = head
+    
+    hat.Height = 0.8
+    hat.Radius = 1.8
+    hat.CFrame = CFrame.new(0, 0.5, 0) * CFrame.Angles(math.rad(90), 0, 0)
+    hat.Color3 = hatColor
+    hat.Transparency = 0.1
+    hat.AlwaysOnTop = true
+    currentHat = hat
+
+    local timePassed = 0
+    hatConnection = RunService.RenderStepped:Connect(function(dt)
+        if not hat or not hat.Parent or not character:FindFirstChild("Humanoid") or character.Humanoid.Health <= 0 then
+            destroyChinaHat()
+            return
+        end
+        timePassed = timePassed + dt
+        hat.Transparency = 0.1 + math.sin(timePassed * 6) * 0.1
+    end)
+end
+
+-- Draggable Function
+local function makeDraggable(guiObject, dragHandle)
+    local dragging = false
+    local dragStart, startPos
+    dragHandle = dragHandle or guiObject
+
+    dragHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = guiObject.Position
+
+            local conn
+            conn = input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    if conn then conn:Disconnect() end
+                end
+            end)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            guiObject.Position = UDim2.new(
+                startPos.X.Scale, 
+                startPos.X.Offset + delta.X, 
+                startPos.Y.Scale, 
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+-- Resizable Function
+local function makeResizable(guiObject, resizeHandle, minSize)
+    minSize = minSize or Vector2.new(180, 100)
+    local resizing = false
+    local dragStart, startSize
+
+    resizeHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            resizing = true
+            dragStart = input.Position
+            startSize = guiObject.AbsoluteSize
+
+            local conn
+            conn = input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    resizing = false
+                    if conn then conn:Disconnect() end
+                end
+            end)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if resizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            local newWidth = math.max(minSize.X, startSize.X + delta.X)
+            local newHeight = math.max(minSize.Y, startSize.Y + delta.Y)
+            guiObject.Size = UDim2.new(0, newWidth, 0, newHeight)
+        end
+    end)
+end
+
+-- GUI
+local function createGUI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "GamesenseGui"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+    local mainVisible = true
+
+    -- Main Window
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(0, 220, 0, 130)
+    mainFrame.Position = UDim2.new(0.5, -110, 0.4, -65)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Active = true
+    mainFrame.Parent = screenGui
+
+    local outerStroke = Instance.new("UIStroke")
+    outerStroke.Color = Color3.fromRGB(0, 0, 0)
+    outerStroke.Thickness = 1
+    outerStroke.Parent = mainFrame
+
+    -- Inner
+    local innerFrame = Instance.new("Frame")
+    innerFrame.Size = UDim2.new(1, -2, 1, -2)
+    innerFrame.Position = UDim2.new(0, 1, 0, 1)
+    innerFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    innerFrame.BorderSizePixel = 0
+    innerFrame.Parent = mainFrame
+
+    local innerStroke = Instance.new("UIStroke")
+    innerStroke.Color = Color3.fromRGB(48, 48, 48)
+    innerStroke.Thickness = 1
+    innerStroke.Parent = innerFrame
+
+    -- Topbar
+    local topGradient = Instance.new("Frame")
+    topGradient.Size = UDim2.new(1, 0, 0, 2)
+    topGradient.Position = UDim2.new(0, 0, 0, 0)
+    topGradient.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    topGradient.BorderSizePixel = 0
+    topGradient.Parent = innerFrame
+
+    local uiGradient = Instance.new("UIGradient")
+    uiGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(59, 175, 218)),
+        ColorSequenceKeypoint.new(0.20, Color3.fromRGB(201, 107, 255)),
+        ColorSequenceKeypoint.new(0.40, Color3.fromRGB(255, 85, 85)),
+        ColorSequenceKeypoint.new(0.70, Color3.fromRGB(255, 184, 108)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(161, 222, 73))
+    })
+    uiGradient.Parent = topGradient
+
+    -- Window
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, -10, 0, 18)
+    title.Position = UDim2.new(0, 6, 0, 2)
+    title.BackgroundTransparency = 1
+    title.Text = "gamesense"
+    title.TextColor3 = Color3.fromRGB(200, 200, 200)
+    title.TextSize = 11
+    title.Font = Enum.Font.Code
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Parent = innerFrame
+
+    makeDraggable(mainFrame, title)
+
+    -- Groupbox
+    local groupbox = Instance.new("Frame")
+    groupbox.Size = UDim2.new(1, -12, 1, -28)
+    groupbox.Position = UDim2.new(0, 6, 0, 22)
+    groupbox.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+    groupbox.BorderSizePixel = 0
+    groupbox.Parent = innerFrame
+
+    local groupboxStroke = Instance.new("UIStroke")
+    groupboxStroke.Color = Color3.fromRGB(35, 35, 35)
+    groupboxStroke.Thickness = 1
+    groupboxStroke.Parent = groupbox
+
+    
+    local groupTitle = Instance.new("TextLabel")
+    groupTitle.Size = UDim2.new(0, 50, 0, 10)
+    groupTitle.Position = UDim2.new(0, 8, 0, -6)
+    groupTitle.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+    groupTitle.BorderSizePixel = 0
+    groupTitle.Text = " visuals "
+    groupTitle.TextColor3 = Color3.fromRGB(160, 160, 160)
+    groupTitle.TextSize = 10
+    groupTitle.Font = Enum.Font.Code
+    groupTitle.Parent = groupbox
+
+    
+    local toggleRow = Instance.new("Frame")
+    toggleRow.Size = UDim2.new(1, -16, 0, 16)
+    toggleRow.Position = UDim2.new(0, 8, 0, 12)
+    toggleRow.BackgroundTransparency = 1
+    toggleRow.Parent = groupbox
+
+    
+    local checkbox = Instance.new("TextButton")
+    checkbox.Size = UDim2.new(0, 9, 0, 9)
+    checkbox.Position = UDim2.new(0, 0, 0.5, -4)
+    checkbox.BackgroundColor3 = Color3.fromRGB(140, 195, 75)
+    checkbox.AutoButtonColor = false
+    checkbox.Text = ""
+    checkbox.Parent = toggleRow
+
+    local checkStroke = Instance.new("UIStroke")
+    checkStroke.Color = Color3.fromRGB(0, 0, 0)
+    checkStroke.Thickness = 1
+    checkStroke.Parent = checkbox
+
+    local checkGradient = Instance.new("UIGradient")
+    checkGradient.Rotation = 90
+    checkGradient.Color = ColorSequence.new(Color3.fromRGB(255,255,255), Color3.fromRGB(180,180,180))
+    checkGradient.Parent = checkbox
+
+    -- Toggle
+    local toggleLabel = Instance.new("TextButton")
+    toggleLabel.Size = UDim2.new(0, 120, 1, 0)
+    toggleLabel.Position = UDim2.new(0, 15, 0, 0)
+    toggleLabel.BackgroundTransparency = 1
+    toggleLabel.Text = "china hat"
+    toggleLabel.TextColor3 = Color3.fromRGB(210, 210, 210)
+    toggleLabel.TextSize = 11
+    toggleLabel.Font = Enum.Font.Code
+    toggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    toggleLabel.Parent = toggleRow
+
+    
+    local colorPickerBtn = Instance.new("TextButton")
+    colorPickerBtn.Size = UDim2.new(0, 14, 0, 8)
+    colorPickerBtn.Position = UDim2.new(1, -14, 0.5, -4)
+    colorPickerBtn.BackgroundColor3 = hatColor
+    colorPickerBtn.Text = ""
+    colorPickerBtn.AutoButtonColor = false
+    colorPickerBtn.Parent = toggleRow
+
+    local cpStroke = Instance.new("UIStroke")
+    cpStroke.Color = Color3.fromRGB(0, 0, 0)
+    cpStroke.Thickness = 1
+    cpStroke.Parent = colorPickerBtn
+
+    -- Colorpicker
+    local pickerFrame = Instance.new("Frame")
+    pickerFrame.Size = UDim2.new(0, 110, 0, 80)
+    pickerFrame.Position = UDim2.new(1, 5, 0, 0)
+    pickerFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+    pickerFrame.Visible = false
+    pickerFrame.ZIndex = 5
+    pickerFrame.Parent = colorPickerBtn
+
+    local pickerOutline = Instance.new("UIStroke")
+    pickerOutline.Color = Color3.fromRGB(40, 40, 40)
+    pickerOutline.Thickness = 1
+    pickerOutline.Parent = pickerFrame
+
+    -- Color SV
+    local hsvBox = Instance.new("Frame")
+    hsvBox.Size = UDim2.new(1, -6, 1, -6)
+    hsvBox.Position = UDim2.new(0, 3, 0, 3)
+    hsvBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    hsvBox.BorderSizePixel = 0
+    hsvBox.ZIndex = 6
+    hsvBox.Parent = pickerFrame
+
+    local hueGradient = Instance.new("UIGradient")
+    hueGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.00, Color3.fromHSV(0.00, 1, 1)),
+        ColorSequenceKeypoint.new(0.17, Color3.fromHSV(0.17, 1, 1)),
+        ColorSequenceKeypoint.new(0.33, Color3.fromHSV(0.33, 1, 1)),
+        ColorSequenceKeypoint.new(0.50, Color3.fromHSV(0.50, 1, 1)),
+        ColorSequenceKeypoint.new(0.67, Color3.fromHSV(0.67, 1, 1)),
+        ColorSequenceKeypoint.new(0.83, Color3.fromHSV(0.83, 1, 1)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromHSV(1.00, 1, 1))
+    })
+    hueGradient.Parent = hsvBox
+
+    local satFrame = Instance.new("Frame")
+    satFrame.Size = UDim2.new(1, 0, 1, 0)
+    satFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    satFrame.BorderSizePixel = 0
+    satFrame.ZIndex = 7
+    satFrame.Parent = hsvBox
+
+    local satGradient = Instance.new("UIGradient")
+    satGradient.Rotation = 90
+    satGradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(1, 0)
+    })
+    satGradient.Parent = satFrame
+
+    local pickerCursor = Instance.new("Frame")
+    pickerCursor.Size = UDim2.new(0, 3, 0, 3)
+    pickerCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+    pickerCursor.Position = UDim2.new(h, 0, 1 - s, 0)
+    pickerCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    pickerCursor.BorderSizePixel = 0
+    pickerCursor.ZIndex = 8
+    pickerCursor.Parent = hsvBox
+
+    local cursorStroke = Instance.new("UIStroke")
+    cursorStroke.Color = Color3.fromRGB(0, 0, 0)
+    cursorStroke.Thickness = 1
+    cursorStroke.Parent = pickerCursor
+
+    -- Resize
+    local resizeHandle = Instance.new("TextButton")
+    resizeHandle.Size = UDim2.new(0, 10, 0, 10)
+    resizeHandle.Position = UDim2.new(1, -10, 1, -10)
+    resizeHandle.BackgroundTransparency = 1
+    resizeHandle.Text = "◢"
+    resizeHandle.TextColor3 = Color3.fromRGB(80, 80, 80)
+    resizeHandle.TextSize = 9
+    resizeHandle.Font = Enum.Font.Code
+    resizeHandle.ZIndex = 10
+    resizeHandle.Parent = mainFrame
+
+    makeResizable(mainFrame, resizeHandle, Vector2.new(180, 100))
+
+    -- Event
+    local function setCheckboxState(state)
+        isHatEnabled = state
+        if isHatEnabled then
+            checkbox.BackgroundColor3 = Color3.fromRGB(140, 195, 75)
+            createChinaHat()
+        else
+            checkbox.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+            destroyChinaHat()
+        end
+    end
+
+    checkbox.MouseButton1Click:Connect(function()
+        setCheckboxState(not isHatEnabled)
+    end)
+
+    toggleLabel.MouseButton1Click:Connect(function()
+        setCheckboxState(not isHatEnabled)
+    end)
+
+    colorPickerBtn.MouseButton1Click:Connect(function()
+        pickerFrame.Visible = not pickerFrame.Visible
+    end)
+
+    local function updateColor(inputPosition)
+        local boxAbsPos = hsvBox.AbsolutePosition
+        local boxAbsSize = hsvBox.AbsoluteSize
+
+        local x = math.clamp((inputPosition.X - boxAbsPos.X) / boxAbsSize.X, 0, 1)
+        local y = math.clamp((inputPosition.Y - boxAbsPos.Y) / boxAbsSize.Y, 0, 1)
+
+        h = x
+        s = 1 - y
+        
+        pickerCursor.Position = UDim2.new(x, 0, y, 0)
+        hatColor = Color3.fromHSV(h, s, v)
+        colorPickerBtn.BackgroundColor3 = hatColor
+        if currentHat then currentHat.Color3 = hatColor end
+    end
+
+    hsvBox.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isDraggingColor = true
+            updateColor(input.Position)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if isDraggingColor and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            updateColor(input.Position)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            isDraggingColor = false
+        end
+    end)
+
+    -- Keybind
+    UserInputService.InputBegan:Connect(function(input, gpe)
+        if not gpe and input.KeyCode == Enum.KeyCode.Insert then
+            mainVisible = not mainVisible
+            mainFrame.Visible = mainVisible
+        end
+    end)
+end
+
+-- Initialize
+if LocalPlayer.Character then createChinaHat() end
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    createChinaHat()
+end)
+
+createGUI()
