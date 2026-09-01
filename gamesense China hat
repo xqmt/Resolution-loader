@@ -3,7 +3,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
-local CHEAT_FONT = Enum.Font.Cartoon
+local CHEAT_FONT = Enum.Font.Arcade
 
 local THEME = {
     Primary = Color3.fromRGB(255, 105, 180),
