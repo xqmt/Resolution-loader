@@ -1111,7 +1111,7 @@ local TracerGroupBox = Tabs.Main:AddLeftGroupbox("Target Visual")
 local FOVGroupBox = Tabs.Main:AddRightGroupbox("FOV Settings")
 local FOVFillGroupBox = Tabs.Main:AddRightGroupbox("FOV Fill")
 
-LeftGroupBox:AddToggle("SilentAimToggle", { Text = "Silent Aim", Default = false })
+LeftGroupBox:AddToggle("SilentAimToggle", { Text = "Enable Silent Aim", Default = false })
     :AddKeyPicker("SilentAimKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Silent Aim Bind" })
 
 Toggles.SilentAimToggle:OnChanged(function()
@@ -1123,36 +1123,36 @@ Toggles.ShowLockButtonToggle:OnChanged(function()
     LockButtonGui.Enabled = Toggles.ShowLockButtonToggle.Value
 end)
 
-LeftGroupBox:AddToggle("ResolverToggle", { Text = "Resolver", Default = false })
+LeftGroupBox:AddToggle("ResolverToggle", { Text = "Enable Resolver", Default = false })
 Toggles.ResolverToggle:OnChanged(function()
     ResolverEnabled = Toggles.ResolverToggle.Value
 end)
 
-LeftGroupBox:AddToggle("LookAtToggle", { Text = "Look at Target", Default = false })
+LeftGroupBox:AddToggle("LookAtToggle", { Text = "Enable Look at Target", Default = false })
     :AddKeyPicker("LookAtKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Look At Bind" })
 
 Toggles.LookAtToggle:OnChanged(function()
     LookAtEnabled = Toggles.LookAtToggle.Value
 end)
 
-LeftGroupBox:AddToggle("BulletTPToggle", { Text = "MagicBullet", Default = false })
+LeftGroupBox:AddToggle("BulletTPToggle", { Text = "Enable MagicBullet", Default = false })
     :AddKeyPicker("BulletTPKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "BulletTp Bind" })
 
 Toggles.BulletTPToggle:OnChanged(function()
     BulletTPEnabled = Toggles.BulletTPToggle.Value
 end)
 
-LeftGroupBox:AddToggle("WallCheckToggle", { Text = "Wall Check", Default = false })
+LeftGroupBox:AddToggle("WallCheckToggle", { Text = "Enable Wall Check", Default = false })
 Toggles.WallCheckToggle:OnChanged(function()
     WallCheckEnabled = Toggles.WallCheckToggle.Value
 end)
 
-LeftGroupBox:AddToggle("TeamCheckToggle", { Text = "Team Check", Default = false })
+LeftGroupBox:AddToggle("TeamCheckToggle", { Text = "Enable Team Check", Default = false })
 Toggles.TeamCheckToggle:OnChanged(function()
     TeamCheckEnabled = Toggles.TeamCheckToggle.Value
 end)
 
-LeftGroupBox:AddToggle("KnockCheckToggle", { Text = "Knock Check", Default = false })
+LeftGroupBox:AddToggle("KnockCheckToggle", { Text = "Enable Knock Check", Default = false })
 Toggles.KnockCheckToggle:OnChanged(function()
     KnockCheckEnabled = Toggles.KnockCheckToggle.Value
 end)
@@ -1198,7 +1198,7 @@ Options.TracerOutlineThicknessSlider:OnChanged(function()
     TracerOutlineThickness = Options.TracerOutlineThicknessSlider.Value
 end)
 
-local FOVVisibleToggle = FOVGroupBox:AddToggle("FOVVisibleToggle", { Text = "Enable", Default = true })
+local FOVVisibleToggle = FOVGroupBox:AddToggle("FOVVisibleToggle", { Text = "Enable Fov", Default = true })
 FOVVisibleToggle:AddColorPicker("FOVCircleColorPicker", { Default = Color3.fromRGB(255, 255, 255), Title = "FOV Color" })
 FOVVisibleToggle:AddColorPicker("FOVCircleOutlineColorPicker", { Default = Color3.fromRGB(0, 0, 0), Title = "FOV Outline Color" })
 
@@ -1249,12 +1249,12 @@ Options.FOVLerpSlider:OnChanged(function()
     FOVLerpSpeed = Options.FOVLerpSlider.Value
 end)
 
-FOVFillGroupBox:AddToggle("FOVFillToggle", { Text = "Enable", Default = false })
+FOVFillGroupBox:AddToggle("FOVFillToggle", { Text = "Enable FOV Fill", Default = false })
 Toggles.FOVFillToggle:OnChanged(function()
     FOVFillEnabled = Toggles.FOVFillToggle.Value
 end)
 
-FOVFillGroupBox:AddSlider("FOVFillTransparencySlider", { Text = "Fill Transparency", Default = 0.65, Min = 0, Max = 1, Rounding = 2 })
+FOVFillGroupBox:AddSlider("FOVFillTransparencySlider", { Text = "FOV Fill Opacity", Default = 0.65, Min = 0, Max = 1, Rounding = 2 })
 Options.FOVFillTransparencySlider:OnChanged(function()
     FOVFillTransparency = Options.FOVFillTransparencySlider.Value
 end)
@@ -1274,12 +1274,12 @@ Options.FOVFillColor3Picker:OnChanged(function()
     FOVFillColor3 = Options.FOVFillColor3Picker.Value
 end)
 
-FOVFillGroupBox:AddToggle("FOVFillRotateToggle", { Text = "Rotate", Default = false })
+FOVFillGroupBox:AddToggle("FOVFillRotateToggle", { Text = "Rotate FOV", Default = false })
 Toggles.FOVFillRotateToggle:OnChanged(function()
     FOVFillRotateEnabled = Toggles.FOVFillRotateToggle.Value
 end)
 
-FOVFillGroupBox:AddSlider("FOVFillRotateSpeedSlider", { Text = "Rotation Speed", Default = 3, Min = 1, Max = 10, Rounding = 1 })
+FOVFillGroupBox:AddSlider("FOVFillRotateSpeedSlider", { Text = "Gradient Rotation Speed", Default = 3, Min = 1, Max = 10, Rounding = 1 })
 Options.FOVFillRotateSpeedSlider:OnChanged(function()
     FOVFillRotateSpeed = Options.FOVFillRotateSpeedSlider.Value
 end)
@@ -2043,29 +2043,29 @@ local EspTextGroup = Tabs.ESP:AddRightGroupbox("Text & Display")
 local EspSkeletonGroup = Tabs.ESP:AddRightGroupbox("Skeleton")
 local TextTransparencyGroup = Tabs.ESP:AddRightGroupbox("Text Transparency")
 
-EspMainGroup:AddToggle("EspMaster", { Text = "Enable", Default = false })
+EspMainGroup:AddToggle("EspMaster", { Text = "Enable Esp", Default = false })
 
-local BoxToggle = EspMainGroup:AddToggle("EspBox", { Text = "Box", Default = false })
+local BoxToggle = EspMainGroup:AddToggle("EspBox", { Text = "Enable Box ESP", Default = false })
 BoxToggle:AddColorPicker("BoxColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Box Main Color" })
 BoxToggle:AddColorPicker("BoxOutlineColor", { Default = Color3.fromRGB(0, 0, 0), Title = "Box Outline Color" })
 
-EspMainGroup:AddToggle("EspBoxFill", { Text = "Box Fill", Default = false })
-EspMainGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Transparency", Default = 0.65, Min = 0, Max = 1, Rounding = 2 })
+EspMainGroup:AddToggle("EspBoxFill", { Text = "Enable Box Fill", Default = false })
+EspMainGroup:AddSlider("EspBoxFillTransparency", { Text = "Box Fill Opacity", Default = 0.65, Min = 0, Max = 1, Rounding = 2 })
 EspMainGroup:AddLabel("Fill Color 1"):AddColorPicker("EspBoxFillColor1", { Default = Color3.fromRGB(255, 255, 255) })
 EspMainGroup:AddLabel("Fill Color 2"):AddColorPicker("EspBoxFillColor2", { Default = Color3.fromRGB(255, 255, 255) })
 EspMainGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Default = Color3.fromRGB(255, 255, 255) })
 EspMainGroup:AddToggle("EspBoxFillRotate", { Text = "Rotate Fill", Default = false })
 EspMainGroup:AddSlider("EspBoxFillRotateSpeed", { Text = "Fill Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
 
-local LineESPToggle = EspLineGroup:AddToggle("EspLine", { Text = "Line", Default = false })
-LineESPToggle:AddColorPicker("LineESPColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Line Color" })
-LineESPToggle:AddColorPicker("LineESPOutlineColor", { Default = Color3.fromRGB(0, 0, 0), Title = "Line Outline Color" })
+local LineESPToggle = EspLineGroup:AddToggle("EspLine", { Text = "Enable Line ESP", Default = false })
+LineESPToggle:AddColorPicker("LineESPColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Line ESP Color" })
+LineESPToggle:AddColorPicker("LineESPOutlineColor", { Default = Color3.fromRGB(0, 0, 0), Title = "Line ESP Outline Color" })
 
-EspLineGroup:AddDropdown("LineESPPosDropdown", { Text = "Line Position", Values = {"Bottom", "Center", "Top"}, Default = 1, Multi = false })
-EspLineGroup:AddSlider("LineESPThicknessSlider", { Text = "Line Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
-EspLineGroup:AddSlider("LineESPOutlineThicknessSlider", { Text = "Line Outline Thickness", Default = 2.5, Min = 1.0, Max = 8.0, Rounding = 1 })
+EspLineGroup:AddDropdown("LineESPPosDropdown", { Text = "Line ESP Position", Values = {"Bottom", "Center", "Top"}, Default = 1, Multi = false })
+EspLineGroup:AddSlider("LineESPThicknessSlider", { Text = "Line ESP Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
+EspLineGroup:AddSlider("LineESPOutlineThicknessSlider", { Text = "Line ESP Outline Thickness", Default = 2.5, Min = 1.0, Max = 8.0, Rounding = 1 })
 
-local HighlightToggle = EspLineGroup:AddToggle("EspHighlight", { Text = "Highlights", Default = false })
+local HighlightToggle = EspLineGroup:AddToggle("EspHighlight", { Text = "Enable Highlights", Default = false })
 HighlightToggle:AddColorPicker("HighlightVisibleColor", { Default = Color3.fromRGB(0, 255, 0), Title = "Visible Color" })
 HighlightToggle:AddColorPicker("HighlightInvisibleColor", { Default = Color3.fromRGB(255, 0, 0), Title = "Invisible Color" })
 HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Outline Color" })
@@ -2113,14 +2113,14 @@ local EspArmorToggle = EspTextGroup:AddToggle("EspArmor", { Text = "Armor Bar", 
 EspArmorToggle:AddColorPicker("ArmorColor1", { Default = Color3.fromRGB(0, 255, 232), Title = "Armor Color 1" })
 EspArmorToggle:AddColorPicker("ArmorColor2", { Default = Color3.fromRGB(0, 216, 255), Title = "Armor Color 2" })
 
-EspTextGroup:AddToggle("EspDistance", { Text = "Distance", Default = false }):AddColorPicker("DistColor", { Default = Color3.fromRGB(255, 255, 255) })
+EspTextGroup:AddToggle("EspDistance", { Text = "Draw Distance", Default = false }):AddColorPicker("DistColor", { Default = Color3.fromRGB(255, 255, 255) })
 EspTextGroup:AddToggle("EspTool", { Text = "Tool Equipped", Default = false }):AddColorPicker("ToolColor", { Default = Color3.fromRGB(255, 255, 255) })
 
 local SkeletonToggle = EspSkeletonGroup:AddToggle("EspSkeleton", { Text = "Enable Skeleton ESP", Default = false })
 SkeletonToggle:AddColorPicker("SkeletonColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Skeleton Main Color" })
 SkeletonToggle:AddColorPicker("SkeletonOutlineColor", { Default = Color3.fromRGB(0, 0, 0), Title = "Skeleton Outline Color" })
 
-EspSkeletonGroup:AddSlider("SkeletonThicknessSlider", { Text = "Line Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
+EspSkeletonGroup:AddSlider("SkeletonThicknessSlider", { Text = "Skeleton Line Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
 EspSkeletonGroup:AddSlider("SkeletonOutlineThicknessSlider", { Text = "Skeleton Outline Thickness", Default = 2.5, Min = 1.0, Max = 8.0, Rounding = 1 })
 
 TextTransparencyGroup:AddToggle("CustomTextTransparency", { Text = "Custom Text Transparency", Default = false })
