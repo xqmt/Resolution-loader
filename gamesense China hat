@@ -3,15 +3,27 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
--- State
+local CHEAT_FONT = Enum.Font.Cartoon
+
+local THEME = {
+    Primary = Color3.fromRGB(255, 105, 180),
+    GradientStart = Color3.fromRGB(255, 150, 200),
+    GradientMid = Color3.fromRGB(255, 105, 180),
+    GradientEnd = Color3.fromRGB(186, 85, 211),
+    Background = Color3.fromRGB(5, 5, 5),
+    InnerBackground = Color3.fromRGB(6, 6, 6),
+    GroupboxBackground = Color3.fromRGB(6, 6, 6),
+    Border = Color3.fromRGB(60, 45, 65),
+    Glow = Color3.fromRGB(255, 105, 180)
+}
+
 local currentHat = nil
-local hatColor = Color3.fromHSV(0.5, 1, 1)
-local h, s, v = 0.5, 1, 1
+local hatColor = THEME.Primary
+local h, s, v = Color3.toHSV(hatColor)
 local isDraggingColor = false
 local isHatEnabled = true
 local hatConnection = nil
 
--- Function
 local function destroyChinaHat()
     if hatConnection then
         hatConnection:Disconnect()
@@ -62,7 +74,6 @@ local function createChinaHat()
     end)
 end
 
--- Draggable Function
 local function makeDraggable(guiObject, dragHandle)
     local dragging = false
     local dragStart, startPos
@@ -97,9 +108,8 @@ local function makeDraggable(guiObject, dragHandle)
     end)
 end
 
--- Resizable Function
 local function makeResizable(guiObject, resizeHandle, minSize)
-    minSize = minSize or Vector2.new(180, 100)
+    minSize = minSize or Vector2.new(280, 180)
     local resizing = false
     local dragStart, startSize
 
@@ -129,113 +139,124 @@ local function makeResizable(guiObject, resizeHandle, minSize)
     end)
 end
 
--- GUI
 local function createGUI()
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "GamesenseGui"
+    screenGui.Name = "PrimordialGui"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
     local mainVisible = true
 
-    -- Main Window
     local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 220, 0, 130)
-    mainFrame.Position = UDim2.new(0.5, -110, 0.4, -65)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+    mainFrame.Size = UDim2.new(0, 320, 0, 200)
+    mainFrame.Position = UDim2.new(0.5, -160, 0.4, -100)
+    mainFrame.BackgroundColor3 = THEME.Background
     mainFrame.BorderSizePixel = 0
     mainFrame.Active = true
+    mainFrame.ZIndex = 2
     mainFrame.Parent = screenGui
+
+    local glowShadow = Instance.new("ImageLabel")
+    glowShadow.Name = "PrimordialGlow"
+    glowShadow.AnchorPoint = Vector2.new(0.5, 0.5)
+    glowShadow.Position = UDim2.new(0.5, 0, 0.5, 0)
+    glowShadow.Size = UDim2.new(1, 30, 1, 30)
+    glowShadow.BackgroundTransparency = 1
+    glowShadow.Image = "rbxassetid://6015897843"
+    glowShadow.ImageColor3 = THEME.Glow
+    glowShadow.ImageTransparency = 0.4
+    glowShadow.ScaleType = Enum.ScaleType.Slice
+    glowShadow.SliceCenter = Rect.new(49, 49, 49, 49)
+    glowShadow.ZIndex = 1
+    glowShadow.Parent = mainFrame
 
     local outerStroke = Instance.new("UIStroke")
     outerStroke.Color = Color3.fromRGB(0, 0, 0)
     outerStroke.Thickness = 1
     outerStroke.Parent = mainFrame
 
-    -- Inner
     local innerFrame = Instance.new("Frame")
     innerFrame.Size = UDim2.new(1, -2, 1, -2)
     innerFrame.Position = UDim2.new(0, 1, 0, 1)
-    innerFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    innerFrame.BackgroundColor3 = THEME.InnerBackground
     innerFrame.BorderSizePixel = 0
+    innerFrame.ZIndex = 3
     innerFrame.Parent = mainFrame
 
     local innerStroke = Instance.new("UIStroke")
-    innerStroke.Color = Color3.fromRGB(48, 48, 48)
+    innerStroke.Color = THEME.Border
     innerStroke.Thickness = 1
     innerStroke.Parent = innerFrame
 
-    -- Topbar
     local topGradient = Instance.new("Frame")
     topGradient.Size = UDim2.new(1, 0, 0, 2)
     topGradient.Position = UDim2.new(0, 0, 0, 0)
     topGradient.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     topGradient.BorderSizePixel = 0
+    topGradient.ZIndex = 4
     topGradient.Parent = innerFrame
 
     local uiGradient = Instance.new("UIGradient")
     uiGradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(59, 175, 218)),
-        ColorSequenceKeypoint.new(0.20, Color3.fromRGB(201, 107, 255)),
-        ColorSequenceKeypoint.new(0.40, Color3.fromRGB(255, 85, 85)),
-        ColorSequenceKeypoint.new(0.70, Color3.fromRGB(255, 184, 108)),
-        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(161, 222, 73))
+        ColorSequenceKeypoint.new(0.00, THEME.GradientStart),
+        ColorSequenceKeypoint.new(0.50, THEME.GradientMid),
+        ColorSequenceKeypoint.new(1.00, THEME.GradientEnd)
     })
     uiGradient.Parent = topGradient
 
-    -- Window
     local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -10, 0, 18)
+    title.Size = UDim2.new(1, -10, 0, 22)
     title.Position = UDim2.new(0, 6, 0, 2)
     title.BackgroundTransparency = 1
-    title.Text = "gamesense"
-    title.TextColor3 = Color3.fromRGB(200, 200, 200)
-    title.TextSize = 11
-    title.Font = Enum.Font.Code
+    title.Text = "primordial"
+    title.TextColor3 = Color3.fromRGB(245, 230, 240)
+    title.TextSize = 13
+    title.Font = CHEAT_FONT
     title.TextXAlignment = Enum.TextXAlignment.Left
+    title.ZIndex = 4
     title.Parent = innerFrame
 
     makeDraggable(mainFrame, title)
 
-    -- Groupbox
     local groupbox = Instance.new("Frame")
-    groupbox.Size = UDim2.new(1, -12, 1, -28)
-    groupbox.Position = UDim2.new(0, 6, 0, 22)
-    groupbox.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+    groupbox.Size = UDim2.new(1, -12, 1, -32)
+    groupbox.Position = UDim2.new(0, 6, 0, 24)
+    groupbox.BackgroundColor3 = THEME.GroupboxBackground
     groupbox.BorderSizePixel = 0
+    groupbox.ZIndex = 4
     groupbox.Parent = innerFrame
 
     local groupboxStroke = Instance.new("UIStroke")
-    groupboxStroke.Color = Color3.fromRGB(35, 35, 35)
+    groupboxStroke.Color = Color3.fromRGB(45, 35, 50)
     groupboxStroke.Thickness = 1
     groupboxStroke.Parent = groupbox
 
-    
     local groupTitle = Instance.new("TextLabel")
-    groupTitle.Size = UDim2.new(0, 50, 0, 10)
+    groupTitle.Size = UDim2.new(0, 60, 0, 10)
     groupTitle.Position = UDim2.new(0, 8, 0, -6)
-    groupTitle.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+    groupTitle.BackgroundColor3 = THEME.GroupboxBackground
     groupTitle.BorderSizePixel = 0
     groupTitle.Text = " visuals "
-    groupTitle.TextColor3 = Color3.fromRGB(160, 160, 160)
-    groupTitle.TextSize = 10
-    groupTitle.Font = Enum.Font.Code
+    groupTitle.TextColor3 = Color3.fromRGB(200, 160, 185)
+    groupTitle.TextSize = 11
+    groupTitle.Font = CHEAT_FONT
+    groupTitle.ZIndex = 5
     groupTitle.Parent = groupbox
 
-    
     local toggleRow = Instance.new("Frame")
-    toggleRow.Size = UDim2.new(1, -16, 0, 16)
+    toggleRow.Size = UDim2.new(1, -16, 0, 20)
     toggleRow.Position = UDim2.new(0, 8, 0, 12)
     toggleRow.BackgroundTransparency = 1
+    toggleRow.ZIndex = 5
     toggleRow.Parent = groupbox
 
-    
     local checkbox = Instance.new("TextButton")
-    checkbox.Size = UDim2.new(0, 9, 0, 9)
+    checkbox.Size = UDim2.new(0, 8, 0, 8)
     checkbox.Position = UDim2.new(0, 0, 0.5, -4)
-    checkbox.BackgroundColor3 = Color3.fromRGB(140, 195, 75)
+    checkbox.BackgroundColor3 = THEME.Primary
     checkbox.AutoButtonColor = false
     checkbox.Text = ""
+    checkbox.ZIndex = 6
     checkbox.Parent = toggleRow
 
     local checkStroke = Instance.new("UIStroke")
@@ -245,57 +266,71 @@ local function createGUI()
 
     local checkGradient = Instance.new("UIGradient")
     checkGradient.Rotation = 90
-    checkGradient.Color = ColorSequence.new(Color3.fromRGB(255,255,255), Color3.fromRGB(180,180,180))
+    checkGradient.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 150, 180))
     checkGradient.Parent = checkbox
 
-    -- Toggle
     local toggleLabel = Instance.new("TextButton")
-    toggleLabel.Size = UDim2.new(0, 120, 1, 0)
-    toggleLabel.Position = UDim2.new(0, 15, 0, 0)
+    toggleLabel.Size = UDim2.new(0, 140, 0, 8)
+    toggleLabel.Position = UDim2.new(0, 14, 0.5, -4)
     toggleLabel.BackgroundTransparency = 1
     toggleLabel.Text = "china hat"
-    toggleLabel.TextColor3 = Color3.fromRGB(210, 210, 210)
-    toggleLabel.TextSize = 11
-    toggleLabel.Font = Enum.Font.Code
+    toggleLabel.TextColor3 = Color3.fromRGB(230, 220, 225)
+    toggleLabel.TextSize = 12
+    toggleLabel.Font = CHEAT_FONT
     toggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    toggleLabel.TextYAlignment = Enum.TextYAlignment.Center
+    toggleLabel.ZIndex = 6
     toggleLabel.Parent = toggleRow
 
-    
     local colorPickerBtn = Instance.new("TextButton")
-    colorPickerBtn.Size = UDim2.new(0, 14, 0, 8)
-    colorPickerBtn.Position = UDim2.new(1, -14, 0.5, -4)
+    colorPickerBtn.Size = UDim2.new(0, 18, 0, 10)
+    colorPickerBtn.Position = UDim2.new(1, -18, 0.5, -5)
     colorPickerBtn.BackgroundColor3 = hatColor
     colorPickerBtn.Text = ""
     colorPickerBtn.AutoButtonColor = false
+    colorPickerBtn.ZIndex = 6
     colorPickerBtn.Parent = toggleRow
+
+    local cpCorner = Instance.new("UICorner")
+    cpCorner.CornerRadius = UDim.new(0, 3)
+    cpCorner.Parent = colorPickerBtn
 
     local cpStroke = Instance.new("UIStroke")
     cpStroke.Color = Color3.fromRGB(0, 0, 0)
     cpStroke.Thickness = 1
     cpStroke.Parent = colorPickerBtn
 
-    -- Colorpicker
     local pickerFrame = Instance.new("Frame")
-    pickerFrame.Size = UDim2.new(0, 110, 0, 80)
+    pickerFrame.Size = UDim2.new(0, 130, 0, 100)
     pickerFrame.Position = UDim2.new(1, 5, 0, 0)
-    pickerFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+    pickerFrame.BackgroundColor3 = THEME.GroupboxBackground
     pickerFrame.Visible = false
-    pickerFrame.ZIndex = 5
+    pickerFrame.ZIndex = 10
     pickerFrame.Parent = colorPickerBtn
 
+    local pfCorner = Instance.new("UICorner")
+    pfCorner.CornerRadius = UDim.new(0, 4)
+    pfCorner.Parent = pickerFrame
+
     local pickerOutline = Instance.new("UIStroke")
-    pickerOutline.Color = Color3.fromRGB(40, 40, 40)
+    pickerOutline.Color = THEME.Border
     pickerOutline.Thickness = 1
     pickerOutline.Parent = pickerFrame
 
-    -- Color SV
-    local hsvBox = Instance.new("Frame")
+    local hsvBox = Instance.new("TextButton")
     hsvBox.Size = UDim2.new(1, -6, 1, -6)
     hsvBox.Position = UDim2.new(0, 3, 0, 3)
     hsvBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     hsvBox.BorderSizePixel = 0
-    hsvBox.ZIndex = 6
+    hsvBox.AutoButtonColor = false
+    hsvBox.Text = ""
+    hsvBox.Modal = true
+    hsvBox.ZIndex = 11
     hsvBox.Parent = pickerFrame
+
+    local hsvCorner = Instance.new("UICorner")
+    hsvCorner.CornerRadius = UDim.new(0, 3)
+    hsvCorner.Parent = hsvBox
 
     local hueGradient = Instance.new("UIGradient")
     hueGradient.Color = ColorSequence.new({
@@ -313,8 +348,12 @@ local function createGUI()
     satFrame.Size = UDim2.new(1, 0, 1, 0)
     satFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     satFrame.BorderSizePixel = 0
-    satFrame.ZIndex = 7
+    satFrame.ZIndex = 12
     satFrame.Parent = hsvBox
+
+    local satCorner = Instance.new("UICorner")
+    satCorner.CornerRadius = UDim.new(0, 3)
+    satCorner.Parent = satFrame
 
     local satGradient = Instance.new("UIGradient")
     satGradient.Rotation = 90
@@ -325,12 +364,12 @@ local function createGUI()
     satGradient.Parent = satFrame
 
     local pickerCursor = Instance.new("Frame")
-    pickerCursor.Size = UDim2.new(0, 3, 0, 3)
+    pickerCursor.Size = UDim2.new(0, 4, 0, 4)
     pickerCursor.AnchorPoint = Vector2.new(0.5, 0.5)
     pickerCursor.Position = UDim2.new(h, 0, 1 - s, 0)
     pickerCursor.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     pickerCursor.BorderSizePixel = 0
-    pickerCursor.ZIndex = 8
+    pickerCursor.ZIndex = 13
     pickerCursor.Parent = hsvBox
 
     local cursorStroke = Instance.new("UIStroke")
@@ -338,28 +377,26 @@ local function createGUI()
     cursorStroke.Thickness = 1
     cursorStroke.Parent = pickerCursor
 
-    -- Resize
     local resizeHandle = Instance.new("TextButton")
-    resizeHandle.Size = UDim2.new(0, 10, 0, 10)
-    resizeHandle.Position = UDim2.new(1, -10, 1, -10)
+    resizeHandle.Size = UDim2.new(0, 12, 0, 12)
+    resizeHandle.Position = UDim2.new(1, -12, 1, -12)
     resizeHandle.BackgroundTransparency = 1
     resizeHandle.Text = "◢"
-    resizeHandle.TextColor3 = Color3.fromRGB(80, 80, 80)
-    resizeHandle.TextSize = 9
-    resizeHandle.Font = Enum.Font.Code
+    resizeHandle.TextColor3 = Color3.fromRGB(150, 110, 135)
+    resizeHandle.TextSize = 10
+    resizeHandle.Font = CHEAT_FONT
     resizeHandle.ZIndex = 10
     resizeHandle.Parent = mainFrame
 
-    makeResizable(mainFrame, resizeHandle, Vector2.new(180, 100))
+    makeResizable(mainFrame, resizeHandle, Vector2.new(240, 140))
 
-    -- Event
     local function setCheckboxState(state)
         isHatEnabled = state
         if isHatEnabled then
-            checkbox.BackgroundColor3 = Color3.fromRGB(140, 195, 75)
+            checkbox.BackgroundColor3 = THEME.Primary
             createChinaHat()
         else
-            checkbox.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+            checkbox.BackgroundColor3 = Color3.fromRGB(35, 30, 40)
             destroyChinaHat()
         end
     end
@@ -411,7 +448,6 @@ local function createGUI()
         end
     end)
 
-    -- Keybind
     UserInputService.InputBegan:Connect(function(input, gpe)
         if not gpe and input.KeyCode == Enum.KeyCode.Insert then
             mainVisible = not mainVisible
@@ -420,7 +456,6 @@ local function createGUI()
     end)
 end
 
--- Initialize
 if LocalPlayer.Character then createChinaHat() end
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(0.5)
