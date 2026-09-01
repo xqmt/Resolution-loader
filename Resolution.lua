@@ -1732,7 +1732,7 @@ RunService.RenderStepped:Connect(function()
                         local feetPos = Camera:WorldToViewportPoint(feetOffset.Position)
                         
                         local height = math.clamp(math.abs(headPos.Y - feetPos.Y), 10, 2000)
-                        local width = height * 0.67
+                        local width = height * 0.7
                         local boxX = math.round(rootPos.X - (width / 2))
                         local boxY = math.round(headPos.Y)
                         
