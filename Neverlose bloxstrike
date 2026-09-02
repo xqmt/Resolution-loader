@@ -1,0 +1,412 @@
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+-- NeverLose UI Library
+local NeverLose = loadstring(game:HttpGet("https://raw.githubusercontent.com/4lpaca-pin/NeverLose/refs/heads/main/source.luau"))()
+
+-- config
+local SilentAim = {
+    Enabled = true,
+    TeamCheck = true,
+    WallCheck = true,
+    FOV = 35,
+    AimPart = "Head",
+    ShowFOV = true,
+    ShowOutline = true
+}
+
+local Chams = {
+    Enabled = true,
+    TeamCheck = true,
+    FillColor = Color3.fromRGB(255, 0, 0),
+    OutlineColor = Color3.fromRGB(255, 255, 255),
+    FillTransparency = 0.5,
+    OutlineTransparency = 0
+}
+
+-- FOV Outline
+local fovOutline = Drawing.new("Circle")
+fovOutline.Thickness = 1
+fovOutline.Color = Color3.fromRGB(0, 0, 0)
+fovOutline.Filled = false
+fovOutline.Transparency = 1
+fovOutline.Visible = false
+
+local fovCircle = Drawing.new("Circle")
+fovCircle.Thickness = 1.5
+fovCircle.Color = Color3.fromRGB(255, 255, 255)
+fovCircle.Filled = false
+fovCircle.Transparency = 1
+fovCircle.Visible = false
+
+
+RunService.RenderStepped:Connect(function()
+    if SilentAim.ShowFOV and SilentAim.Enabled then
+        local viewportSize = Camera.ViewportSize
+        local center = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+        
+        -- คำนวณ Radius จาก Half-Angle อิงตาม Vertical Field of View ของ Roblox
+        local radFOV = math.rad(SilentAim.FOV)
+        local radCameraFOV = math.rad(Camera.FieldOfView)
+        local radius = (math.tan(radFOV / 2) / math.tan(radCameraFOV / 2)) * (viewportSize.Y / 2)
+
+        if SilentAim.ShowOutline then
+            fovOutline.Position = center
+            fovOutline.Radius = radius
+            fovOutline.Visible = true
+        else
+            fovOutline.Visible = false
+        end
+
+        fovCircle.Position = center
+        fovCircle.Radius = radius
+        fovCircle.Visible = true
+    else
+        fovOutline.Visible = false
+        fovCircle.Visible = false
+    end
+end)
+
+local function getCharacter(player)
+    return player and player.Character
+end
+
+local function isAlive(character)
+    if not character then return false end
+    if character:GetAttribute("Dead") then return false end
+    local health = character:GetAttribute("Health")
+    return health == nil or health > 0
+end
+
+local function applyChams(player)
+    if player == LocalPlayer then return end
+
+    local function updateChams()
+        local character = getCharacter(player)
+        if not character then return end
+
+        local highlight = character:FindFirstChild("ChamsHighlight")
+        local isEnemy = not Chams.TeamCheck or (player:GetAttribute("Team") ~= LocalPlayer:GetAttribute("Team"))
+
+        if Chams.Enabled and isAlive(character) and isEnemy then
+            if not highlight then
+                highlight = Instance.new("Highlight")
+                highlight.Name = "ChamsHighlight"
+                highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                highlight.Parent = character
+            end
+
+            highlight.FillColor = Chams.FillColor
+            highlight.OutlineColor = Chams.OutlineColor
+            highlight.FillTransparency = Chams.FillTransparency
+            highlight.OutlineTransparency = Chams.OutlineTransparency
+            highlight.Enabled = true
+        elseif highlight then
+            highlight.Enabled = false
+        end
+    end
+
+    player.CharacterAdded:Connect(function()
+        task.wait(0.1)
+        updateChams()
+    end)
+
+    updateChams()
+end
+
+for _, player in ipairs(Players:GetPlayers()) do
+    applyChams(player)
+end
+Players.PlayerAdded:Connect(applyChams)
+
+RunService.Heartbeat:Connect(function()
+    if not Chams.Enabled then
+        for _, player in ipairs(Players:GetPlayers()) do
+            local char = getCharacter(player)
+            if char and char:FindFirstChild("ChamsHighlight") then
+                char.ChamsHighlight.Enabled = false
+            end
+        end
+        return
+    end
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local char = getCharacter(player)
+            if char then
+                local highlight = char:FindFirstChild("ChamsHighlight")
+                local isEnemy = not Chams.TeamCheck or (player:GetAttribute("Team") ~= LocalPlayer:GetAttribute("Team"))
+                
+                if isAlive(char) and isEnemy then
+                    if not highlight then
+                        applyChams(player)
+                    else
+                        highlight.Enabled = true
+                    end
+                elseif highlight then
+                    highlight.Enabled = false
+                end
+            end
+        end
+    end
+end)
+
+local function isObstructed(origin, target, character)
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = { character, LocalPlayer.Character }
+
+    local ray = Workspace:Raycast(origin, target - origin, params)
+    return ray ~= nil and ray.Instance ~= nil and not ray.Instance:IsDescendantOf(character)
+end
+
+local function getTarget(origin)
+    local localTeam = LocalPlayer:GetAttribute("Team")
+    local look = Camera.CFrame.LookVector
+    local best, bestAngle = nil, math.rad(SilentAim.FOV)
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player == LocalPlayer then continue end
+
+        local character = getCharacter(player)
+        if not isAlive(character) then continue end
+        if SilentAim.TeamCheck and player:GetAttribute("Team") == localTeam then continue end
+
+        local part
+        if SilentAim.AimPart == "Closest" then
+            local head = character:FindFirstChild("Head")
+            local torso = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
+            
+            if head and torso then
+                local headAngle = math.acos(math.clamp(look:Dot((head.Position - origin).Unit), -1, 1))
+                local torsoAngle = math.acos(math.clamp(look:Dot((torso.Position - origin).Unit), -1, 1))
+                part = headAngle < torsoAngle and head or torso
+            else
+                part = head or torso
+            end
+        else
+            part = character:FindFirstChild(SilentAim.AimPart) or character:FindFirstChild("Head") or character:FindFirstChild("HumanoidRootPart")
+        end
+
+        if not part then continue end
+
+        local targetPos = part.Position
+        local direction = (targetPos - origin).Unit
+        local angle = math.acos(math.clamp(look:Dot(direction), -1, 1))
+
+        if angle < bestAngle then
+            if SilentAim.WallCheck and isObstructed(origin, targetPos, character) then continue end
+            best, bestAngle = part, angle
+        end
+    end
+
+    return best
+end
+
+local function buildHit(origin, part)
+    local targetPos = part.Position
+    local direction = (targetPos - origin).Unit
+
+    return {
+        Distance = (targetPos - origin).Magnitude,
+        Instance = part,
+        Position = targetPos,
+        Normal = -direction,
+        Material = part.Material.Name,
+        Exit = false
+    }
+end
+
+-- Hook Remote Silent Aim
+local ok, Remotes = pcall(require, game:GetService("ReplicatedStorage").Database.Security.Remotes)
+local shootRemote = ok and Remotes and Remotes.Inventory and Remotes.Inventory.ShootWeapon
+
+if shootRemote and shootRemote.Send then
+    local oldSend
+    local function hookedSend(packet, ...)
+        if SilentAim.Enabled and packet and packet.Bullets then
+            for _, bullet in ipairs(packet.Bullets) do
+                local origin = bullet.Origin
+                if origin then
+                    local part = getTarget(origin)
+                    if part then
+                        bullet.Direction = (part.Position - origin).Unit
+                        bullet.Hits = { buildHit(origin, part) }
+                    end
+                end
+            end
+        end
+        return oldSend(packet, ...)
+    end
+
+    if typeof(hookfunction) == "function" then
+        oldSend = hookfunction(shootRemote.Send, hookedSend)
+    else
+        oldSend = shootRemote.Send
+        shootRemote.Send = hookedSend
+    end
+end
+
+-- ==================== UI CREATION ==================== --
+
+local window = NeverLose:CreateWindow({
+    Logo = NeverLose.GlobalLogo,
+    Name = "Neverlose",
+    Content = "BloxStrike",
+    Size = NeverLose.Scales.Default,
+    ConfigFolder = "NeverLoseConfigs",
+    Enable3DRenderer = false,
+    Keybind = "RightControl"
+})
+
+window.UserSettings:AddLabel("Menu Keybind"):AddKeybind({
+	Default = 'Insert',
+	Callback = function(v)
+		window.Keybind = v;
+		
+		Logging.new("ps4-touchpad",'Changed ui keybind to '..tostring(v),5)
+	end,
+})
+
+window.UserSettings:AddLabel('Menu Scale'):AddDropdown({
+	Default = "Default",
+	Values = {"Default",'Large','Mobile','Small'},
+	Callback = function(v)
+		window:SetSize(NeverLose.Scales[v]);
+		
+		Logging.new("crop",'Changed ui size to '..tostring(v),5)
+	end,
+})
+
+window.UserSettings:AddLabel('3D Menu'):AddToggle({
+	Default = false,
+	Callback = function(v)
+		window:Set3DRender(v);
+	end,
+})
+
+-- ==================== WATERMARK ==================== --
+
+local Watermark = window:Watermark()
+local pingBlock = Watermark:AddBlock("chart-four-vertical-bars", "0MS")
+local uiToggleBlock = Watermark:AddBlock("cube-vertexes", "Neverlose")
+
+uiToggleBlock:Input(function()
+    if window.ToggleInterface then
+        window:ToggleInterface()
+    elseif window.Toggle then
+        window:Toggle()
+    end
+end)
+
+Watermark:SetRender(true)
+
+task.spawn(function()
+    while true do
+        task.wait(1)
+        local pingValue = math.floor(LocalPlayer:GetNetworkPing() * 1000)
+        pingBlock:SetText(tostring(pingValue) .. "MS")
+    end
+end)
+
+-- Tab: Legit
+local LegitTab = window:AddTab({
+    Icon = 'mouse-scrollwheel',
+    Name = "Legit"
+})
+
+local SilentAimSection = LegitTab:AddSection({
+    Name = "SILENT AIM",
+    Position = 'left'
+})
+
+SilentAimSection:AddLabel('Enable Silent Aim'):AddToggle({
+    Default = SilentAim.Enabled,
+    Callback = function(v) SilentAim.Enabled = v end,
+    Flag = "silent_enabled"
+})
+
+SilentAimSection:AddLabel('Team Check'):AddToggle({
+    Default = SilentAim.TeamCheck,
+    Callback = function(v) SilentAim.TeamCheck = v end,
+    Flag = "silent_teamcheck"
+})
+
+SilentAimSection:AddLabel('Wall Check'):AddToggle({
+    Default = SilentAim.WallCheck,
+    Callback = function(v) SilentAim.WallCheck = v end,
+    Flag = "silent_wallcheck"
+})
+
+SilentAimSection:AddLabel('Field of View'):AddSlider({
+    Min = 1,
+    Max = 180,
+    Rounding = 0,
+    Default = SilentAim.FOV,
+    Type = "°",
+    Size = 100,
+    Callback = function(v) SilentAim.FOV = v end,
+    Flag = "silent_fov"
+})
+
+SilentAimSection:AddLabel('Hit Part'):AddDropdown({
+    Default = 'Head',
+    Values = {'Head', 'HumanoidRootPart', 'Closest'},
+    Callback = function(v) 
+        if v == 'HumanoidRootPart' then
+            SilentAim.AimPart = "HumanoidRootPart"
+        elseif v == 'Closest' then
+            SilentAim.AimPart = "Closest"
+        else
+            SilentAim.AimPart = "Head"
+        end
+    end,
+    Flag = "silent_hitpart"
+})
+
+-- Tab: Visuals
+local VisualsTab = window:AddTab({
+    Icon = 'eye',
+    Name = "Visuals"
+})
+
+local FOVSection = VisualsTab:AddSection({
+    Name = "FOV SETTINGS",
+    Position = 'left'
+})
+
+FOVSection:AddLabel('Draw FOV'):AddToggle({
+    Default = SilentAim.ShowFOV,
+    Callback = function(v) SilentAim.ShowFOV = v end,
+    Flag = "draw_fov"
+})
+
+FOVSection:AddLabel('Toggle FOV Outline'):AddToggle({
+    Default = SilentAim.ShowOutline,
+    Callback = function(v) SilentAim.ShowOutline = v end,
+    Flag = "fov_outline"
+})
+
+local ESPSection = VisualsTab:AddSection({
+    Name = "ESP & CHAMS",
+    Position = 'right'
+})
+
+ESPSection:AddLabel('Enable Chams'):AddToggle({
+    Default = Chams.Enabled,
+    Callback = function(v) Chams.Enabled = v end,
+    Flag = "chams_enabled"
+})
+
+ESPSection:AddLabel('Team Check'):AddToggle({
+    Default = Chams.TeamCheck,
+    Callback = function(v) 
+        Chams.TeamCheck = v
+    end,
+    Flag = "chams_teamcheck"
+})
