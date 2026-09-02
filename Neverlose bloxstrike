@@ -237,8 +237,8 @@ local function getTracerColor()
         return Color3.fromRGB(255, 105, 180)
     elseif mode == "Blue" then
         return Color3.fromRGB(0, 170, 255)
-    elseif mode == "Purple" then
-        return Color3.fromRGB(170, 0, 255)
+    elseif mode == "Red" then
+        return Color3.fromRGB(255, 100, 100)
     elseif mode == "Rainbow" then
         local hue = (tick() % 3) / 3
         return Color3.fromHSV(hue, 1, 1)
@@ -454,7 +454,7 @@ local function createPlayerESP(player)
     if espObjects[player] then return end
     
     local objects = {
-        BoxOutline = createDrawing("Square", {Thickness = 3, Color = ESPConfig.OutlineColor, Filled = false, Visible = false}),
+        BoxOutline = createDrawing("Square", {Thickness = 2.5, Color = ESPConfig.OutlineColor, Filled = false, Visible = false}),
         Box = createDrawing("Square", {Thickness = 1, Color = ESPConfig.BoxColor, Filled = false, Visible = false}),
         HealthBarOutline = createDrawing("Square", {Thickness = 1, Color = ESPConfig.OutlineColor, Filled = true, Visible = false}),
         HealthBar = createDrawing("Square", {Thickness = 1, Color = Color3.fromRGB(0, 255, 0), Filled = true, Visible = false}),
@@ -1180,7 +1180,7 @@ MovementSection:AddLabel('Enable Speed Multiplier'):AddToggle({
 
 MovementSection:AddLabel('Speed Multiplier'):AddSlider({
     Min = 0.5,
-    Max = 30.0,
+    Max = 80.0,
     Rounding = 1,
     Default = MovementConfig.SpeedMultiplier,
     Type = "x",
@@ -1210,7 +1210,7 @@ TracerSection:AddLabel('Enable Bullet Tracer'):AddToggle({
 
 TracerSection:AddLabel('Tracer Color'):AddDropdown({
     Default = 'Blue',
-    Values = {'Pink', 'Blue', 'Purple', 'Rainbow', 'Gradient'},
+    Values = {'Pink', 'Blue', 'Red', 'Rainbow', 'Gradient'},
     Callback = function(v) BulletTracer.ColorMode = v end,
     Flag = "tracer_colormode"
 })
