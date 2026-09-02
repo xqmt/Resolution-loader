@@ -3,6 +3,8 @@ local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local SoundService = game:GetService("SoundService")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -44,7 +46,18 @@ local function playHitSound()
     end)
 end
 
--- config
+-- Bullet Tracer Configuration
+local BulletTracer = {
+    Enabled = true,
+    Color = Color3.fromRGB(0, 170, 255),
+    Material = "Neon",
+    Thickness = 0.2,
+    LifeTime = 0.6,
+    FadeTime = 0.4,
+    BloomEffect = true
+}
+
+-- Config
 local SilentAim = {
     Enabled = true,
     TeamCheck = true,
@@ -77,7 +90,7 @@ local Chams = {
     OutlineTransparency = 0
 }
 
--- ESP Configuration
+-- ESP Configuration (ลบ Names และ Distance ออกแล้ว)
 local ESPConfig = {
     Enabled = true,
     TeamCheck = true,
@@ -90,14 +103,220 @@ local ESPConfig = {
     OutlineColor = Color3.fromRGB(0, 0, 0)
 }
 
--- FOV Outline & Drawings (Sharp External Crisp Style)
+-- World & Atmosphere Configuration
+local WorldConfig = {
+    NightMode = false,
+    ClockTime = 14,
+    Brightness = 2,
+    OutdoorAmbient = Color3.fromRGB(128, 128, 128),
+    Ambient = Color3.fromRGB(128, 128, 128),
+    GlobalShadows = true,
+    ExposureCompensation = 0,
+    
+    FogEnabled = false,
+    FogColor = Color3.fromRGB(128, 128, 128),
+    FogStart = 0,
+    FogEnd = 100000,
+    
+    AtmosphereEnabled = true,
+    Density = 0.3,
+    Offset = 0.25,
+    Glare = 0,
+    Haze = 0,
+    Decay = Color3.fromRGB(255, 255, 255),
+    Color = Color3.fromRGB(199, 175, 151),
+    
+    SelectedSky = "Default"
+}
+
+-- World System Core Engine
+local DefaultSky = Lighting:FindFirstChildOfClass("Sky") and Lighting:FindFirstChildOfClass("Sky"):Clone() or nil
+local CurrentSkyObj = Lighting:FindFirstChildOfClass("Sky")
+
+local AtmosphereObj = Lighting:FindFirstChildOfClass("Atmosphere")
+if not AtmosphereObj then
+    AtmosphereObj = Instance.new("Atmosphere")
+    AtmosphereObj.Parent = Lighting
+end
+
+local SkyPresets = {
+    ["Default"] = nil,
+    ["Night"] = {
+        SkyboxBk = "rbxassetid://12064107",
+        SkyboxDn = "rbxassetid://12064152",
+        SkyboxFt = "rbxassetid://12064121",
+        SkyboxLf = "rbxassetid://12064131",
+        SkyboxRt = "rbxassetid://12064115",
+        SkyboxUp = "rbxassetid://12064143"
+    },
+    ["Cyberpunk"] = {
+        SkyboxBk = "rbxassetid://159454299",
+        SkyboxDn = "rbxassetid://159454296",
+        SkyboxFt = "rbxassetid://159454293",
+        SkyboxLf = "rbxassetid://159454298",
+        SkyboxRt = "rbxassetid://159454300",
+        SkyboxUp = "rbxassetid://159454302"
+    },
+    ["Sunset"] = {
+        SkyboxBk = "rbxassetid://323493360",
+        SkyboxDn = "rbxassetid://323494032",
+        SkyboxFt = "rbxassetid://323494252",
+        SkyboxLf = "rbxassetid://323494796",
+        SkyboxRt = "rbxassetid://323495049",
+        SkyboxUp = "rbxassetid://323495287"
+    },
+    ["Purple Nebula"] = {
+        SkyboxBk = "rbxassetid://159512398",
+        SkyboxDn = "rbxassetid://159512392",
+        SkyboxFt = "rbxassetid://159512389",
+        SkyboxLf = "rbxassetid://159512396",
+        SkyboxRt = "rbxassetid://159512400",
+        SkyboxUp = "rbxassetid://159512404"
+    },
+    ["Clear Daylight"] = {
+        SkyboxBk = "rbxassetid://610834159",
+        SkyboxDn = "rbxassetid://610834327",
+        SkyboxFt = "rbxassetid://610834570",
+        SkyboxLf = "rbxassetid://610834781",
+        SkyboxRt = "rbxassetid://610835010",
+        SkyboxUp = "rbxassetid://610835174"
+    },
+    ["Red Moon"] = {
+        SkyboxBk = "rbxassetid://121113000",
+        SkyboxDn = "rbxassetid://121113031",
+        SkyboxFt = "rbxassetid://121113056",
+        SkyboxLf = "rbxassetid://121113083",
+        SkyboxRt = "rbxassetid://121113110",
+        SkyboxUp = "rbxassetid://121113141"
+    }
+}
+
+local function applySky(presetName)
+    if CurrentSkyObj then CurrentSkyObj:Destroy() end
+    
+    if presetName == "Default" and DefaultSky then
+        CurrentSkyObj = DefaultSky:Clone()
+        CurrentSkyObj.Parent = Lighting
+    elseif SkyPresets[presetName] then
+        local newSky = Instance.new("Sky")
+        local data = SkyPresets[presetName]
+        newSky.SkyboxBk = data.SkyboxBk
+        newSky.SkyboxDn = data.SkyboxDn
+        newSky.SkyboxFt = data.SkyboxFt
+        newSky.SkyboxLf = data.SkyboxLf
+        newSky.SkyboxRt = data.SkyboxRt
+        newSky.SkyboxUp = data.SkyboxUp
+        newSky.Parent = Lighting
+        CurrentSkyObj = newSky
+    end
+end
+
+local function updateWorldLighting()
+    if WorldConfig.NightMode then
+        Lighting.ClockTime = 0
+    else
+        Lighting.ClockTime = WorldConfig.ClockTime
+    end
+    
+    Lighting.Brightness = WorldConfig.Brightness
+    Lighting.OutdoorAmbient = WorldConfig.OutdoorAmbient
+    Lighting.Ambient = WorldConfig.Ambient
+    Lighting.GlobalShadows = WorldConfig.GlobalShadows
+    Lighting.ExposureCompensation = WorldConfig.ExposureCompensation
+    
+    if WorldConfig.FogEnabled then
+        Lighting.FogColor = WorldConfig.FogColor
+        Lighting.FogStart = WorldConfig.FogStart
+        Lighting.FogEnd = WorldConfig.FogEnd
+    else
+        Lighting.FogEnd = 100000
+    end
+    
+    if AtmosphereObj then
+        AtmosphereObj.Density = WorldConfig.Density
+        AtmosphereObj.Offset = WorldConfig.Offset
+        AtmosphereObj.Glare = WorldConfig.Glare
+        AtmosphereObj.Haze = WorldConfig.Haze
+        AtmosphereObj.Decay = WorldConfig.Decay
+        AtmosphereObj.Color = WorldConfig.Color
+    end
+end
+
+-- Viewmodel Muzzle Origin Finder
+local function getMuzzlePosition(defaultOrigin)
+    local vm = Camera:FindFirstChildOfClass("Model") or Camera:FindFirstChild("ViewModel") or Camera:FindFirstChild("Viewmodel")
+    if vm then
+        local muzzle = vm:FindFirstChild("Muzzle", true) or vm:FindFirstChild("Flash", true) or vm:FindFirstChild("Barrel", true) or vm:FindFirstChild("MuzzleFlash", true)
+        if muzzle then
+            if muzzle:IsA("BasePart") or muzzle:IsA("MeshPart") then
+                return muzzle.Position
+            elseif muzzle:IsA("Attachment") then
+                return muzzle.WorldPosition
+            end
+        end
+        for _, v in ipairs(vm:GetDescendants()) do
+            if v:IsA("BasePart") and (v.Name:lower():find("muzzle") or v.Name:lower():find("flash") or v.Name:lower():find("barrel")) then
+                return v.Position
+            end
+        end
+    end
+    return defaultOrigin
+end
+
+-- Create Custom Tracer Line (เพิ่ม Corner เล็กน้อยผ่าน Cylinder Shape)
+local function drawBulletTracer(startPos, targetPos)
+    if not BulletTracer.Enabled then return end
+
+    local origin = getMuzzlePosition(startPos)
+    local distance = (targetPos - origin).Magnitude
+    if distance < 1 then return end
+
+    local tracer = Instance.new("Part")
+    tracer.Name = "BulletTracer"
+    tracer.Shape = Enum.PartType.Cylinder
+    tracer.Anchored = true
+    tracer.CanCollide = false
+    tracer.CastShadow = false
+    tracer.Material = Enum.Material[BulletTracer.Material] or Enum.Material.Neon
+    tracer.Color = BulletTracer.Color
+    tracer.Size = Vector3.new(distance, BulletTracer.Thickness, BulletTracer.Thickness)
+    
+    -- ปรับ CFrame ให้ Cylinder หันตามเส้นยิงอย่างถูกต้อง
+    tracer.CFrame = CFrame.lookAt(origin, targetPos) * CFrame.new(0, 0, -distance / 2) * CFrame.Angles(0, math.rad(90), 0)
+    tracer.Parent = Workspace
+
+    if BulletTracer.BloomEffect then
+        local highlight = Instance.new("Highlight")
+        highlight.Adornee = tracer
+        highlight.FillColor = BulletTracer.Color
+        highlight.OutlineColor = BulletTracer.Color
+        highlight.FillTransparency = 0.2
+        highlight.OutlineTransparency = 0.5
+        highlight.Parent = tracer
+    end
+
+    task.delay(BulletTracer.LifeTime, function()
+        if tracer and tracer.Parent then
+            local tween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Transparency = 1,
+                Size = Vector3.new(distance, 0, 0)
+            })
+            tween:Play()
+            tween.Completed:Connect(function()
+                tracer:Destroy()
+            end)
+        end
+    end)
+end
+
+-- FOV Outline & Drawings
 local fovOutlineOuter = Drawing.new("Circle")
 fovOutlineOuter.Thickness = 1
 fovOutlineOuter.Color = Color3.fromRGB(0, 0, 0)
 fovOutlineOuter.Filled = false
-fovOutlineOuter.Transparency = 1
+fovOutlineOuter.Transparency = 0.75
 fovOutlineOuter.Visible = false
-fovOutlineOuter.NumSides = 64
+fovOutlineOuter.NumSides = 144
 
 local fovCircle = Drawing.new("Circle")
 fovCircle.Thickness = 1.5
@@ -139,7 +358,6 @@ targetHighlight.Enabled = false
 
 local currentTargetPart = nil
 
--- Helper function for Drawing objects with Outlines
 local function createDrawing(type, properties)
     local obj = Drawing.new(type)
     for k, v in pairs(properties) do
@@ -148,34 +366,26 @@ local function createDrawing(type, properties)
     return obj
 end
 
--- ESP Object Cache for Players
 local espObjects = {}
 
 local function createPlayerESP(player)
     if espObjects[player] then return end
     
     local objects = {
-        -- Box ESP & Outlines
         BoxOutline = createDrawing("Square", {Thickness = 3, Color = ESPConfig.OutlineColor, Filled = false, Visible = false}),
         Box = createDrawing("Square", {Thickness = 1, Color = ESPConfig.BoxColor, Filled = false, Visible = false}),
-        
-        -- HealthBar & Outlines
         HealthBarOutline = createDrawing("Square", {Thickness = 1, Color = ESPConfig.OutlineColor, Filled = true, Visible = false}),
         HealthBar = createDrawing("Square", {Thickness = 1, Color = Color3.fromRGB(0, 255, 0), Filled = true, Visible = false}),
-        
-        -- Skeleton Drawings
         Skeletons = {},
         SkeletonOutlines = {}
     }
 
-    -- R15 / R6 Bone Connections
     local skeletonConnections = {
         {"Head", "UpperTorso"}, {"UpperTorso", "LowerTorso"},
         {"UpperTorso", "LeftUpperArm"}, {"LeftUpperArm", "LeftLowerArm"}, {"LeftLowerArm", "LeftHand"},
         {"UpperTorso", "RightUpperArm"}, {"RightUpperArm", "RightLowerArm"}, {"RightLowerArm", "RightHand"},
         {"LowerTorso", "LeftUpperLeg"}, {"LeftUpperLeg", "LeftLowerLeg"}, {"LeftLowerLeg", "LeftFoot"},
         {"LowerTorso", "RightUpperLeg"}, {"RightUpperLeg", "RightLowerLeg"}, {"RightLowerLeg", "RightFoot"},
-        -- R6 Fallbacks
         {"Head", "Torso"}, {"Torso", "Left Arm"}, {"Torso", "Right Arm"},
         {"Torso", "Left Leg"}, {"Torso", "Right Leg"}
     }
@@ -266,12 +476,12 @@ local function getTarget(origin)
     return best
 end
 
--- Render Loop (ESP, FOV & Target Visuals Update)
 RunService.RenderStepped:Connect(function()
+    updateWorldLighting()
+
     local viewportSize = Camera.ViewportSize
     local center = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
 
-    -- Update FOV (External Clean & Sharp Style)
     if SilentAim.ShowFOV and SilentAim.Enabled then
         local radFOV = math.rad(SilentAim.FOV)
         local radCameraFOV = math.rad(Camera.FieldOfView)
@@ -299,7 +509,6 @@ RunService.RenderStepped:Connect(function()
         fovOutlineInner.Visible = false
     end
 
-    -- Update ESP for Players
     for player, objs in pairs(espObjects) do
         local character = getCharacter(player)
         local isEnemy = not ESPConfig.TeamCheck or (player:GetAttribute("Team") ~= LocalPlayer:GetAttribute("Team"))
@@ -312,15 +521,20 @@ RunService.RenderStepped:Connect(function()
                 local hrpPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
                 
                 if onScreen then
-                    local _, size = character:GetBoundingBox()
-                    local headPos = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
-                    local legPos = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, size.Y / 2, 0))
+                    local cframe, size = character:GetBoundingBox()
+                    local topWorld = cframe.Position + Vector3.new(0, size.Y / 2, 0)
+                    local bottomWorld = cframe.Position - Vector3.new(0, size.Y / 2, 0)
                     
-                    local boxHeight = math.abs(headPos.Y - legPos.Y)
-                    local boxWidth = boxHeight * 0.65
-                    local boxPos = Vector2.new(hrpPos.X - boxWidth / 2, headPos.Y)
+                    local topPos = Camera:WorldToViewportPoint(topWorld)
+                    local bottomPos = Camera:WorldToViewportPoint(bottomWorld)
                     
-                    -- 1. Box ESP
+                    local boxHeight = math.abs(topPos.Y - bottomPos.Y)
+                    local boxWidth = boxHeight * (size.X / size.Y) * 1.1
+                    if boxWidth < boxHeight * 0.4 then boxWidth = boxHeight * 0.5 end
+                    
+                    local boxPos = Vector2.new(hrpPos.X - boxWidth / 2, topPos.Y)
+
+                    -- Box ESP
                     if ESPConfig.Boxes then
                         if ESPConfig.Outline then
                             objs.BoxOutline.Size = Vector2.new(boxWidth, boxHeight)
@@ -339,7 +553,7 @@ RunService.RenderStepped:Connect(function()
                         objs.Box.Visible = false
                     end
 
-                    -- 2. Health Bar
+                    -- Health Bar
                     if ESPConfig.HealthBar then
                         local health = character:GetAttribute("Health") or 100
                         local maxHealth = character:GetAttribute("MaxHealth") or 100
@@ -364,7 +578,7 @@ RunService.RenderStepped:Connect(function()
                         objs.HealthBar.Visible = false
                     end
 
-                    -- 3. Skeleton ESP
+                    -- Skeleton ESP
                     if ESPConfig.Skeletons then
                         local skeletonPairs = {
                             {"Head", "UpperTorso"}, {"UpperTorso", "LowerTorso"},
@@ -434,21 +648,18 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Find Current Target
     if SilentAim.Enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
         currentTargetPart = getTarget(LocalPlayer.Character.Head.Position)
     else
         currentTargetPart = nil
     end
 
-    -- Update Target Visuals
     if currentTargetPart and currentTargetPart.Parent then
         local targetChar = currentTargetPart.Parent
         local targetHead = targetChar:FindFirstChild("Head") or currentTargetPart
         local screenPos, onScreen = Camera:WorldToViewportPoint(currentTargetPart.Position)
         local headScreenPos, headOnScreen = Camera:WorldToViewportPoint(targetHead.Position)
 
-        -- 1. Target SnapLine
         if TargetVisuals.SnapLine and onScreen then
             snapLine.From = center
             snapLine.To = Vector2.new(screenPos.X, screenPos.Y)
@@ -459,7 +670,6 @@ RunService.RenderStepped:Connect(function()
             snapLine.Visible = false
         end
 
-        -- 2. Target HeadDot
         if TargetVisuals.HeadDot and headOnScreen then
             headDot.Position = Vector2.new(headScreenPos.X, headScreenPos.Y)
             headDot.Color = TargetVisuals.HeadDotColor
@@ -469,7 +679,6 @@ RunService.RenderStepped:Connect(function()
             headDot.Visible = false
         end
 
-        -- 3. Target Highlight
         if TargetVisuals.Highlight then
             targetHighlight.Parent = targetChar
             targetHighlight.FillColor = TargetVisuals.HighlightColor
@@ -486,7 +695,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Player Management for ESP
 for _, player in ipairs(Players:GetPlayers()) do
     if player ~= LocalPlayer then createPlayerESP(player) end
 end
@@ -499,7 +707,6 @@ Players.PlayerRemoving:Connect(function(player)
     removePlayerESP(player)
 end)
 
--- Chams Logic
 local function applyChams(player)
     if player == LocalPlayer then return end
 
@@ -587,22 +794,31 @@ local function buildHit(origin, part)
     }
 end
 
--- Hook Remote Silent Aim & Trigger Hit Sound
+-- Hook Remote Silent Aim, Tracer & Hit Sound
 local ok, Remotes = pcall(require, game:GetService("ReplicatedStorage").Database.Security.Remotes)
 local shootRemote = ok and Remotes and Remotes.Inventory and Remotes.Inventory.ShootWeapon
 
 if shootRemote and shootRemote.Send then
     local oldSend
     local function hookedSend(packet, ...)
-        if SilentAim.Enabled and packet and packet.Bullets then
+        if packet and packet.Bullets then
             for _, bullet in ipairs(packet.Bullets) do
                 local origin = bullet.Origin
                 if origin then
-                    local part = getTarget(origin)
-                    if part then
-                        bullet.Direction = (part.Position - origin).Unit
-                        bullet.Hits = { buildHit(origin, part) }
-                        playHitSound()
+                    if SilentAim.Enabled then
+                        local part = getTarget(origin)
+                        if part then
+                            bullet.Direction = (part.Position - origin).Unit
+                            bullet.Hits = { buildHit(origin, part) }
+                            playHitSound()
+                            drawBulletTracer(origin, part.Position)
+                        else
+                            local endPos = origin + (bullet.Direction * 1000)
+                            drawBulletTracer(origin, endPos)
+                        end
+                    else
+                        local endPos = origin + (bullet.Direction * 1000)
+                        drawBulletTracer(origin, endPos)
                     end
                 end
             end
@@ -733,7 +949,6 @@ SilentAimSection:AddLabel('Hit Part'):AddDropdown({
     Flag = "silent_hitpart"
 })
 
--- Section: MISC (Hit Sounds UI Integration)
 local MiscSection = LegitTab:AddSection({
     Name = "MISC",
     Position = 'right'
@@ -772,9 +987,67 @@ local VisualsTab = window:AddTab({
     Name = "Visuals"
 })
 
+-- Bullet Tracer Section UI
+local TracerSection = VisualsTab:AddSection({
+    Name = "BULLET TRACERS",
+    Position = 'left'
+})
+
+TracerSection:AddLabel('Enable Bullet Tracer'):AddToggle({
+    Default = BulletTracer.Enabled,
+    Callback = function(v) BulletTracer.Enabled = v end,
+    Flag = "tracer_enabled"
+})
+
+TracerSection:AddLabel('Bloom / Neon Glow'):AddToggle({
+    Default = BulletTracer.BloomEffect,
+    Callback = function(v) BulletTracer.BloomEffect = v end,
+    Flag = "tracer_bloom"
+})
+
+TracerSection:AddLabel('Material'):AddDropdown({
+    Default = 'Neon',
+    Values = {'Neon', 'ForceField', 'SmoothPlastic', 'Glass'},
+    Callback = function(v) BulletTracer.Material = v end,
+    Flag = "tracer_material"
+})
+
+TracerSection:AddLabel('Thickness'):AddSlider({
+    Min = 0.1,
+    Max = 1.0,
+    Rounding = 2,
+    Default = BulletTracer.Thickness,
+    Type = "px",
+    Size = 100,
+    Callback = function(v) BulletTracer.Thickness = v end,
+    Flag = "tracer_thickness"
+})
+
+TracerSection:AddLabel('Lifetime'):AddSlider({
+    Min = 0.1,
+    Max = 3.0,
+    Rounding = 1,
+    Default = BulletTracer.LifeTime,
+    Type = "s",
+    Size = 100,
+    Callback = function(v) BulletTracer.LifeTime = v end,
+    Flag = "tracer_lifetime"
+})
+
+TracerSection:AddLabel('Fade Out Duration'):AddSlider({
+    Min = 0.1,
+    Max = 2.0,
+    Rounding = 1,
+    Default = BulletTracer.FadeTime,
+    Type = "s",
+    Size = 100,
+    Callback = function(v) BulletTracer.FadeTime = v end,
+    Flag = "tracer_fadetime"
+})
+
 local FOVSection = VisualsTab:AddSection({
     Name = "FOV SETTINGS",
-    Position = 'left'
+    Position = 'right'
 })
 
 FOVSection:AddLabel('Draw FOV'):AddToggle({
@@ -863,4 +1136,147 @@ ESPSection:AddLabel('Chams Team Check'):AddToggle({
     Default = Chams.TeamCheck,
     Callback = function(v) Chams.TeamCheck = v end,
     Flag = "chams_teamcheck"
+})
+
+-- ==================== TAB: WORLD ==================== --
+local WorldTab = window:AddTab({
+    Icon = 'globe',
+    Name = "World"
+})
+
+local NightModeSection = WorldTab:AddSection({
+    Name = "LIGHTING & NIGHT MODE",
+    Position = 'left'
+})
+
+NightModeSection:AddLabel('Enable Night Mode'):AddToggle({
+    Default = WorldConfig.NightMode,
+    Callback = function(v) WorldConfig.NightMode = v end,
+    Flag = "world_nightmode"
+})
+
+NightModeSection:AddLabel('Time of Day'):AddSlider({
+    Min = 0,
+    Max = 24,
+    Rounding = 1,
+    Default = WorldConfig.ClockTime,
+    Type = "h",
+    Size = 100,
+    Callback = function(v) WorldConfig.ClockTime = v end,
+    Flag = "world_clocktime"
+})
+
+NightModeSection:AddLabel('Brightness'):AddSlider({
+    Min = 0,
+    Max = 10,
+    Rounding = 1,
+    Default = WorldConfig.Brightness,
+    Type = "",
+    Size = 100,
+    Callback = function(v) WorldConfig.Brightness = v end,
+    Flag = "world_brightness"
+})
+
+NightModeSection:AddLabel('Exposure'):AddSlider({
+    Min = -3,
+    Max = 3,
+    Rounding = 2,
+    Default = WorldConfig.ExposureCompensation,
+    Type = "",
+    Size = 100,
+    Callback = function(v) WorldConfig.ExposureCompensation = v end,
+    Flag = "world_exposure"
+})
+
+NightModeSection:AddLabel('Global Shadows'):AddToggle({
+    Default = WorldConfig.GlobalShadows,
+    Callback = function(v) WorldConfig.GlobalShadows = v end,
+    Flag = "world_shadows"
+})
+
+NightModeSection:AddLabel('Skybox Preset'):AddDropdown({
+    Default = 'Default',
+    Values = {'Default', 'Night', 'Cyberpunk', 'Sunset', 'Purple Nebula', 'Clear Daylight', 'Red Moon'},
+    Callback = function(v)
+        WorldConfig.SelectedSky = v
+        applySky(v)
+    end,
+    Flag = "world_skybox"
+})
+
+local AtmosphereSection = WorldTab:AddSection({
+    Name = "ATMOSPHERE & FOG",
+    Position = 'right'
+})
+
+AtmosphereSection:AddLabel('Density'):AddSlider({
+    Min = 0,
+    Max = 1,
+    Rounding = 2,
+    Default = WorldConfig.Density,
+    Type = "",
+    Size = 100,
+    Callback = function(v) WorldConfig.Density = v end,
+    Flag = "atmo_density"
+})
+
+AtmosphereSection:AddLabel('Offset'):AddSlider({
+    Min = 0,
+    Max = 1,
+    Rounding = 2,
+    Default = WorldConfig.Offset,
+    Type = "",
+    Size = 100,
+    Callback = function(v) WorldConfig.Offset = v end,
+    Flag = "atmo_offset"
+})
+
+AtmosphereSection:AddLabel('Haze'):AddSlider({
+    Min = 0,
+    Max = 10,
+    Rounding = 1,
+    Default = WorldConfig.Haze,
+    Type = "",
+    Size = 100,
+    Callback = function(v) WorldConfig.Haze = v end,
+    Flag = "atmo_haze"
+})
+
+AtmosphereSection:AddLabel('Glare'):AddSlider({
+    Min = 0,
+    Max = 10,
+    Rounding = 1,
+    Default = WorldConfig.Glare,
+    Type = "",
+    Size = 100,
+    Callback = function(v) WorldConfig.Glare = v end,
+    Flag = "atmo_glare"
+})
+
+AtmosphereSection:AddLabel('Enable Custom Fog'):AddToggle({
+    Default = WorldConfig.FogEnabled,
+    Callback = function(v) WorldConfig.FogEnabled = v end,
+    Flag = "fog_enabled"
+})
+
+AtmosphereSection:AddLabel('Fog Start Distance'):AddSlider({
+    Min = 0,
+    Max = 500,
+    Rounding = 0,
+    Default = WorldConfig.FogStart,
+    Type = "m",
+    Size = 100,
+    Callback = function(v) WorldConfig.FogStart = v end,
+    Flag = "fog_start"
+})
+
+AtmosphereSection:AddLabel('Fog End Distance'):AddSlider({
+    Min = 100,
+    Max = 5000,
+    Rounding = 0,
+    Default = WorldConfig.FogEnd,
+    Type = "m",
+    Size = 100,
+    Callback = function(v) WorldConfig.FogEnd = v end,
+    Flag = "fog_end"
 })
