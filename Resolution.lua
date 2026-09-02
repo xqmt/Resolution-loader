@@ -126,7 +126,7 @@ local SkyboxIDs = {
 }
 
 local AuraEnabled = false
-local SelectedAuras = {} -- เปลี่ยนเป็น Table เก็บรายการที่เลือก
+local SelectedAuras = {} 
 local CurrentAuraColor = Color3.fromRGB(133, 220, 255)
 local ActiveParticles = {}
 
@@ -223,29 +223,80 @@ local SkeletonConnections = {
     {"Torso", "Right Leg"}
 }
 
-local SelfHighlightInstance = Instance.new("Highlight")
-SelfHighlightInstance.Name = "hooksense_SelfHighlight"
-SelfHighlightInstance.Enabled = false
-SelfHighlightInstance.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-SelfHighlightInstance.Parent = CoreGui
+local SelfNeonEnabled = false
+local SelfNeonColor = Color3.fromRGB(0, 255, 150)
+local OriginalMaterials = {}
+local OriginalColors = {}
 
-local function UpdateSelfHighlight()
-    if SelfHighlightEnabled and LocalPlayer.Character then
-        SelfHighlightInstance.Adornee = LocalPlayer.Character
-        SelfHighlightInstance.FillColor = SelfHighlightMainColor
-        SelfHighlightInstance.OutlineColor = SelfHighlightOutlineColor
-        SelfHighlightInstance.FillTransparency = SelfHighlightFillTrans
-        SelfHighlightInstance.OutlineTransparency = SelfHighlightOutlineTrans
-        SelfHighlightInstance.Enabled = true
+local function UpdateSelfNeon()
+    local char = LocalPlayer.Character
+    if not char then return end
+
+    if SelfNeonEnabled then
+        for _, part in ipairs(char:GetDescendants()) do
+            
+            if part:IsA("SurfaceAppearance") then
+                part.Enabled = false
+            elseif part:IsA("Decal") or part:IsA("Texture") then
+                if not OriginalMaterials[part] then
+                    OriginalMaterials[part] = part.Transparency
+                end
+                part.Transparency = 1
+            end
+
+            
+            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                if not OriginalMaterials[part] then
+                    OriginalMaterials[part] = part.Material
+                    OriginalColors[part] = part.Color
+                end
+
+                part.Material = Enum.Material.Neon
+                part.Color = SelfNeonColor
+
+                
+                local mesh = part:FindFirstChildOfClass("SpecialMesh")
+                if mesh then
+                    if not OriginalMaterials[mesh] then
+                        OriginalMaterials[mesh] = mesh.TextureId
+                    end
+                    mesh.TextureId = "" 
+                end
+            end
+        end
     else
-        SelfHighlightInstance.Enabled = false
+        
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("SurfaceAppearance") then
+                part.Enabled = true
+            end
+        end
+
+        for item, originalValue in pairs(OriginalMaterials) do
+            if item and item.Parent then
+                if item:IsA("BasePart") then
+                    item.Material = originalValue
+                    item.Color = OriginalColors[item] or item.Color
+                elseif item:IsA("Decal") or item:IsA("Texture") then
+                    item.Transparency = originalValue
+                elseif item:IsA("SpecialMesh") then
+                    item.TextureId = originalValue
+                end
+            end
+        end
+        table.clear(OriginalMaterials)
+        table.clear(OriginalColors)
     end
 end
 
+
 LocalPlayer.CharacterAdded:Connect(function(newChar)
+    table.clear(OriginalMaterials)
+    table.clear(OriginalColors)
     task.wait(0.5)
-    UpdateSelfHighlight()
+    UpdateSelfNeon()
 end)
+
 
 local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
 
@@ -1328,36 +1379,19 @@ Options.HitOverlayColorPicker:OnChanged(function()
     HitOverlayColor = Options.HitOverlayColorPicker.Value
 end)
 
-local SelfHLToggle = SelfHighlightLeftBox:AddToggle("SelfHighlightToggle", { Text = "Enable Self Highlights", Default = false })
-SelfHLToggle:AddColorPicker("SelfHighlightMainColorPicker", { Default = Color3.fromRGB(0, 255, 150), Title = "Main Color" })
-SelfHLToggle:AddColorPicker("SelfHighlightOutlineColorPicker", { Default = Color3.fromRGB(255, 255, 255), Title = "Outline Color" })
+local SelfNeonToggle = SelfHighlightLeftBox:AddToggle("SelfNeonToggle", { Text = "Enable Self Neon", Default = false })
+SelfNeonToggle:AddColorPicker("SelfNeonColorPicker", { Default = Color3.fromRGB(0, 255, 150), Title = "Neon Color" })
 
-Toggles.SelfHighlightToggle:OnChanged(function()
-    SelfHighlightEnabled = Toggles.SelfHighlightToggle.Value
-    UpdateSelfHighlight()
+Toggles.SelfNeonToggle:OnChanged(function()
+    SelfNeonEnabled = Toggles.SelfNeonToggle.Value
+    UpdateSelfNeon()
 end)
 
-Options.SelfHighlightMainColorPicker:OnChanged(function()
-    SelfHighlightMainColor = Options.SelfHighlightMainColorPicker.Value
-    UpdateSelfHighlight()
+Options.SelfNeonColorPicker:OnChanged(function()
+    SelfNeonColor = Options.SelfNeonColorPicker.Value
+    UpdateSelfNeon()
 end)
 
-Options.SelfHighlightOutlineColorPicker:OnChanged(function()
-    SelfHighlightOutlineColor = Options.SelfHighlightOutlineColorPicker.Value
-    UpdateSelfHighlight()
-end)
-
-SelfHighlightLeftBox:AddSlider("SelfHLFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
-Options.SelfHLFillTransSlider:OnChanged(function()
-    SelfHighlightFillTrans = Options.SelfHLFillTransSlider.Value
-    UpdateSelfHighlight()
-end)
-
-SelfHighlightLeftBox:AddSlider("SelfHLOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.95, Min = 0, Max = 1, Rounding = 2 })
-Options.SelfHLOutlineTransSlider:OnChanged(function()
-    SelfHighlightOutlineTrans = Options.SelfHLOutlineTransSlider.Value
-    UpdateSelfHighlight()
-end)
 
 NotifyRightBox:AddToggle("HitNotifyToggle", { Text = "Enable Hit Notification", Default = false })
 Toggles.HitNotifyToggle:OnChanged(function()
