@@ -1337,8 +1337,8 @@ end)
 
 local SoundLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Sound")
 local OverlayLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Overlay") 
-local SelfHighlightLeftBox = Tabs.HitEffects:AddLeftGroupbox("Self Highlights")
-local NotifyRightBox = Tabs.HitEffects:AddRightGroupbox("Hit Notification Custom System")
+local SelfHighlightLeftBox = Tabs.HitEffects:AddLeftGroupbox("Material")
+local NotifyRightBox = Tabs.HitEffects:AddRightGroupbox("Hit Notification")
 
 SoundLeftBox:AddDropdown("HitSoundDropdown", { Text = "Target Hit Sound", Values = {"None", "Spark", "Neverlose", "Rust", "Break", "Fatality", "Primordial", "Minecraft xp", "Minecraft Bow", "Crack", "Pop", "Headshot", "Manbo", "Skeet"}, Default = 1, Multi = false })
 Options.HitSoundDropdown:OnChanged(function()
@@ -2384,7 +2384,7 @@ BlacklistPlayersGroup:AddButton({ Text = "rapid fire", Func = function()
     end
 end })
 
-BlacklistPlayersGroup:AddButton({ Text = "China hat / Korblox / Headless", Func = function()
+BlacklistPlayersGroup:AddButton({ Text = "Primordial visual gui", Func = function()
     local success, err = pcall(function()
         loadstring(game:HttpGet('https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/gamesense%20China%20hat'))()
     end)
