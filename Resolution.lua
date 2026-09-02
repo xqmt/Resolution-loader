@@ -2208,7 +2208,7 @@ end)
 local LightingColorsGroup = Tabs.World:AddLeftGroupbox("Lighting & Time")
 local WorldSkyboxBox = Tabs.World:AddLeftGroupbox("Skybox")
 local WorldFogBox = Tabs.World:AddLeftGroupbox("World Fog")
-local WorldAtmosphereBox = Tabs.World:AddLeftGroupbox("Atmosphere")
+local WorldAtmosphereBox = Tabs.World:AddRightGroupbox("Atmosphere")
 local CameraDisplayBox = Tabs.World:AddRightGroupbox("Camera & Display")
 
 LightingColorsGroup:AddSlider("ClockTimeSlider", { Text = "Clock Time", Default = Lighting.ClockTime, Min = 0, Max = 24, Rounding = 1 })
