@@ -2,12 +2,47 @@ local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local SoundService = game:GetService("SoundService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 -- NeverLose UI Library
 local NeverLose = loadstring(game:HttpGet("https://raw.githubusercontent.com/4lpaca-pin/NeverLose/refs/heads/main/source.luau"))()
+
+-- Hit Sound Config & Setup
+local HitSoundMode = "None"
+local HitSoundVolume = 2
+local SoundIDs = {
+    ["None"] = "None",
+    ["Spark"] = "rbxassetid://110241936966089",
+    ["Neverlose"] = "rbxassetid://18391691942",
+    ["Rust"] = "rbxassetid://138750331387064",
+    ["Break"] = "rbxassetid://103059835203534",
+    ["Fatality"] = "rbxassetid://17802817724",
+    ["Primordial"] = "rbxassetid://97511223764004",
+    ["Minecraft xp"] = "rbxassetid://17148249625",
+    ["Minecraft Bow"] = "rbxassetid://135478009117226",
+    ["Crack"] = "rbxassetid://126409451844008",
+    ["Pop"] = "rbxassetid://140323850218372",
+    ["Headshot"] = "rbxassetid://5764885315",
+    ["Manbo"] = "rbxassetid://102257186883445",
+    ["Skeet"] = "rbxassetid://80461265049096"
+}
+
+local function playHitSound()
+    if HitSoundMode == "None" or not SoundIDs[HitSoundMode] then return end
+    
+    local sound = Instance.new("Sound")
+    sound.SoundId = SoundIDs[HitSoundMode]
+    sound.Volume = HitSoundVolume
+    sound.Parent = SoundService
+    
+    sound:Play()
+    sound.Ended:Connect(function()
+        sound:Destroy()
+    end)
+end
 
 -- config
 local SilentAim = {
@@ -20,6 +55,19 @@ local SilentAim = {
     ShowOutline = true
 }
 
+local TargetVisuals = {
+    SnapLine = true,
+    SnapLineColor = Color3.fromRGB(255, 0, 0),
+    SnapLineThickness = 1.5,
+    
+    HeadDot = true,
+    HeadDotColor = Color3.fromRGB(255, 0, 0),
+    HeadDotRadius = 4,
+    
+    Highlight = true,
+    HighlightColor = Color3.fromRGB(255, 255, 0)
+}
+
 local Chams = {
     Enabled = true,
     TeamCheck = true,
@@ -29,48 +77,131 @@ local Chams = {
     OutlineTransparency = 0
 }
 
--- FOV Outline
-local fovOutline = Drawing.new("Circle")
-fovOutline.Thickness = 1
-fovOutline.Color = Color3.fromRGB(0, 0, 0)
-fovOutline.Filled = false
-fovOutline.Transparency = 1
-fovOutline.Visible = false
+-- ESP Configuration
+local ESPConfig = {
+    Enabled = true,
+    TeamCheck = true,
+    Boxes = true,
+    BoxColor = Color3.fromRGB(255, 255, 255),
+    HealthBar = true,
+    Skeletons = true,
+    SkeletonColor = Color3.fromRGB(255, 255, 255),
+    Outline = true,
+    OutlineColor = Color3.fromRGB(0, 0, 0)
+}
+
+-- FOV Outline & Drawings (Sharp External Crisp Style)
+local fovOutlineOuter = Drawing.new("Circle")
+fovOutlineOuter.Thickness = 1
+fovOutlineOuter.Color = Color3.fromRGB(0, 0, 0)
+fovOutlineOuter.Filled = false
+fovOutlineOuter.Transparency = 1
+fovOutlineOuter.Visible = false
+fovOutlineOuter.NumSides = 64
 
 local fovCircle = Drawing.new("Circle")
 fovCircle.Thickness = 1.5
 fovCircle.Color = Color3.fromRGB(255, 255, 255)
 fovCircle.Filled = false
-fovCircle.Transparency = 1
+fovCircle.Transparency = 0.85
 fovCircle.Visible = false
+fovCircle.NumSides = 144
 
+local fovOutlineInner = Drawing.new("Circle")
+fovOutlineInner.Thickness = 1
+fovOutlineInner.Color = Color3.fromRGB(0, 0, 0)
+fovOutlineInner.Filled = false
+fovOutlineInner.Transparency = 0.65
+fovOutlineInner.Visible = false
+fovOutlineInner.NumSides = 144
 
-RunService.RenderStepped:Connect(function()
-    if SilentAim.ShowFOV and SilentAim.Enabled then
-        local viewportSize = Camera.ViewportSize
-        local center = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
-        
-        -- คำนวณ Radius จาก Half-Angle อิงตาม Vertical Field of View ของ Roblox
-        local radFOV = math.rad(SilentAim.FOV)
-        local radCameraFOV = math.rad(Camera.FieldOfView)
-        local radius = (math.tan(radFOV / 2) / math.tan(radCameraFOV / 2)) * (viewportSize.Y / 2)
+-- Target Drawings & Visual Objects
+local snapLine = Drawing.new("Line")
+snapLine.Thickness = TargetVisuals.SnapLineThickness
+snapLine.Color = TargetVisuals.SnapLineColor
+snapLine.Transparency = 1
+snapLine.Visible = false
 
-        if SilentAim.ShowOutline then
-            fovOutline.Position = center
-            fovOutline.Radius = radius
-            fovOutline.Visible = true
-        else
-            fovOutline.Visible = false
-        end
+local headDot = Drawing.new("Circle")
+headDot.Radius = TargetVisuals.HeadDotRadius
+headDot.Color = TargetVisuals.HeadDotColor
+headDot.Filled = true
+headDot.Transparency = 1
+headDot.Visible = false
 
-        fovCircle.Position = center
-        fovCircle.Radius = radius
-        fovCircle.Visible = true
-    else
-        fovOutline.Visible = false
-        fovCircle.Visible = false
+local targetHighlight = Instance.new("Highlight")
+targetHighlight.Name = "SilentAimTargetHighlight"
+targetHighlight.FillColor = TargetVisuals.HighlightColor
+targetHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+targetHighlight.FillTransparency = 0.3
+targetHighlight.OutlineTransparency = 0
+targetHighlight.Enabled = false
+
+local currentTargetPart = nil
+
+-- Helper function for Drawing objects with Outlines
+local function createDrawing(type, properties)
+    local obj = Drawing.new(type)
+    for k, v in pairs(properties) do
+        obj[k] = v
     end
-end)
+    return obj
+end
+
+-- ESP Object Cache for Players
+local espObjects = {}
+
+local function createPlayerESP(player)
+    if espObjects[player] then return end
+    
+    local objects = {
+        -- Box ESP & Outlines
+        BoxOutline = createDrawing("Square", {Thickness = 3, Color = ESPConfig.OutlineColor, Filled = false, Visible = false}),
+        Box = createDrawing("Square", {Thickness = 1, Color = ESPConfig.BoxColor, Filled = false, Visible = false}),
+        
+        -- HealthBar & Outlines
+        HealthBarOutline = createDrawing("Square", {Thickness = 1, Color = ESPConfig.OutlineColor, Filled = true, Visible = false}),
+        HealthBar = createDrawing("Square", {Thickness = 1, Color = Color3.fromRGB(0, 255, 0), Filled = true, Visible = false}),
+        
+        -- Skeleton Drawings
+        Skeletons = {},
+        SkeletonOutlines = {}
+    }
+
+    -- R15 / R6 Bone Connections
+    local skeletonConnections = {
+        {"Head", "UpperTorso"}, {"UpperTorso", "LowerTorso"},
+        {"UpperTorso", "LeftUpperArm"}, {"LeftUpperArm", "LeftLowerArm"}, {"LeftLowerArm", "LeftHand"},
+        {"UpperTorso", "RightUpperArm"}, {"RightUpperArm", "RightLowerArm"}, {"RightLowerArm", "RightHand"},
+        {"LowerTorso", "LeftUpperLeg"}, {"LeftUpperLeg", "LeftLowerLeg"}, {"LeftLowerLeg", "LeftFoot"},
+        {"LowerTorso", "RightUpperLeg"}, {"RightUpperLeg", "RightLowerLeg"}, {"RightLowerLeg", "RightFoot"},
+        -- R6 Fallbacks
+        {"Head", "Torso"}, {"Torso", "Left Arm"}, {"Torso", "Right Arm"},
+        {"Torso", "Left Leg"}, {"Torso", "Right Leg"}
+    }
+
+    for i = 1, #skeletonConnections do
+        objects.SkeletonOutlines[i] = createDrawing("Line", {Thickness = 3, Color = ESPConfig.OutlineColor, Visible = false})
+        objects.Skeletons[i] = createDrawing("Line", {Thickness = 1, Color = ESPConfig.SkeletonColor, Visible = false})
+    end
+
+    espObjects[player] = objects
+end
+
+local function removePlayerESP(player)
+    if not espObjects[player] then return end
+    local objs = espObjects[player]
+    
+    objs.BoxOutline:Remove()
+    objs.Box:Remove()
+    objs.HealthBarOutline:Remove()
+    objs.HealthBar:Remove()
+    
+    for _, line in ipairs(objs.SkeletonOutlines) do line:Remove() end
+    for _, line in ipairs(objs.Skeletons) do line:Remove() end
+    
+    espObjects[player] = nil
+end
 
 local function getCharacter(player)
     return player and player.Character
@@ -83,6 +214,292 @@ local function isAlive(character)
     return health == nil or health > 0
 end
 
+local function isObstructed(origin, target, character)
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = { character, LocalPlayer.Character }
+
+    local ray = Workspace:Raycast(origin, target - origin, params)
+    return ray ~= nil and ray.Instance ~= nil and not ray.Instance:IsDescendantOf(character)
+end
+
+local function getTarget(origin)
+    local localTeam = LocalPlayer:GetAttribute("Team")
+    local look = Camera.CFrame.LookVector
+    local best, bestAngle = nil, math.rad(SilentAim.FOV)
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player == LocalPlayer then continue end
+
+        local character = getCharacter(player)
+        if not isAlive(character) then continue end
+        if SilentAim.TeamCheck and player:GetAttribute("Team") == localTeam then continue end
+
+        local part
+        if SilentAim.AimPart == "Closest" then
+            local head = character:FindFirstChild("Head")
+            local torso = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
+            
+            if head and torso then
+                local headAngle = math.acos(math.clamp(look:Dot((head.Position - origin).Unit), -1, 1))
+                local torsoAngle = math.acos(math.clamp(look:Dot((torso.Position - origin).Unit), -1, 1))
+                part = headAngle < torsoAngle and head or torso
+            else
+                part = head or torso
+            end
+        else
+            part = character:FindFirstChild(SilentAim.AimPart) or character:FindFirstChild("Head") or character:FindFirstChild("HumanoidRootPart")
+        end
+
+        if not part then continue end
+
+        local targetPos = part.Position
+        local direction = (targetPos - origin).Unit
+        local angle = math.acos(math.clamp(look:Dot(direction), -1, 1))
+
+        if angle < bestAngle then
+            if SilentAim.WallCheck and isObstructed(origin, targetPos, character) then continue end
+            best, bestAngle = part, angle
+        end
+    end
+
+    return best
+end
+
+-- Render Loop (ESP, FOV & Target Visuals Update)
+RunService.RenderStepped:Connect(function()
+    local viewportSize = Camera.ViewportSize
+    local center = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+
+    -- Update FOV (External Clean & Sharp Style)
+    if SilentAim.ShowFOV and SilentAim.Enabled then
+        local radFOV = math.rad(SilentAim.FOV)
+        local radCameraFOV = math.rad(Camera.FieldOfView)
+        local radius = (math.tan(radFOV / 2) / math.tan(radCameraFOV / 2)) * (viewportSize.Y / 2)
+
+        fovCircle.Position = center
+        fovCircle.Radius = radius
+        fovCircle.Visible = true
+
+        if SilentAim.ShowOutline then
+            fovOutlineOuter.Position = center
+            fovOutlineOuter.Radius = radius + 1.25
+            fovOutlineOuter.Visible = true
+
+            fovOutlineInner.Position = center
+            fovOutlineInner.Radius = radius - 1.25
+            fovOutlineInner.Visible = true
+        else
+            fovOutlineOuter.Visible = false
+            fovOutlineInner.Visible = false
+        end
+    else
+        fovCircle.Visible = false
+        fovOutlineOuter.Visible = false
+        fovOutlineInner.Visible = false
+    end
+
+    -- Update ESP for Players
+    for player, objs in pairs(espObjects) do
+        local character = getCharacter(player)
+        local isEnemy = not ESPConfig.TeamCheck or (player:GetAttribute("Team") ~= LocalPlayer:GetAttribute("Team"))
+        
+        if ESPConfig.Enabled and character and isAlive(character) and isEnemy and player ~= LocalPlayer then
+            local hrp = character:FindFirstChild("HumanoidRootPart")
+            local head = character:FindFirstChild("Head")
+            
+            if hrp and head then
+                local hrpPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+                
+                if onScreen then
+                    local _, size = character:GetBoundingBox()
+                    local headPos = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+                    local legPos = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, size.Y / 2, 0))
+                    
+                    local boxHeight = math.abs(headPos.Y - legPos.Y)
+                    local boxWidth = boxHeight * 0.65
+                    local boxPos = Vector2.new(hrpPos.X - boxWidth / 2, headPos.Y)
+                    
+                    -- 1. Box ESP
+                    if ESPConfig.Boxes then
+                        if ESPConfig.Outline then
+                            objs.BoxOutline.Size = Vector2.new(boxWidth, boxHeight)
+                            objs.BoxOutline.Position = boxPos
+                            objs.BoxOutline.Visible = true
+                        else
+                            objs.BoxOutline.Visible = false
+                        end
+
+                        objs.Box.Size = Vector2.new(boxWidth, boxHeight)
+                        objs.Box.Position = boxPos
+                        objs.Box.Color = ESPConfig.BoxColor
+                        objs.Box.Visible = true
+                    else
+                        objs.BoxOutline.Visible = false
+                        objs.Box.Visible = false
+                    end
+
+                    -- 2. Health Bar
+                    if ESPConfig.HealthBar then
+                        local health = character:GetAttribute("Health") or 100
+                        local maxHealth = character:GetAttribute("MaxHealth") or 100
+                        local healthPercent = math.clamp(health / maxHealth, 0, 1)
+                        local barHeight = boxHeight * healthPercent
+                        local barPos = Vector2.new(boxPos.X - 5, boxPos.Y + (boxHeight - barHeight))
+
+                        if ESPConfig.Outline then
+                            objs.HealthBarOutline.Size = Vector2.new(3, boxHeight + 2)
+                            objs.HealthBarOutline.Position = Vector2.new(boxPos.X - 6, boxPos.Y - 1)
+                            objs.HealthBarOutline.Visible = true
+                        else
+                            objs.HealthBarOutline.Visible = false
+                        end
+
+                        objs.HealthBar.Size = Vector2.new(1, barHeight)
+                        objs.HealthBar.Position = barPos
+                        objs.HealthBar.Color = Color3.fromRGB(255, 0, 0):Lerp(Color3.fromRGB(0, 255, 0), healthPercent)
+                        objs.HealthBar.Visible = true
+                    else
+                        objs.HealthBarOutline.Visible = false
+                        objs.HealthBar.Visible = false
+                    end
+
+                    -- 3. Skeleton ESP
+                    if ESPConfig.Skeletons then
+                        local skeletonPairs = {
+                            {"Head", "UpperTorso"}, {"UpperTorso", "LowerTorso"},
+                            {"UpperTorso", "LeftUpperArm"}, {"LeftUpperArm", "LeftLowerArm"}, {"LeftLowerArm", "LeftHand"},
+                            {"UpperTorso", "RightUpperArm"}, {"RightUpperArm", "RightLowerArm"}, {"RightLowerArm", "RightHand"},
+                            {"LowerTorso", "LeftUpperLeg"}, {"LeftUpperLeg", "LeftLowerLeg"}, {"LeftLowerLeg", "LeftFoot"},
+                            {"LowerTorso", "RightUpperLeg"}, {"RightUpperLeg", "RightLowerLeg"}, {"RightLowerLeg", "RightFoot"},
+                            {"Head", "Torso"}, {"Torso", "Left Arm"}, {"Torso", "Right Arm"}, {"Torso", "Left Leg"}, {"Torso", "Right Leg"}
+                        }
+
+                        for idx, pair in ipairs(skeletonPairs) do
+                            local partA = character:FindFirstChild(pair[1])
+                            local partB = character:FindFirstChild(pair[2])
+                            
+                            if partA and partB and objs.Skeletons[idx] then
+                                local posA, visA = Camera:WorldToViewportPoint(partA.Position)
+                                local posB, visB = Camera:WorldToViewportPoint(partB.Position)
+
+                                if visA and visB then
+                                    local vecA = Vector2.new(posA.X, posA.Y)
+                                    local vecB = Vector2.new(posB.X, posB.Y)
+
+                                    if ESPConfig.Outline then
+                                        objs.SkeletonOutlines[idx].From = vecA
+                                        objs.SkeletonOutlines[idx].To = vecB
+                                        objs.SkeletonOutlines[idx].Visible = true
+                                    else
+                                        objs.SkeletonOutlines[idx].Visible = false
+                                    end
+
+                                    objs.Skeletons[idx].From = vecA
+                                    objs.Skeletons[idx].To = vecB
+                                    objs.Skeletons[idx].Color = ESPConfig.SkeletonColor
+                                    objs.Skeletons[idx].Visible = true
+                                else
+                                    objs.SkeletonOutlines[idx].Visible = false
+                                    objs.Skeletons[idx].Visible = false
+                                end
+                            end
+                        end
+                    else
+                        for idx = 1, #objs.Skeletons do
+                            objs.SkeletonOutlines[idx].Visible = false
+                            objs.Skeletons[idx].Visible = false
+                        end
+                    end
+                else
+                    objs.BoxOutline.Visible = false
+                    objs.Box.Visible = false
+                    objs.HealthBarOutline.Visible = false
+                    objs.HealthBar.Visible = false
+                    for idx = 1, #objs.Skeletons do
+                        objs.SkeletonOutlines[idx].Visible = false
+                        objs.Skeletons[idx].Visible = false
+                    end
+                end
+            end
+        else
+            objs.BoxOutline.Visible = false
+            objs.Box.Visible = false
+            objs.HealthBarOutline.Visible = false
+            objs.HealthBar.Visible = false
+            for idx = 1, #objs.Skeletons do
+                objs.SkeletonOutlines[idx].Visible = false
+                objs.Skeletons[idx].Visible = false
+            end
+        end
+    end
+
+    -- Find Current Target
+    if SilentAim.Enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
+        currentTargetPart = getTarget(LocalPlayer.Character.Head.Position)
+    else
+        currentTargetPart = nil
+    end
+
+    -- Update Target Visuals
+    if currentTargetPart and currentTargetPart.Parent then
+        local targetChar = currentTargetPart.Parent
+        local targetHead = targetChar:FindFirstChild("Head") or currentTargetPart
+        local screenPos, onScreen = Camera:WorldToViewportPoint(currentTargetPart.Position)
+        local headScreenPos, headOnScreen = Camera:WorldToViewportPoint(targetHead.Position)
+
+        -- 1. Target SnapLine
+        if TargetVisuals.SnapLine and onScreen then
+            snapLine.From = center
+            snapLine.To = Vector2.new(screenPos.X, screenPos.Y)
+            snapLine.Color = TargetVisuals.SnapLineColor
+            snapLine.Thickness = TargetVisuals.SnapLineThickness
+            snapLine.Visible = true
+        else
+            snapLine.Visible = false
+        end
+
+        -- 2. Target HeadDot
+        if TargetVisuals.HeadDot and headOnScreen then
+            headDot.Position = Vector2.new(headScreenPos.X, headScreenPos.Y)
+            headDot.Color = TargetVisuals.HeadDotColor
+            headDot.Radius = TargetVisuals.HeadDotRadius
+            headDot.Visible = true
+        else
+            headDot.Visible = false
+        end
+
+        -- 3. Target Highlight
+        if TargetVisuals.Highlight then
+            targetHighlight.Parent = targetChar
+            targetHighlight.FillColor = TargetVisuals.HighlightColor
+            targetHighlight.Enabled = true
+        else
+            targetHighlight.Enabled = false
+            targetHighlight.Parent = nil
+        end
+    else
+        snapLine.Visible = false
+        headDot.Visible = false
+        targetHighlight.Enabled = false
+        targetHighlight.Parent = nil
+    end
+end)
+
+-- Player Management for ESP
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then createPlayerESP(player) end
+end
+
+Players.PlayerAdded:Connect(function(player)
+    if player ~= LocalPlayer then createPlayerESP(player) end
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    removePlayerESP(player)
+end)
+
+-- Chams Logic
 local function applyChams(player)
     if player == LocalPlayer then return end
 
@@ -156,58 +573,6 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
-local function isObstructed(origin, target, character)
-    local params = RaycastParams.new()
-    params.FilterType = Enum.RaycastFilterType.Exclude
-    params.FilterDescendantsInstances = { character, LocalPlayer.Character }
-
-    local ray = Workspace:Raycast(origin, target - origin, params)
-    return ray ~= nil and ray.Instance ~= nil and not ray.Instance:IsDescendantOf(character)
-end
-
-local function getTarget(origin)
-    local localTeam = LocalPlayer:GetAttribute("Team")
-    local look = Camera.CFrame.LookVector
-    local best, bestAngle = nil, math.rad(SilentAim.FOV)
-
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player == LocalPlayer then continue end
-
-        local character = getCharacter(player)
-        if not isAlive(character) then continue end
-        if SilentAim.TeamCheck and player:GetAttribute("Team") == localTeam then continue end
-
-        local part
-        if SilentAim.AimPart == "Closest" then
-            local head = character:FindFirstChild("Head")
-            local torso = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
-            
-            if head and torso then
-                local headAngle = math.acos(math.clamp(look:Dot((head.Position - origin).Unit), -1, 1))
-                local torsoAngle = math.acos(math.clamp(look:Dot((torso.Position - origin).Unit), -1, 1))
-                part = headAngle < torsoAngle and head or torso
-            else
-                part = head or torso
-            end
-        else
-            part = character:FindFirstChild(SilentAim.AimPart) or character:FindFirstChild("Head") or character:FindFirstChild("HumanoidRootPart")
-        end
-
-        if not part then continue end
-
-        local targetPos = part.Position
-        local direction = (targetPos - origin).Unit
-        local angle = math.acos(math.clamp(look:Dot(direction), -1, 1))
-
-        if angle < bestAngle then
-            if SilentAim.WallCheck and isObstructed(origin, targetPos, character) then continue end
-            best, bestAngle = part, angle
-        end
-    end
-
-    return best
-end
-
 local function buildHit(origin, part)
     local targetPos = part.Position
     local direction = (targetPos - origin).Unit
@@ -222,7 +587,7 @@ local function buildHit(origin, part)
     }
 end
 
--- Hook Remote Silent Aim
+-- Hook Remote Silent Aim & Trigger Hit Sound
 local ok, Remotes = pcall(require, game:GetService("ReplicatedStorage").Database.Security.Remotes)
 local shootRemote = ok and Remotes and Remotes.Inventory and Remotes.Inventory.ShootWeapon
 
@@ -237,6 +602,7 @@ if shootRemote and shootRemote.Send then
                     if part then
                         bullet.Direction = (part.Position - origin).Unit
                         bullet.Hits = { buildHit(origin, part) }
+                        playHitSound()
                     end
                 end
             end
@@ -265,29 +631,27 @@ local window = NeverLose:CreateWindow({
 })
 
 window.UserSettings:AddLabel("Menu Keybind"):AddKeybind({
-	Default = 'Insert',
-	Callback = function(v)
-		window.Keybind = v;
-		
-		Logging.new("ps4-touchpad",'Changed ui keybind to '..tostring(v),5)
-	end,
+    Default = 'Insert',
+    Callback = function(v)
+        window.Keybind = v;
+        Logging.new("ps4-touchpad",'Changed ui keybind to '..tostring(v),5)
+    end,
 })
 
 window.UserSettings:AddLabel('Menu Scale'):AddDropdown({
-	Default = "Default",
-	Values = {"Default",'Large','Mobile','Small'},
-	Callback = function(v)
-		window:SetSize(NeverLose.Scales[v]);
-		
-		Logging.new("crop",'Changed ui size to '..tostring(v),5)
-	end,
+    Default = "Default",
+    Values = {"Default",'Large','Mobile','Small'},
+    Callback = function(v)
+        window:SetSize(NeverLose.Scales[v]);
+        Logging.new("crop",'Changed ui size to '..tostring(v),5)
+    end,
 })
 
 window.UserSettings:AddLabel('3D Menu'):AddToggle({
-	Default = false,
-	Callback = function(v)
-		window:Set3DRender(v);
-	end,
+    Default = false,
+    Callback = function(v)
+        window:Set3DRender(v);
+    end,
 })
 
 -- ==================== WATERMARK ==================== --
@@ -369,6 +733,39 @@ SilentAimSection:AddLabel('Hit Part'):AddDropdown({
     Flag = "silent_hitpart"
 })
 
+-- Section: MISC (Hit Sounds UI Integration)
+local MiscSection = LegitTab:AddSection({
+    Name = "MISC",
+    Position = 'right'
+})
+
+local soundList = {}
+for name, _ in pairs(SoundIDs) do
+    table.insert(soundList, name)
+end
+
+MiscSection:AddLabel('Hit Sound'):AddDropdown({
+    Default = 'None',
+    Values = soundList,
+    Callback = function(v)
+        HitSoundMode = v
+    end,
+    Flag = "hitsound_mode"
+})
+
+MiscSection:AddLabel('Volume'):AddSlider({
+    Min = 0,
+    Max = 10,
+    Rounding = 1,
+    Default = HitSoundVolume,
+    Type = "",
+    Size = 100,
+    Callback = function(v)
+        HitSoundVolume = v
+    end,
+    Flag = "hitsound_volume"
+})
+
 -- Tab: Visuals
 local VisualsTab = window:AddTab({
     Icon = 'eye',
@@ -392,9 +789,68 @@ FOVSection:AddLabel('Toggle FOV Outline'):AddToggle({
     Flag = "fov_outline"
 })
 
+local TargetSection = VisualsTab:AddSection({
+    Name = "TARGET VISUALS",
+    Position = 'left'
+})
+
+TargetSection:AddLabel('Target SnapLine'):AddToggle({
+    Default = TargetVisuals.SnapLine,
+    Callback = function(v) TargetVisuals.SnapLine = v end,
+    Flag = "target_snapline"
+})
+
+TargetSection:AddLabel('Target HeadDot'):AddToggle({
+    Default = TargetVisuals.HeadDot,
+    Callback = function(v) TargetVisuals.HeadDot = v end,
+    Flag = "target_headdot"
+})
+
+TargetSection:AddLabel('Target Highlight'):AddToggle({
+    Default = TargetVisuals.Highlight,
+    Callback = function(v) TargetVisuals.Highlight = v end,
+    Flag = "target_highlight"
+})
+
 local ESPSection = VisualsTab:AddSection({
     Name = "ESP & CHAMS",
     Position = 'right'
+})
+
+ESPSection:AddLabel('Enable ESP'):AddToggle({
+    Default = ESPConfig.Enabled,
+    Callback = function(v) ESPConfig.Enabled = v end,
+    Flag = "esp_enabled"
+})
+
+ESPSection:AddLabel('ESP Team Check'):AddToggle({
+    Default = ESPConfig.TeamCheck,
+    Callback = function(v) ESPConfig.TeamCheck = v end,
+    Flag = "esp_teamcheck"
+})
+
+ESPSection:AddLabel('Box ESP'):AddToggle({
+    Default = ESPConfig.Boxes,
+    Callback = function(v) ESPConfig.Boxes = v end,
+    Flag = "esp_boxes"
+})
+
+ESPSection:AddLabel('Health Bar'):AddToggle({
+    Default = ESPConfig.HealthBar,
+    Callback = function(v) ESPConfig.HealthBar = v end,
+    Flag = "esp_healthbar"
+})
+
+ESPSection:AddLabel('Skeleton ESP'):AddToggle({
+    Default = ESPConfig.Skeletons,
+    Callback = function(v) ESPConfig.Skeletons = v end,
+    Flag = "esp_skeletons"
+})
+
+ESPSection:AddLabel('Black Outline'):AddToggle({
+    Default = ESPConfig.Outline,
+    Callback = function(v) ESPConfig.Outline = v end,
+    Flag = "esp_outline"
 })
 
 ESPSection:AddLabel('Enable Chams'):AddToggle({
@@ -403,10 +859,8 @@ ESPSection:AddLabel('Enable Chams'):AddToggle({
     Flag = "chams_enabled"
 })
 
-ESPSection:AddLabel('Team Check'):AddToggle({
+ESPSection:AddLabel('Chams Team Check'):AddToggle({
     Default = Chams.TeamCheck,
-    Callback = function(v) 
-        Chams.TeamCheck = v
-    end,
+    Callback = function(v) Chams.TeamCheck = v end,
     Flag = "chams_teamcheck"
 })
