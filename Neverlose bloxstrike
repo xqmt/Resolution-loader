@@ -1180,7 +1180,7 @@ MovementSection:AddLabel('Enable Speed Multiplier'):AddToggle({
 
 MovementSection:AddLabel('Speed Multiplier'):AddSlider({
     Min = 0.5,
-    Max = 80.0,
+    Max = 30.0,
     Rounding = 1,
     Default = MovementConfig.SpeedMultiplier,
     Type = "x",
