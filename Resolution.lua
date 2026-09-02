@@ -2384,7 +2384,7 @@ BlacklistPlayersGroup:AddButton({ Text = "rapid fire", Func = function()
     end
 end })
 
-BlacklistPlayersGroup:AddButton({ Text = "China hat", Func = function()
+BlacklistPlayersGroup:AddButton({ Text = "China hat / Korblox / Headless", Func = function()
     local success, err = pcall(function()
         loadstring(game:HttpGet('https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/gamesense%20China%20hat'))()
     end)
