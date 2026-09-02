@@ -1,3 +1,4 @@
+
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -11,6 +12,23 @@ local Camera = Workspace.CurrentCamera
 
 -- NeverLose UI Library
 local NeverLose = loadstring(game:HttpGet("https://raw.githubusercontent.com/4lpaca-pin/NeverLose/refs/heads/main/source.luau"))()
+
+-- Movement Configurations
+local MovementConfig = {
+    BhopEnabled = false,
+    SpeedEnabled = false,
+    SpeedMultiplier = 1.0,
+    BaseSpeed = 16,
+    JumpBoost = 12,
+    SpeedCap = 180,
+    DecelRate = 30,
+    LowFriction = 0.01
+}
+
+local currSpeed = MovementConfig.BaseSpeed
+local lastHzSpeed = 0
+local lastDir = Vector3.new(0, 0, 0)
+local sliding = false
 
 -- Hit Sound Config & Setup
 local HitSoundMode = "None"
@@ -49,11 +67,16 @@ end
 -- Bullet Tracer Configuration
 local BulletTracer = {
     Enabled = true,
+    Type = "Corner",
+    FadeMode = "Smooth",
+    ColorMode = "Blue",
     Color = Color3.fromRGB(0, 170, 255),
+    Transparency = 0,
     Material = "Neon",
-    Thickness = 0.2,
-    LifeTime = 0.6,
-    FadeTime = 0.4,
+    Thickness = 0.015,
+    LifeTime = 0.5,
+    FadeTime = 0.3,
+    TravelTime = 0.08,
     BloomEffect = true
 }
 
@@ -90,7 +113,7 @@ local Chams = {
     OutlineTransparency = 0
 }
 
--- ESP Configuration (ลบ Names และ Distance ออกแล้ว)
+-- ESP Configuration
 local ESPConfig = {
     Enabled = true,
     TeamCheck = true,
@@ -103,40 +126,37 @@ local ESPConfig = {
     OutlineColor = Color3.fromRGB(0, 0, 0)
 }
 
--- World & Atmosphere Configuration
+-- World Configuration
 local WorldConfig = {
-    NightMode = false,
-    ClockTime = 14,
-    Brightness = 2,
-    OutdoorAmbient = Color3.fromRGB(128, 128, 128),
-    Ambient = Color3.fromRGB(128, 128, 128),
+    CameraFOV = 70,
+    WorldBlur = false,
+    BlurSize = 10,
+    
+    NightMode = true,
+    ClockTime = 0,
+    Brightness = 1.2,
+    OutdoorAmbient = Color3.fromRGB(10, 20, 35),
+    Ambient = Color3.fromRGB(15, 25, 40),
     GlobalShadows = true,
-    ExposureCompensation = 0,
+    ExposureCompensation = -0.2,
     
-    FogEnabled = false,
-    FogColor = Color3.fromRGB(128, 128, 128),
-    FogStart = 0,
-    FogEnd = 100000,
+    FogEnabled = true,
+    FogColor = Color3.fromRGB(5, 18, 32),
+    FogStart = 10,
+    FogEnd = 1200,
     
-    AtmosphereEnabled = true,
-    Density = 0.3,
-    Offset = 0.25,
-    Glare = 0,
-    Haze = 0,
-    Decay = Color3.fromRGB(255, 255, 255),
-    Color = Color3.fromRGB(199, 175, 151),
-    
-    SelectedSky = "Default"
+    SelectedSky = "Night"
 }
 
 -- World System Core Engine
 local DefaultSky = Lighting:FindFirstChildOfClass("Sky") and Lighting:FindFirstChildOfClass("Sky"):Clone() or nil
 local CurrentSkyObj = Lighting:FindFirstChildOfClass("Sky")
 
-local AtmosphereObj = Lighting:FindFirstChildOfClass("Atmosphere")
-if not AtmosphereObj then
-    AtmosphereObj = Instance.new("Atmosphere")
-    AtmosphereObj.Parent = Lighting
+local BlurObj = Lighting:FindFirstChildOfClass("BlurEffect")
+if not BlurObj then
+    BlurObj = Instance.new("BlurEffect")
+    BlurObj.Name = "WorldBlurEffect"
+    BlurObj.Parent = Lighting
 end
 
 local SkyPresets = {
@@ -211,13 +231,36 @@ local function applySky(presetName)
     end
 end
 
+local function getTracerColor()
+    local mode = BulletTracer.ColorMode
+    if mode == "Pink" then
+        return Color3.fromRGB(255, 105, 180)
+    elseif mode == "Blue" then
+        return Color3.fromRGB(0, 170, 255)
+    elseif mode == "Purple" then
+        return Color3.fromRGB(170, 0, 255)
+    elseif mode == "Rainbow" then
+        local hue = (tick() % 3) / 3
+        return Color3.fromHSV(hue, 1, 1)
+    elseif mode == "Gradient" then
+        local t = (math.sin(tick() * 3) + 1) / 2
+        return Color3.fromRGB(0, 255, 200):Lerp(Color3.fromRGB(255, 0, 150), t)
+    end
+    return BulletTracer.Color
+end
+
 local function updateWorldLighting()
+    Camera.FieldOfView = WorldConfig.CameraFOV
+    
+    BlurObj.Enabled = WorldConfig.WorldBlur
+    BlurObj.Size = WorldConfig.BlurSize
+
     if WorldConfig.NightMode then
         Lighting.ClockTime = 0
     else
         Lighting.ClockTime = WorldConfig.ClockTime
     end
-    
+
     Lighting.Brightness = WorldConfig.Brightness
     Lighting.OutdoorAmbient = WorldConfig.OutdoorAmbient
     Lighting.Ambient = WorldConfig.Ambient
@@ -231,18 +274,8 @@ local function updateWorldLighting()
     else
         Lighting.FogEnd = 100000
     end
-    
-    if AtmosphereObj then
-        AtmosphereObj.Density = WorldConfig.Density
-        AtmosphereObj.Offset = WorldConfig.Offset
-        AtmosphereObj.Glare = WorldConfig.Glare
-        AtmosphereObj.Haze = WorldConfig.Haze
-        AtmosphereObj.Decay = WorldConfig.Decay
-        AtmosphereObj.Color = WorldConfig.Color
-    end
 end
 
--- Viewmodel Muzzle Origin Finder
 local function getMuzzlePosition(defaultOrigin)
     local vm = Camera:FindFirstChildOfClass("Model") or Camera:FindFirstChild("ViewModel") or Camera:FindFirstChild("Viewmodel")
     if vm then
@@ -263,7 +296,6 @@ local function getMuzzlePosition(defaultOrigin)
     return defaultOrigin
 end
 
--- Create Custom Tracer Line (เพิ่ม Corner เล็กน้อยผ่าน Cylinder Shape)
 local function drawBulletTracer(startPos, targetPos)
     if not BulletTracer.Enabled then return end
 
@@ -271,50 +303,100 @@ local function drawBulletTracer(startPos, targetPos)
     local distance = (targetPos - origin).Magnitude
     if distance < 1 then return end
 
+    local currentColor = getTracerColor()
+
     local tracer = Instance.new("Part")
     tracer.Name = "BulletTracer"
-    tracer.Shape = Enum.PartType.Cylinder
+    
+    if BulletTracer.Type == "Square" then
+        tracer.Shape = Enum.PartType.Block
+        tracer.Size = Vector3.new(BulletTracer.Thickness, BulletTracer.Thickness, 0)
+    else
+        tracer.Shape = Enum.PartType.Cylinder
+        tracer.Size = Vector3.new(0, BulletTracer.Thickness, BulletTracer.Thickness)
+    end
+
     tracer.Anchored = true
     tracer.CanCollide = false
     tracer.CastShadow = false
     tracer.Material = Enum.Material[BulletTracer.Material] or Enum.Material.Neon
-    tracer.Color = BulletTracer.Color
-    tracer.Size = Vector3.new(distance, BulletTracer.Thickness, BulletTracer.Thickness)
+    tracer.Color = currentColor
+    tracer.Transparency = BulletTracer.Transparency
     
-    -- ปรับ CFrame ให้ Cylinder หันตามเส้นยิงอย่างถูกต้อง
-    tracer.CFrame = CFrame.lookAt(origin, targetPos) * CFrame.new(0, 0, -distance / 2) * CFrame.Angles(0, math.rad(90), 0)
+    if BulletTracer.Type == "Square" then
+        tracer.CFrame = CFrame.lookAt(origin, targetPos) * CFrame.new(0, 0, 0)
+    else
+        tracer.CFrame = CFrame.lookAt(origin, targetPos) * CFrame.new(0, 0, 0) * CFrame.Angles(0, math.rad(90), 0)
+    end
+    
     tracer.Parent = Workspace
 
+    local highlight = nil
     if BulletTracer.BloomEffect then
-        local highlight = Instance.new("Highlight")
+        highlight = Instance.new("Highlight")
         highlight.Adornee = tracer
-        highlight.FillColor = BulletTracer.Color
-        highlight.OutlineColor = BulletTracer.Color
-        highlight.FillTransparency = 0.2
-        highlight.OutlineTransparency = 0.5
+        highlight.FillColor = currentColor
+        highlight.OutlineColor = currentColor
+        highlight.FillTransparency = math.clamp(BulletTracer.Transparency + 0.2, 0, 1)
+        highlight.OutlineTransparency = math.clamp(BulletTracer.Transparency + 0.5, 0, 1)
         highlight.Parent = tracer
     end
 
+    local targetCFrame
+    local targetSize
+    if BulletTracer.Type == "Square" then
+        targetCFrame = CFrame.lookAt(origin, targetPos) * CFrame.new(0, 0, -distance / 2)
+        targetSize = Vector3.new(BulletTracer.Thickness, BulletTracer.Thickness, distance)
+    else
+        targetCFrame = CFrame.lookAt(origin, targetPos) * CFrame.new(0, 0, -distance / 2) * CFrame.Angles(0, math.rad(90), 0)
+        targetSize = Vector3.new(distance, BulletTracer.Thickness, BulletTracer.Thickness)
+    end
+
+    local growTween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.TravelTime, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+        Size = targetSize,
+        CFrame = targetCFrame
+    })
+    
+    growTween:Play()
+
     task.delay(BulletTracer.LifeTime, function()
         if tracer and tracer.Parent then
-            local tween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                Transparency = 1,
-                Size = Vector3.new(distance, 0, 0)
-            })
-            tween:Play()
-            tween.Completed:Connect(function()
+            if BulletTracer.FadeMode == "Instant" then
                 tracer:Destroy()
-            end)
+            else
+                local fadeSize
+                if BulletTracer.Type == "Square" then
+                    fadeSize = Vector3.new(0, 0, distance)
+                else
+                    fadeSize = Vector3.new(distance, 0, 0)
+                end
+
+                if highlight then
+                    TweenService:Create(highlight, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        FillTransparency = 1,
+                        OutlineTransparency = 1
+                    }):Play()
+                end
+
+                local fadeTween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Transparency = 1,
+                    Size = fadeSize
+                })
+                fadeTween:Play()
+                fadeTween.Completed:Connect(function()
+                    tracer:Destroy()
+                end)
+            end
         end
     end)
 end
 
 -- FOV Outline & Drawings
 local fovOutlineOuter = Drawing.new("Circle")
-fovOutlineOuter.Thickness = 1
+fovOutlineOuter.Thickness = 1.25
 fovOutlineOuter.Color = Color3.fromRGB(0, 0, 0)
 fovOutlineOuter.Filled = false
-fovOutlineOuter.Transparency = 0.75
+fovOutlineOuter.Transparency = 0.85
 fovOutlineOuter.Visible = false
 fovOutlineOuter.NumSides = 144
 
@@ -534,7 +616,6 @@ RunService.RenderStepped:Connect(function()
                     
                     local boxPos = Vector2.new(hrpPos.X - boxWidth / 2, topPos.Y)
 
-                    -- Box ESP
                     if ESPConfig.Boxes then
                         if ESPConfig.Outline then
                             objs.BoxOutline.Size = Vector2.new(boxWidth, boxHeight)
@@ -553,7 +634,6 @@ RunService.RenderStepped:Connect(function()
                         objs.Box.Visible = false
                     end
 
-                    -- Health Bar
                     if ESPConfig.HealthBar then
                         local health = character:GetAttribute("Health") or 100
                         local maxHealth = character:GetAttribute("MaxHealth") or 100
@@ -578,7 +658,6 @@ RunService.RenderStepped:Connect(function()
                         objs.HealthBar.Visible = false
                     end
 
-                    -- Skeleton ESP
                     if ESPConfig.Skeletons then
                         local skeletonPairs = {
                             {"Head", "UpperTorso"}, {"UpperTorso", "LowerTorso"},
@@ -780,6 +859,89 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
+-- Improved Bhop & Movement Engine
+local function setupCharacterMovement(character)
+    if not character then return end
+    local hum = character:WaitForChild("Humanoid", 5)
+    local hrp = character:WaitForChild("HumanoidRootPart", 5)
+    if not hum or not hrp then return end
+
+    local origProps = hrp.CustomPhysicalProperties or PhysicalProperties.new(0.7, 0.3, 0.5, 1, 1)
+    local slipProps = PhysicalProperties.new(origProps.Density, MovementConfig.LowFriction, origProps.Elasticity, 100, origProps.ElasticityWeight)
+
+    local stateConn
+    stateConn = hum.StateChanged:Connect(function(_, newState)
+        if MovementConfig.BhopEnabled and newState == Enum.HumanoidStateType.Landed then
+            if hum.MoveDirection.Magnitude > 0 then
+                hum:ChangeState(Enum.HumanoidStateType.Jumping)
+                
+                currSpeed = math.min(currSpeed + MovementConfig.JumpBoost, MovementConfig.SpeedCap)
+                local multiplier = MovementConfig.SpeedEnabled and MovementConfig.SpeedMultiplier or 1.0
+                local finalSpeed = currSpeed * multiplier
+                
+                local moveDir = hum.MoveDirection.Unit
+                hrp.CustomPhysicalProperties = slipProps
+                hrp.AssemblyLinearVelocity = Vector3.new(
+                    moveDir.X * finalSpeed,
+                    hrp.AssemblyLinearVelocity.Y + 2,
+                    moveDir.Z * finalSpeed
+                )
+            end
+        end
+    end)
+
+    character.AncestryChanged:Connect(function(_, parent)
+        if not parent then
+            if stateConn then stateConn:Disconnect() end
+        end
+    end)
+end
+
+if LocalPlayer.Character then
+    setupCharacterMovement(LocalPlayer.Character)
+end
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+    currSpeed = MovementConfig.BaseSpeed
+    sliding = false
+    setupCharacterMovement(char)
+end)
+
+RunService.Heartbeat:Connect(function(delta)
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hum or not hrp then return end
+
+    local multiplier = MovementConfig.SpeedEnabled and MovementConfig.SpeedMultiplier or 1.0
+
+    if MovementConfig.BhopEnabled then
+        local origProps = PhysicalProperties.new(0.7, 0.3, 0.5, 1, 1)
+        local slipProps = PhysicalProperties.new(origProps.Density, MovementConfig.LowFriction, origProps.Elasticity, 100, origProps.ElasticityWeight)
+
+        if hum.FloorMaterial == Enum.Material.Air and hum.MoveDirection.Magnitude > 0 then
+            local moveDir = hum.MoveDirection.Unit
+            local finalSpeed = currSpeed * multiplier
+            
+            hrp.AssemblyLinearVelocity = Vector3.new(
+                moveDir.X * finalSpeed,
+                hrp.AssemblyLinearVelocity.Y,
+                moveDir.Z * finalSpeed
+            )
+        end
+
+        if hum.FloorMaterial ~= Enum.Material.Air and hum.MoveDirection.Magnitude == 0 then
+            currSpeed = math.max(MovementConfig.BaseSpeed, currSpeed - MovementConfig.DecelRate * delta)
+            hrp.CustomPhysicalProperties = origProps
+        end
+    else
+        if MovementConfig.SpeedEnabled then
+            hum.WalkSpeed = MovementConfig.BaseSpeed * MovementConfig.SpeedMultiplier
+        end
+    end
+end)
+
 local function buildHit(origin, part)
     local targetPos = part.Position
     local direction = (targetPos - origin).Unit
@@ -855,7 +1017,7 @@ window.UserSettings:AddLabel("Menu Keybind"):AddKeybind({
 })
 
 window.UserSettings:AddLabel('Menu Scale'):AddDropdown({
-    Default = "Default",
+    Default = "Large",
     Values = {"Default",'Large','Mobile','Small'},
     Callback = function(v)
         window:SetSize(NeverLose.Scales[v]);
@@ -981,13 +1143,60 @@ MiscSection:AddLabel('Volume'):AddSlider({
     Flag = "hitsound_volume"
 })
 
+-- Tab: Movement
+local MovementTab = window:AddTab({
+    Icon = 'person-running',
+    Name = "Movement"
+})
+
+local MovementSection = MovementTab:AddSection({
+    Name = "MOVEMENT MODS",
+    Position = 'left'
+})
+
+MovementSection:AddLabel('Enable Bhop'):AddToggle({
+    Default = MovementConfig.BhopEnabled,
+    Callback = function(v) 
+        MovementConfig.BhopEnabled = v 
+        if not v and LocalPlayer.Character then
+            local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed = MovementConfig.BaseSpeed end
+        end
+    end,
+    Flag = "bhop_enabled"
+})
+
+MovementSection:AddLabel('Enable Speed Multiplier'):AddToggle({
+    Default = MovementConfig.SpeedEnabled,
+    Callback = function(v) 
+        MovementConfig.SpeedEnabled = v 
+        if not v and LocalPlayer.Character then
+            local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed = MovementConfig.BaseSpeed end
+        end
+    end,
+    Flag = "speed_enabled"
+})
+
+MovementSection:AddLabel('Speed Multiplier'):AddSlider({
+    Min = 0.5,
+    Max = 30.0,
+    Rounding = 1,
+    Default = MovementConfig.SpeedMultiplier,
+    Type = "x",
+    Size = 100,
+    Callback = function(v) 
+        MovementConfig.SpeedMultiplier = v 
+    end,
+    Flag = "speed_multiplier"
+})
+
 -- Tab: Visuals
 local VisualsTab = window:AddTab({
     Icon = 'eye',
     Name = "Visuals"
 })
 
--- Bullet Tracer Section UI
 local TracerSection = VisualsTab:AddSection({
     Name = "BULLET TRACERS",
     Position = 'left'
@@ -997,6 +1206,27 @@ TracerSection:AddLabel('Enable Bullet Tracer'):AddToggle({
     Default = BulletTracer.Enabled,
     Callback = function(v) BulletTracer.Enabled = v end,
     Flag = "tracer_enabled"
+})
+
+TracerSection:AddLabel('Tracer Color'):AddDropdown({
+    Default = 'Blue',
+    Values = {'Pink', 'Blue', 'Purple', 'Rainbow', 'Gradient'},
+    Callback = function(v) BulletTracer.ColorMode = v end,
+    Flag = "tracer_colormode"
+})
+
+TracerSection:AddLabel('Tracer Type'):AddDropdown({
+    Default = 'Corner',
+    Values = {'Corner', 'Square'},
+    Callback = function(v) BulletTracer.Type = v end,
+    Flag = "tracer_type"
+})
+
+TracerSection:AddLabel('Fade Type'):AddDropdown({
+    Default = 'Smooth',
+    Values = {'Instant', 'Smooth'},
+    Callback = function(v) BulletTracer.FadeMode = v end,
+    Flag = "tracer_fade_mode"
 })
 
 TracerSection:AddLabel('Bloom / Neon Glow'):AddToggle({
@@ -1013,7 +1243,7 @@ TracerSection:AddLabel('Material'):AddDropdown({
 })
 
 TracerSection:AddLabel('Thickness'):AddSlider({
-    Min = 0.1,
+    Min = 0.015,
     Max = 1.0,
     Rounding = 2,
     Default = BulletTracer.Thickness,
@@ -1021,6 +1251,17 @@ TracerSection:AddLabel('Thickness'):AddSlider({
     Size = 100,
     Callback = function(v) BulletTracer.Thickness = v end,
     Flag = "tracer_thickness"
+})
+
+TracerSection:AddLabel('Transparency'):AddSlider({
+    Min = 0,
+    Max = 1,
+    Rounding = 2,
+    Default = BulletTracer.Transparency,
+    Type = "",
+    Size = 100,
+    Callback = function(v) BulletTracer.Transparency = v end,
+    Flag = "tracer_transparency"
 })
 
 TracerSection:AddLabel('Lifetime'):AddSlider({
@@ -1140,8 +1381,41 @@ ESPSection:AddLabel('Chams Team Check'):AddToggle({
 
 -- ==================== TAB: WORLD ==================== --
 local WorldTab = window:AddTab({
-    Icon = 'globe',
+    Icon = 'crosshairs',
     Name = "World"
+})
+
+local CameraSection = WorldTab:AddSection({
+    Name = "CAMERA & EFFECTS",
+    Position = 'left'
+})
+
+CameraSection:AddLabel('Camera FOV'):AddSlider({
+    Min = 70,
+    Max = 120,
+    Rounding = 0,
+    Default = WorldConfig.CameraFOV,
+    Type = "°",
+    Size = 100,
+    Callback = function(v) WorldConfig.CameraFOV = v end,
+    Flag = "world_camera_fov"
+})
+
+CameraSection:AddLabel('World Blur'):AddToggle({
+    Default = WorldConfig.WorldBlur,
+    Callback = function(v) WorldConfig.WorldBlur = v end,
+    Flag = "world_blur_enabled"
+})
+
+CameraSection:AddLabel('Blur Intensity'):AddSlider({
+    Min = 0,
+    Max = 50,
+    Rounding = 0,
+    Default = WorldConfig.BlurSize,
+    Type = "px",
+    Size = 100,
+    Callback = function(v) WorldConfig.BlurSize = v end,
+    Flag = "world_blur_size"
 })
 
 local NightModeSection = WorldTab:AddSection({
@@ -1195,88 +1469,11 @@ NightModeSection:AddLabel('Global Shadows'):AddToggle({
 })
 
 NightModeSection:AddLabel('Skybox Preset'):AddDropdown({
-    Default = 'Default',
+    Default = 'Night',
     Values = {'Default', 'Night', 'Cyberpunk', 'Sunset', 'Purple Nebula', 'Clear Daylight', 'Red Moon'},
     Callback = function(v)
         WorldConfig.SelectedSky = v
         applySky(v)
     end,
     Flag = "world_skybox"
-})
-
-local AtmosphereSection = WorldTab:AddSection({
-    Name = "ATMOSPHERE & FOG",
-    Position = 'right'
-})
-
-AtmosphereSection:AddLabel('Density'):AddSlider({
-    Min = 0,
-    Max = 1,
-    Rounding = 2,
-    Default = WorldConfig.Density,
-    Type = "",
-    Size = 100,
-    Callback = function(v) WorldConfig.Density = v end,
-    Flag = "atmo_density"
-})
-
-AtmosphereSection:AddLabel('Offset'):AddSlider({
-    Min = 0,
-    Max = 1,
-    Rounding = 2,
-    Default = WorldConfig.Offset,
-    Type = "",
-    Size = 100,
-    Callback = function(v) WorldConfig.Offset = v end,
-    Flag = "atmo_offset"
-})
-
-AtmosphereSection:AddLabel('Haze'):AddSlider({
-    Min = 0,
-    Max = 10,
-    Rounding = 1,
-    Default = WorldConfig.Haze,
-    Type = "",
-    Size = 100,
-    Callback = function(v) WorldConfig.Haze = v end,
-    Flag = "atmo_haze"
-})
-
-AtmosphereSection:AddLabel('Glare'):AddSlider({
-    Min = 0,
-    Max = 10,
-    Rounding = 1,
-    Default = WorldConfig.Glare,
-    Type = "",
-    Size = 100,
-    Callback = function(v) WorldConfig.Glare = v end,
-    Flag = "atmo_glare"
-})
-
-AtmosphereSection:AddLabel('Enable Custom Fog'):AddToggle({
-    Default = WorldConfig.FogEnabled,
-    Callback = function(v) WorldConfig.FogEnabled = v end,
-    Flag = "fog_enabled"
-})
-
-AtmosphereSection:AddLabel('Fog Start Distance'):AddSlider({
-    Min = 0,
-    Max = 500,
-    Rounding = 0,
-    Default = WorldConfig.FogStart,
-    Type = "m",
-    Size = 100,
-    Callback = function(v) WorldConfig.FogStart = v end,
-    Flag = "fog_start"
-})
-
-AtmosphereSection:AddLabel('Fog End Distance'):AddSlider({
-    Min = 100,
-    Max = 5000,
-    Rounding = 0,
-    Default = WorldConfig.FogEnd,
-    Type = "m",
-    Size = 100,
-    Callback = function(v) WorldConfig.FogEnd = v end,
-    Flag = "fog_end"
 })
