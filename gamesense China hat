@@ -17,13 +17,25 @@ local THEME = {
     Glow = Color3.fromRGB(255, 105, 180)
 }
 
+-- States
+local isHatEnabled = true
+local isKorbloxEnabled = false
+local isHeadlessEnabled = false
+
 local currentHat = nil
 local hatColor = THEME.Primary
 local h, s, v = Color3.toHSV(hatColor)
 local isDraggingColor = false
-local isHatEnabled = true
 local hatConnection = nil
 
+-- Asset Constants for Korblox
+local KORBLOX_MESH_ID = "rbxassetid://101851696"
+local KORBLOX_TEXTURE_ID = "rbxassetid://101851254"
+local DARK_GREY_COLOR = Color3.fromRGB(64, 64, 64)
+
+---------------------------------------------------------
+-- CHINA HAT LOGIC
+---------------------------------------------------------
 local function destroyChinaHat()
     if hatConnection then
         hatConnection:Disconnect()
@@ -74,6 +86,75 @@ local function createChinaHat()
     end)
 end
 
+---------------------------------------------------------
+-- KORBLOX LOGIC
+---------------------------------------------------------
+local function applyKorblox()
+    if not isKorbloxEnabled then return end
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+
+    if hum.RigType == Enum.HumanoidRigType.R15 then
+        local rf = char:FindFirstChild("RightFoot")
+        local rl = char:FindFirstChild("RightLowerLeg")
+        local ru = char:FindFirstChild("RightUpperLeg")
+        if ru and rl and rf then
+            rf.Transparency = 1
+            rl.Transparency = 1
+            ru.MeshId = "http://www.roblox.com/asset/?id=902942096"
+            ru.TextureID = "http://roblox.com/asset/?id=902843398"
+            ru.Color = Color3.new(1, 1, 1)
+            ru.Transparency = 0
+        end
+    else
+        local rightLeg = char:FindFirstChild("Right Leg")
+        if rightLeg then
+            for _, v in ipairs(char:GetChildren()) do
+                if v:IsA("CharacterMesh") and v.BodyPart == Enum.BodyPart.RightLeg then
+                    v:Destroy()
+                end
+            end
+            local mesh = rightLeg:FindFirstChildOfClass("SpecialMesh")
+            if not mesh then
+                mesh = Instance.new("SpecialMesh")
+                mesh.Parent = rightLeg
+            end
+            rightLeg.Color = DARK_GREY_COLOR
+            rightLeg.Transparency = 0
+            mesh.MeshType = Enum.MeshType.FileMesh
+            mesh.MeshId = KORBLOX_MESH_ID
+            mesh.TextureId = KORBLOX_TEXTURE_ID
+            mesh.Scale = Vector3.new(1, 1, 1)
+        end
+    end
+end
+
+task.spawn(function()
+    while true do
+        if isKorbloxEnabled and LocalPlayer.Character then
+            applyKorblox()
+        end
+        task.wait(0.5)
+    end
+end)
+
+---------------------------------------------------------
+-- HEADLESS LOGIC
+---------------------------------------------------------
+RunService.RenderStepped:Connect(function()
+    if isHeadlessEnabled and LocalPlayer.Character then
+        local head = LocalPlayer.Character:FindFirstChild("Head")
+        if head then
+            head.LocalTransparencyModifier = 1
+        end
+    end
+end)
+
+---------------------------------------------------------
+-- UI UTILS
+---------------------------------------------------------
 local function makeDraggable(guiObject, dragHandle)
     local dragging = false
     local dragStart, startPos
@@ -109,7 +190,7 @@ local function makeDraggable(guiObject, dragHandle)
 end
 
 local function makeResizable(guiObject, resizeHandle, minSize)
-    minSize = minSize or Vector2.new(280, 180)
+    minSize = minSize or Vector2.new(280, 240)
     local resizing = false
     local dragStart, startSize
 
@@ -139,6 +220,9 @@ local function makeResizable(guiObject, resizeHandle, minSize)
     end)
 end
 
+---------------------------------------------------------
+-- GUI CREATION
+---------------------------------------------------------
 local function createGUI()
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "PrimordialGui"
@@ -148,8 +232,8 @@ local function createGUI()
     local mainVisible = true
 
     local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 320, 0, 200)
-    mainFrame.Position = UDim2.new(0.5, -160, 0.4, -100)
+    mainFrame.Size = UDim2.new(0, 320, 0, 260)
+    mainFrame.Position = UDim2.new(0.5, -160, 0.4, -130)
     mainFrame.BackgroundColor3 = THEME.Background
     mainFrame.BorderSizePixel = 0
     mainFrame.Active = true
@@ -243,44 +327,70 @@ local function createGUI()
     groupTitle.ZIndex = 5
     groupTitle.Parent = groupbox
 
-    local toggleRow = Instance.new("Frame")
-    toggleRow.Size = UDim2.new(1, -16, 0, 20)
-    toggleRow.Position = UDim2.new(0, 8, 0, 12)
-    toggleRow.BackgroundTransparency = 1
-    toggleRow.ZIndex = 5
-    toggleRow.Parent = groupbox
+    -- HELPER FUNCTION FOR CHECKBOXES
+    local function createCheckboxRow(yOffset, labelText, defaultState, callback)
+        local toggleRow = Instance.new("Frame")
+        toggleRow.Size = UDim2.new(1, -16, 0, 20)
+        toggleRow.Position = UDim2.new(0, 8, 0, yOffset)
+        toggleRow.BackgroundTransparency = 1
+        toggleRow.ZIndex = 5
+        toggleRow.Parent = groupbox
 
-    local checkbox = Instance.new("TextButton")
-    checkbox.Size = UDim2.new(0, 8, 0, 8)
-    checkbox.Position = UDim2.new(0, 0, 0.5, -4)
-    checkbox.BackgroundColor3 = THEME.Primary
-    checkbox.AutoButtonColor = false
-    checkbox.Text = ""
-    checkbox.ZIndex = 6
-    checkbox.Parent = toggleRow
+        local box = Instance.new("TextButton")
+        box.Size = UDim2.new(0, 8, 0, 8)
+        box.Position = UDim2.new(0, 0, 0.5, -4)
+        box.BackgroundColor3 = defaultState and THEME.Primary or Color3.fromRGB(35, 30, 40)
+        box.AutoButtonColor = false
+        box.Text = ""
+        box.ZIndex = 6
+        box.Parent = toggleRow
 
-    local checkStroke = Instance.new("UIStroke")
-    checkStroke.Color = Color3.fromRGB(0, 0, 0)
-    checkStroke.Thickness = 1
-    checkStroke.Parent = checkbox
+        local boxStroke = Instance.new("UIStroke")
+        boxStroke.Color = Color3.fromRGB(0, 0, 0)
+        boxStroke.Thickness = 1
+        boxStroke.Parent = box
 
-    local checkGradient = Instance.new("UIGradient")
-    checkGradient.Rotation = 90
-    checkGradient.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 150, 180))
-    checkGradient.Parent = checkbox
+        local boxGradient = Instance.new("UIGradient")
+        boxGradient.Rotation = 90
+        boxGradient.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(200, 150, 180))
+        boxGradient.Parent = box
 
-    local toggleLabel = Instance.new("TextButton")
-    toggleLabel.Size = UDim2.new(0, 140, 0, 8)
-    toggleLabel.Position = UDim2.new(0, 14, 0.5, -4)
-    toggleLabel.BackgroundTransparency = 1
-    toggleLabel.Text = "china hat"
-    toggleLabel.TextColor3 = Color3.fromRGB(230, 220, 225)
-    toggleLabel.TextSize = 12
-    toggleLabel.Font = CHEAT_FONT
-    toggleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    toggleLabel.TextYAlignment = Enum.TextYAlignment.Center
-    toggleLabel.ZIndex = 6
-    toggleLabel.Parent = toggleRow
+        local label = Instance.new("TextButton")
+        label.Size = UDim2.new(0, 140, 0, 8)
+        label.Position = UDim2.new(0, 14, 0.5, -4)
+        label.BackgroundTransparency = 1
+        label.Text = labelText
+        label.TextColor3 = Color3.fromRGB(230, 220, 225)
+        label.TextSize = 12
+        label.Font = CHEAT_FONT
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.TextYAlignment = Enum.TextYAlignment.Center
+        label.ZIndex = 6
+        label.Parent = toggleRow
+
+        local state = defaultState
+
+        local function toggle()
+            state = not state
+            box.BackgroundColor3 = state and THEME.Primary or Color3.fromRGB(35, 30, 40)
+            callback(state)
+        end
+
+        box.MouseButton1Click:Connect(toggle)
+        label.MouseButton1Click:Connect(toggle)
+
+        return toggleRow
+    end
+
+    -- 1. China Hat Checkbox (with ColorPicker)
+    local chinaHatRow = createCheckboxRow(12, "china hat", isHatEnabled, function(state)
+        isHatEnabled = state
+        if isHatEnabled then
+            createChinaHat()
+        else
+            destroyChinaHat()
+        end
+    end)
 
     local colorPickerBtn = Instance.new("TextButton")
     colorPickerBtn.Size = UDim2.new(0, 18, 0, 10)
@@ -289,7 +399,7 @@ local function createGUI()
     colorPickerBtn.Text = ""
     colorPickerBtn.AutoButtonColor = false
     colorPickerBtn.ZIndex = 6
-    colorPickerBtn.Parent = toggleRow
+    colorPickerBtn.Parent = chinaHatRow
 
     local cpCorner = Instance.new("UICorner")
     cpCorner.CornerRadius = UDim.new(0, 3)
@@ -377,6 +487,25 @@ local function createGUI()
     cursorStroke.Thickness = 1
     cursorStroke.Parent = pickerCursor
 
+    -- 2. Korblox Checkbox
+    createCheckboxRow(36, "korblox", isKorbloxEnabled, function(state)
+        isKorbloxEnabled = state
+        if isKorbloxEnabled then
+            applyKorblox()
+        end
+    end)
+
+    -- 3. Headless Checkbox
+    createCheckboxRow(60, "headless", isHeadlessEnabled, function(state)
+        isHeadlessEnabled = state
+        if not isHeadlessEnabled and LocalPlayer.Character then
+            local head = LocalPlayer.Character:FindFirstChild("Head")
+            if head then
+                head.LocalTransparencyModifier = 0
+            end
+        end
+    end)
+
     local resizeHandle = Instance.new("TextButton")
     resizeHandle.Size = UDim2.new(0, 12, 0, 12)
     resizeHandle.Position = UDim2.new(1, -12, 1, -12)
@@ -388,26 +517,7 @@ local function createGUI()
     resizeHandle.ZIndex = 10
     resizeHandle.Parent = mainFrame
 
-    makeResizable(mainFrame, resizeHandle, Vector2.new(240, 140))
-
-    local function setCheckboxState(state)
-        isHatEnabled = state
-        if isHatEnabled then
-            checkbox.BackgroundColor3 = THEME.Primary
-            createChinaHat()
-        else
-            checkbox.BackgroundColor3 = Color3.fromRGB(35, 30, 40)
-            destroyChinaHat()
-        end
-    end
-
-    checkbox.MouseButton1Click:Connect(function()
-        setCheckboxState(not isHatEnabled)
-    end)
-
-    toggleLabel.MouseButton1Click:Connect(function()
-        setCheckboxState(not isHatEnabled)
-    end)
+    makeResizable(mainFrame, resizeHandle, Vector2.new(240, 180))
 
     colorPickerBtn.MouseButton1Click:Connect(function()
         pickerFrame.Visible = not pickerFrame.Visible
@@ -460,6 +570,7 @@ if LocalPlayer.Character then createChinaHat() end
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(0.5)
     createChinaHat()
+    if isKorbloxEnabled then applyKorblox() end
 end)
 
 createGUI()
