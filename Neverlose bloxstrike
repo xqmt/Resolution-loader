@@ -21,11 +21,6 @@ local HitboxConfig = {
     TeamCheck = true
 }
 
--- Gun Mods Configuration
-local GunModsConfig = {
-    NoSpread = false
-}
-
 -- Movement Configuration (Third Person Removed)
 local MovementConfig = {
     BhopEnabled = false,
@@ -1052,7 +1047,7 @@ local function buildHit(origin, part)
     }
 end
 
--- Hook Remote Silent Aim, Gun Mods, Tracer & Hit Sound
+-- Hook Remote Silent Aim, Tracer & Hit Sound
 local ok, Remotes = pcall(require, game:GetService("ReplicatedStorage").Database.Security.Remotes)
 local shootRemote = ok and Remotes and Remotes.Inventory and Remotes.Inventory.ShootWeapon
 
@@ -1063,10 +1058,6 @@ if shootRemote and shootRemote.Send then
             for _, bullet in ipairs(packet.Bullets) do
                 local origin = bullet.Origin
                 if origin then
-                    if GunModsConfig.NoSpread then
-                        bullet.Direction = Camera.CFrame.LookVector
-                    end
-
                     if SilentAim.Enabled then
                         local part = getTarget(origin)
                         if part then
@@ -1200,18 +1191,6 @@ SilentAimSection:AddLabel('Hit Part'):AddDropdown({
         SilentAim.AimPart = v
     end,
     Flag = "silent_hitpart"
-})
-
--- Gun Mods Section
-local GunModsSection = LegitTab:AddSection({
-    Name = "GUN MODS",
-    Position = 'left'
-})
-
-GunModsSection:AddLabel('No Spread'):AddToggle({
-    Default = GunModsConfig.NoSpread,
-    Callback = function(v) GunModsConfig.NoSpread = v end,
-    Flag = "gunmod_nospread"
 })
 
 -- Hitbox Extender Controls
