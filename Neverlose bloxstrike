@@ -1133,7 +1133,7 @@ window.UserSettings:AddLabel('3D Menu'):AddToggle({
 -- WATERMARK --
 local Watermark = window:Watermark()
 local pingBlock = Watermark:AddBlock("chart-four-vertical-bars", "0MS")
-local uiToggleBlock = Watermark:AddBlock("cube-vertexes", "Neverlose")
+local uiToggleBlock = Watermark:AddBlock("cube-vertexes", "Toggle ui")
 
 uiToggleBlock:Input(function()
     if window.ToggleInterface then
@@ -1226,7 +1226,7 @@ HitboxSection:AddLabel('Enable Head Hitbox'):AddToggle({
     Flag = "hitbox_enabled"
 })
 
-HitboxSection:AddLabel('Head Size Multiplier'):AddSlider({
+HitboxSection:AddLabel('Size'):AddSlider({
     Min = 1,
     Max = 5,
     Rounding = 1,
