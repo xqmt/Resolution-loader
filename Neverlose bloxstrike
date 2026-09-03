@@ -1,4 +1,3 @@
-
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -13,7 +12,21 @@ local Camera = Workspace.CurrentCamera
 -- NeverLose UI Library
 local NeverLose = loadstring(game:HttpGet("https://raw.githubusercontent.com/4lpaca-pin/NeverLose/refs/heads/main/source.luau"))()
 
--- Movement Configurations
+-- Hitbox Configuration
+local HitboxConfig = {
+    Enabled = false,
+    Size = 1,
+    Transparency = 0.7,
+    Color = Color3.fromRGB(255, 0, 0),
+    TeamCheck = true
+}
+
+-- Gun Mods Configuration
+local GunModsConfig = {
+    NoSpread = false
+}
+
+-- Movement Configuration (Third Person Removed)
 local MovementConfig = {
     BhopEnabled = false,
     SpeedEnabled = false,
@@ -26,9 +39,6 @@ local MovementConfig = {
 }
 
 local currSpeed = MovementConfig.BaseSpeed
-local lastHzSpeed = 0
-local lastDir = Vector3.new(0, 0, 0)
-local sliding = false
 
 -- Hit Sound Config & Setup
 local HitSoundMode = "None"
@@ -64,16 +74,17 @@ local function playHitSound()
     end)
 end
 
--- Bullet Tracer Configuration
+-- Enhanced Bullet Tracer Configuration
 local BulletTracer = {
     Enabled = true,
     Type = "Corner",
-    FadeMode = "Smooth",
-    ColorMode = "Blue",
+    FadeMode = "Smooth", -- Smooth, Instant, Shrink, Pulse, Expand-Out
+    AnimEasing = "Sine", -- Linear, Sine, Elastic, Bounce, Back
+    ColorMode = "Electric Blue",
     Color = Color3.fromRGB(0, 170, 255),
     Transparency = 0,
     Material = "Neon",
-    Thickness = 0.015,
+    Thickness = 0.02,
     LifeTime = 0.5,
     FadeTime = 0.3,
     TravelTime = 0.08,
@@ -231,20 +242,40 @@ local function applySky(presetName)
     end
 end
 
+-- Expanded Color Options Function
 local function getTracerColor()
     local mode = BulletTracer.ColorMode
-    if mode == "Pink" then
-        return Color3.fromRGB(255, 105, 180)
-    elseif mode == "Blue" then
+    if mode == "Electric Blue" then
         return Color3.fromRGB(0, 170, 255)
-    elseif mode == "Red" then
-        return Color3.fromRGB(255, 100, 100)
+    elseif mode == "Hot Pink" then
+        return Color3.fromRGB(255, 20, 147)
+    elseif mode == "White" then
+        return Color3.fromRGB(255, 255, 255)
+    elseif mode == "Crimson Red" then
+        return Color3.fromRGB(255, 30, 30)
+    elseif mode == "Lime Green" then
+        return Color3.fromRGB(50, 255, 50)
+    elseif mode == "Gold Yellow" then
+        return Color3.fromRGB(255, 215, 0)
+    elseif mode == "Cyan" then
+        return Color3.fromRGB(0, 255, 255)
+    elseif mode == "Neon Purple" then
+        return Color3.fromRGB(180, 0, 255)
     elseif mode == "Rainbow" then
-        local hue = (tick() % 3) / 3
+        local hue = (tick() % 2) / 2
         return Color3.fromHSV(hue, 1, 1)
     elseif mode == "Gradient" then
-        local t = (math.sin(tick() * 3) + 1) / 2
+        local t = (math.sin(tick() * 4) + 1) / 2
         return Color3.fromRGB(0, 255, 200):Lerp(Color3.fromRGB(255, 0, 150), t)
+    elseif mode == "Pulse RGB" then
+        local t = (math.sin(tick() * 8) + 1) / 2
+        return Color3.fromRGB(255, 255, 255):Lerp(Color3.fromRGB(255, 0, 80), t)
+    elseif mode == "Fire" then
+        local t = (math.sin(tick() * 5) + 1) / 2
+        return Color3.fromRGB(255, 50, 0):Lerp(Color3.fromRGB(255, 200, 0), t)
+    elseif mode == "Cyber Neon" then
+        local t = (math.sin(tick() * 6) + 1) / 2
+        return Color3.fromRGB(0, 255, 180):Lerp(Color3.fromRGB(255, 0, 200), t)
     end
     return BulletTracer.Color
 end
@@ -296,6 +327,7 @@ local function getMuzzlePosition(defaultOrigin)
     return defaultOrigin
 end
 
+-- Enhanced Bullet Tracer Drawing Engine with Advanced Animations
 local function drawBulletTracer(startPos, targetPos)
     if not BulletTracer.Enabled then return end
 
@@ -352,7 +384,14 @@ local function drawBulletTracer(startPos, targetPos)
         targetSize = Vector3.new(distance, BulletTracer.Thickness, BulletTracer.Thickness)
     end
 
-    local growTween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.TravelTime, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+    -- Easing Style Selection
+    local easingStyle = Enum.EasingStyle.Sine
+    if BulletTracer.AnimEasing == "Linear" then easingStyle = Enum.EasingStyle.Linear
+    elseif BulletTracer.AnimEasing == "Elastic" then easingStyle = Enum.EasingStyle.Elastic
+    elseif BulletTracer.AnimEasing == "Bounce" then easingStyle = Enum.EasingStyle.Bounce
+    elseif BulletTracer.AnimEasing == "Back" then easingStyle = Enum.EasingStyle.Back end
+
+    local growTween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.TravelTime, easingStyle, Enum.EasingDirection.Out), {
         Size = targetSize,
         CFrame = targetCFrame
     })
@@ -363,29 +402,50 @@ local function drawBulletTracer(startPos, targetPos)
         if tracer and tracer.Parent then
             if BulletTracer.FadeMode == "Instant" then
                 tracer:Destroy()
-            else
-                local fadeSize
-                if BulletTracer.Type == "Square" then
-                    fadeSize = Vector3.new(0, 0, distance)
-                else
-                    fadeSize = Vector3.new(distance, 0, 0)
-                end
-
+            elseif BulletTracer.FadeMode == "Shrink" then
+                local shrinkSize = Vector3.new(0, 0, 0)
                 if highlight then
-                    TweenService:Create(highlight, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                        FillTransparency = 1,
-                        OutlineTransparency = 1
+                    TweenService:Create(highlight, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                        FillTransparency = 1, OutlineTransparency = 1
                     }):Play()
                 end
-
-                local fadeTween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                    Transparency = 1,
-                    Size = fadeSize
+                local fadeTween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                    Size = shrinkSize,
+                    Transparency = 1
                 })
                 fadeTween:Play()
-                fadeTween.Completed:Connect(function()
-                    tracer:Destroy()
-                end)
+                fadeTween.Completed:Connect(function() tracer:Destroy() end)
+            elseif BulletTracer.FadeMode == "Pulse" then
+                local pulseTween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.FadeTime / 2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, 1, true), {
+                    Transparency = 0.8
+                })
+                pulseTween:Play()
+                pulseTween.Completed:Connect(function() tracer:Destroy() end)
+            elseif BulletTracer.FadeMode == "Expand-Out" then
+                local expSize = targetSize * 2.5
+                if highlight then
+                    TweenService:Create(highlight, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        FillTransparency = 1, OutlineTransparency = 1
+                    }):Play()
+                end
+                local fadeTween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Size = expSize,
+                    Transparency = 1
+                })
+                fadeTween:Play()
+                fadeTween.Completed:Connect(function() tracer:Destroy() end)
+            else -- Smooth (Default)
+                local fadeSize = BulletTracer.Type == "Square" and Vector3.new(0, 0, distance) or Vector3.new(distance, 0, 0)
+                if highlight then
+                    TweenService:Create(highlight, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        FillTransparency = 1, OutlineTransparency = 1
+                    }):Play()
+                end
+                local fadeTween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Transparency = 1, Size = fadeSize
+                })
+                fadeTween:Play()
+                fadeTween.Completed:Connect(function() tracer:Destroy() end)
             end
         end
     end)
@@ -558,6 +618,43 @@ local function getTarget(origin)
     return best
 end
 
+-- Head Hitbox Extender Engine
+local originalHeadSizes = {}
+local originalHeadColors = {}
+
+RunService.RenderStepped:Connect(function()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local char = getCharacter(player)
+            local localTeam = LocalPlayer:GetAttribute("Team")
+            local isEnemy = not HitboxConfig.TeamCheck or (player:GetAttribute("Team") ~= localTeam)
+
+            if char and isAlive(char) and isEnemy then
+                local head = char:FindFirstChild("Head")
+                if head then
+                    if not originalHeadSizes[head] then
+                        originalHeadSizes[head] = head.Size
+                        originalHeadColors[head] = head.Color
+                    end
+
+                    if HitboxConfig.Enabled then
+                        local baseSize = originalHeadSizes[head]
+                        head.Size = baseSize * HitboxConfig.Size
+                        head.Transparency = HitboxConfig.Transparency
+                        head.Color = HitboxConfig.Color
+                        head.CanCollide = false
+                    else
+                        head.Size = originalHeadSizes[head]
+                        head.Transparency = 0
+                        head.Color = originalHeadColors[head] or Color3.fromRGB(255, 255, 255)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- RenderStepped Logic (Third Person Removed)
 RunService.RenderStepped:Connect(function()
     updateWorldLighting()
 
@@ -859,7 +956,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Improved Bhop & Movement Engine
+-- Bhop & Movement Engine
 local function setupCharacterMovement(character)
     if not character then return end
     local hum = character:WaitForChild("Humanoid", 5)
@@ -903,7 +1000,6 @@ end
 
 LocalPlayer.CharacterAdded:Connect(function(char)
     currSpeed = MovementConfig.BaseSpeed
-    sliding = false
     setupCharacterMovement(char)
 end)
 
@@ -956,7 +1052,7 @@ local function buildHit(origin, part)
     }
 end
 
--- Hook Remote Silent Aim, Tracer & Hit Sound
+-- Hook Remote Silent Aim, Gun Mods, Tracer & Hit Sound
 local ok, Remotes = pcall(require, game:GetService("ReplicatedStorage").Database.Security.Remotes)
 local shootRemote = ok and Remotes and Remotes.Inventory and Remotes.Inventory.ShootWeapon
 
@@ -967,6 +1063,10 @@ if shootRemote and shootRemote.Send then
             for _, bullet in ipairs(packet.Bullets) do
                 local origin = bullet.Origin
                 if origin then
+                    if GunModsConfig.NoSpread then
+                        bullet.Direction = Camera.CFrame.LookVector
+                    end
+
                     if SilentAim.Enabled then
                         local part = getTarget(origin)
                         if part then
@@ -1012,7 +1112,6 @@ window.UserSettings:AddLabel("Menu Keybind"):AddKeybind({
     Default = 'Insert',
     Callback = function(v)
         window.Keybind = v;
-        Logging.new("ps4-touchpad",'Changed ui keybind to '..tostring(v),5)
     end,
 })
 
@@ -1021,7 +1120,6 @@ window.UserSettings:AddLabel('Menu Scale'):AddDropdown({
     Values = {"Default",'Large','Mobile','Small'},
     Callback = function(v)
         window:SetSize(NeverLose.Scales[v]);
-        Logging.new("crop",'Changed ui size to '..tostring(v),5)
     end,
 })
 
@@ -1032,8 +1130,7 @@ window.UserSettings:AddLabel('3D Menu'):AddToggle({
     end,
 })
 
--- ==================== WATERMARK ==================== --
-
+-- WATERMARK --
 local Watermark = window:Watermark()
 local pingBlock = Watermark:AddBlock("chart-four-vertical-bars", "0MS")
 local uiToggleBlock = Watermark:AddBlock("cube-vertexes", "Neverlose")
@@ -1100,15 +1197,73 @@ SilentAimSection:AddLabel('Hit Part'):AddDropdown({
     Default = 'Head',
     Values = {'Head', 'HumanoidRootPart', 'Closest'},
     Callback = function(v) 
-        if v == 'HumanoidRootPart' then
-            SilentAim.AimPart = "HumanoidRootPart"
-        elseif v == 'Closest' then
-            SilentAim.AimPart = "Closest"
-        else
-            SilentAim.AimPart = "Head"
-        end
+        SilentAim.AimPart = v
     end,
     Flag = "silent_hitpart"
+})
+
+-- Gun Mods Section
+local GunModsSection = LegitTab:AddSection({
+    Name = "GUN MODS",
+    Position = 'left'
+})
+
+GunModsSection:AddLabel('No Spread'):AddToggle({
+    Default = GunModsConfig.NoSpread,
+    Callback = function(v) GunModsConfig.NoSpread = v end,
+    Flag = "gunmod_nospread"
+})
+
+-- Hitbox Extender Controls
+local HitboxSection = LegitTab:AddSection({
+    Name = "HITBOX EXTENDER",
+    Position = 'right'
+})
+
+HitboxSection:AddLabel('Enable Head Hitbox'):AddToggle({
+    Default = HitboxConfig.Enabled,
+    Callback = function(v) HitboxConfig.Enabled = v end,
+    Flag = "hitbox_enabled"
+})
+
+HitboxSection:AddLabel('Head Size Multiplier'):AddSlider({
+    Min = 1,
+    Max = 5,
+    Rounding = 1,
+    Default = HitboxConfig.Size,
+    Type = "x",
+    Size = 100,
+    Callback = function(v) HitboxConfig.Size = v end,
+    Flag = "hitbox_size"
+})
+
+HitboxSection:AddLabel('Color'):AddDropdown({
+    Default = 'Red',
+    Values = {'Red', 'Blue', 'Green', 'Cyan', 'Pink', 'Yellow', 'White'},
+    Callback = function(v)
+        local colors = {
+            ["Red"] = Color3.fromRGB(255, 0, 0),
+            ["Blue"] = Color3.fromRGB(0, 170, 255),
+            ["Green"] = Color3.fromRGB(0, 255, 0),
+            ["Cyan"] = Color3.fromRGB(0, 255, 255),
+            ["Pink"] = Color3.fromRGB(255, 105, 180),
+            ["Yellow"] = Color3.fromRGB(255, 255, 0),
+            ["White"] = Color3.fromRGB(255, 255, 255)
+        }
+        HitboxConfig.Color = colors[v] or Color3.fromRGB(255, 0, 0)
+    end,
+    Flag = "hitbox_color"
+})
+
+HitboxSection:AddLabel('Transparency'):AddSlider({
+    Min = 0,
+    Max = 1,
+    Rounding = 2,
+    Default = HitboxConfig.Transparency,
+    Type = "",
+    Size = 100,
+    Callback = function(v) HitboxConfig.Transparency = v end,
+    Flag = "hitbox_transparency"
 })
 
 local MiscSection = LegitTab:AddSection({
@@ -1197,6 +1352,7 @@ local VisualsTab = window:AddTab({
     Name = "Visuals"
 })
 
+-- Enhanced Bullet Tracer Section
 local TracerSection = VisualsTab:AddSection({
     Name = "BULLET TRACERS",
     Position = 'left'
@@ -1208,9 +1364,13 @@ TracerSection:AddLabel('Enable Bullet Tracer'):AddToggle({
     Flag = "tracer_enabled"
 })
 
-TracerSection:AddLabel('Tracer Color'):AddDropdown({
-    Default = 'Blue',
-    Values = {'Pink', 'Blue', 'Red', 'Rainbow', 'Gradient'},
+TracerSection:AddLabel('Color'):AddDropdown({
+    Default = 'Electric Blue',
+    Values = {
+        'Electric Blue', 'White', 'Hot Pink', 'Crimson Red', 'Lime Green', 
+        'Gold Yellow', 'Cyan', 'Neon Purple', 'Rainbow', 
+        'Gradient', 'Pulse RGB', 'Fire', 'Cyber Neon'
+    },
     Callback = function(v) BulletTracer.ColorMode = v end,
     Flag = "tracer_colormode"
 })
@@ -1222,9 +1382,16 @@ TracerSection:AddLabel('Tracer Type'):AddDropdown({
     Flag = "tracer_type"
 })
 
-TracerSection:AddLabel('Fade Type'):AddDropdown({
+TracerSection:AddLabel('Travel Animation'):AddDropdown({
+    Default = 'Sine',
+    Values = {'Linear', 'Sine', 'Elastic', 'Bounce', 'Back'},
+    Callback = function(v) BulletTracer.AnimEasing = v end,
+    Flag = "tracer_anim_easing"
+})
+
+TracerSection:AddLabel('Fade Style'):AddDropdown({
     Default = 'Smooth',
-    Values = {'Instant', 'Smooth'},
+    Values = {'Smooth', 'Instant', 'Shrink', 'Pulse', 'Expand-Out'},
     Callback = function(v) BulletTracer.FadeMode = v end,
     Flag = "tracer_fade_mode"
 })
@@ -1243,7 +1410,7 @@ TracerSection:AddLabel('Material'):AddDropdown({
 })
 
 TracerSection:AddLabel('Thickness'):AddSlider({
-    Min = 0.015,
+    Min = 0.01,
     Max = 1.0,
     Rounding = 2,
     Default = BulletTracer.Thickness,
@@ -1275,7 +1442,7 @@ TracerSection:AddLabel('Lifetime'):AddSlider({
     Flag = "tracer_lifetime"
 })
 
-TracerSection:AddLabel('Fade Out Duration'):AddSlider({
+TracerSection:AddLabel('Fade Duration'):AddSlider({
     Min = 0.1,
     Max = 2.0,
     Rounding = 1,
@@ -1297,7 +1464,7 @@ FOVSection:AddLabel('Draw FOV'):AddToggle({
     Flag = "draw_fov"
 })
 
-FOVSection:AddLabel('Toggle FOV Outline'):AddToggle({
+FOVSection:AddLabel('Outline'):AddToggle({
     Default = SilentAim.ShowOutline,
     Callback = function(v) SilentAim.ShowOutline = v end,
     Flag = "fov_outline"
@@ -1407,7 +1574,7 @@ CameraSection:AddLabel('World Blur'):AddToggle({
     Flag = "world_blur_enabled"
 })
 
-CameraSection:AddLabel('Blur Intensity'):AddSlider({
+CameraSection:AddLabel('Blur'):AddSlider({
     Min = 0,
     Max = 50,
     Rounding = 0,
