@@ -57,6 +57,182 @@ local HitOverlayConfig = {
     MaxTransparency = 0.6
 }
 
+-- Hit Effect Particle Configuration
+local HitEffectConfig = {
+    Enabled = true,
+    Style = "Sparks",
+    Color = Color3.fromRGB(0, 255, 128)
+}
+
+-- Hit Chams Neon Configuration
+local HitChamsConfig = {
+    Enabled = true,
+    Color = Color3.fromRGB(0, 255, 255),
+    Duration = 1.0,
+    Material = Enum.Material.Neon
+}
+
+-- Function to Spawn Hit Chams Ghost
+local function triggerHitChams(targetCharacter)
+    if not HitChamsConfig.Enabled or not targetCharacter then return end
+    
+    local cloneModel = Instance.new("Model")
+    cloneModel.Name = "HitChamsGhost"
+    
+    for _, part in ipairs(targetCharacter:GetChildren()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            local ghostPart = part:Clone()
+            ghostPart:ClearAllChildren()
+            ghostPart.CanCollide = false
+            ghostPart.Anchored = true
+            ghostPart.Material = HitChamsConfig.Material
+            ghostPart.Color = HitChamsConfig.Color
+            ghostPart.Transparency = 0
+            ghostPart.Parent = cloneModel
+            
+            -- Fade Out Animation
+            TweenService:Create(
+                ghostPart,
+                TweenInfo.new(HitChamsConfig.Duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                { Transparency = 1 }
+            ):Play()
+        end
+    end
+    
+    cloneModel.Parent = Workspace
+    
+    task.delay(HitChamsConfig.Duration + 0.1, function()
+        if cloneModel then
+            cloneModel:Destroy()
+        end
+    end)
+end
+
+-- Create Hit Particle Container Part
+local hit_particle_part = Instance.new("Part")
+hit_particle_part.Name = "HitEffectParticleContainer"
+hit_particle_part.Size = Vector3.new(0.1, 0.1, 0.1)
+hit_particle_part.Transparency = 1
+hit_particle_part.Anchored = true
+hit_particle_part.CanCollide = false
+hit_particle_part.Parent = Workspace
+
+-- Initialize Particle Emitters
+local hit_particles = {
+    ["Sparks"] = {
+        {
+            (function()
+                local pe = Instance.new("ParticleEmitter")
+                pe.Acceleration = Vector3.new(0, -50, 0)
+                pe.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)), ColorSequenceKeypoint.new(0.25, Color3.new(0.33, 1, 0)), ColorSequenceKeypoint.new(1, Color3.new(0.33, 1, 0.5))}
+                pe.Lifetime = NumberRange.new(0.5, 1)
+                pe.LightEmission = 1
+                pe.Enabled = false
+                pe.Orientation = Enum.ParticleOrientation.VelocityParallel
+                pe.Rate = 0
+                pe.Size = NumberSequence.new{NumberSequenceKeypoint.new(0, 0.6, 0), NumberSequenceKeypoint.new(0.5, 0.6, 0), NumberSequenceKeypoint.new(1, 0, 0)}
+                pe.Speed = NumberRange.new(15, 15)
+                pe.SpreadAngle = Vector2.new(50, -50)
+                pe.Texture = "http://www.roblox.com/asset/?id=18540695516"
+                pe.Transparency = NumberSequence.new{NumberSequenceKeypoint.new(0, 0, 0), NumberSequenceKeypoint.new(0.5, 0, 0), NumberSequenceKeypoint.new(1, 1, 0)}
+                pe.Parent = hit_particle_part
+                return pe
+            end)(),
+            30
+        }
+    },
+    ["Bubble"] = {
+        {
+            (function()
+                local pe = Instance.new("ParticleEmitter")
+                pe.FlipbookMode = Enum.ParticleFlipbookMode.OneShot
+                pe.Color = ColorSequence.new(Color3.fromRGB(85, 255, 255))
+                pe.LockedToPart = true
+                pe.Rate = 1.5
+                pe.Rotation = NumberRange.new(-5, 5)
+                pe.Transparency = NumberSequence.new{NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.464, 0.77), NumberSequenceKeypoint.new(1, 1)}
+                pe.Texture = "rbxassetid://17086075673"
+                pe.Lifetime = NumberRange.new(0.45, 0.45)
+                pe.LightEmission = 1
+                pe.Brightness = 5
+                pe.Speed = NumberRange.new(0, 0)
+                pe.Size = NumberSequence.new{NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 6)}
+                pe.Enabled = false
+                pe.Parent = hit_particle_part
+                return pe
+            end)(),
+            1
+        }
+    },
+    ["Orbs"] = {
+        {
+            (function()
+                local pe = Instance.new("ParticleEmitter")
+                pe.FlipbookMode = Enum.ParticleFlipbookMode.OneShot
+                pe.RotSpeed = NumberRange.new(-10, 10)
+                pe.FlipbookFramerate = NumberRange.new(40, 40)
+                pe.Drag = 1
+                pe.Rate = 1
+                pe.Texture = "rbxassetid://15011464541"
+                pe.Rotation = NumberRange.new(-1000, 1000)
+                pe.Transparency = NumberSequence.new{NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)}
+                pe.SpreadAngle = Vector2.new(-1000, 1000)
+                pe.Lifetime = NumberRange.new(0.45, 0.45)
+                pe.LightEmission = 1
+                pe.Brightness = 10
+                pe.FlipbookLayout = Enum.ParticleFlipbookLayout.Grid8x8
+                pe.Size = NumberSequence.new{NumberSequenceKeypoint.new(0, 5.5), NumberSequenceKeypoint.new(1, 5.5)}
+                pe.Enabled = false
+                pe.Parent = hit_particle_part
+                return pe
+            end)(),
+            3
+        }
+    },
+    ["Air"] = {
+        {
+            (function()
+                local pe = Instance.new("ParticleEmitter")
+                pe.FlipbookMode = Enum.ParticleFlipbookMode.PingPong
+                pe.VelocityInheritance = 0.15
+                pe.Texture = "rbxassetid://10536350143"
+                pe.FlipbookFramerate = NumberRange.new(30, 30)
+                pe.Drag = 4.5
+                pe.Rate = 1
+                pe.Speed = NumberRange.new(0, 0)
+                pe.LightInfluence = 1
+                pe.Acceleration = Vector3.new(1, 0, 1)
+                pe.LockedToPart = true
+                pe.Lifetime = NumberRange.new(1, 1)
+                pe.LightEmission = 1
+                pe.Brightness = 10
+                pe.FlipbookLayout = Enum.ParticleFlipbookLayout.Grid8x8
+                pe.Size = NumberSequence.new{NumberSequenceKeypoint.new(0, 3), NumberSequenceKeypoint.new(1, 3)}
+                pe.Enabled = false
+                pe.Parent = hit_particle_part
+                return pe
+            end)(),
+            1
+        }
+    }
+}
+
+local function triggerHitEffect(position)
+    if not HitEffectConfig.Enabled then return end
+    local selectedParticles = hit_particles[HitEffectConfig.Style]
+    if not selectedParticles then return end
+
+    hit_particle_part.Position = position
+    for _, item in ipairs(selectedParticles) do
+        local emitter = item[1]
+        local amount = item[2]
+        if emitter then
+            emitter.Color = ColorSequence.new(HitEffectConfig.Color)
+            emitter:Emit(amount)
+        end
+    end
+end
+
 -- Hit Overlay Core Engine Setup (Fixed Fullscreen)
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "HitOverlayGui"
@@ -374,6 +550,7 @@ local function getTracerColor()
     if mode == "Electric Blue" then return Color3.fromRGB(0, 170, 255)
     elseif mode == "Hot Pink" then return Color3.fromRGB(255, 20, 147)
     elseif mode == "White" then return Color3.fromRGB(255, 255, 255)
+    elseif mode == "cool red" then return Color3.fromRGB(255, 100, 100)
     elseif mode == "Crimson Red" then return Color3.fromRGB(255, 30, 30)
     elseif mode == "Lime Green" then return Color3.fromRGB(50, 255, 50)
     elseif mode == "Gold Yellow" then return Color3.fromRGB(255, 215, 0)
@@ -1169,7 +1346,7 @@ local function buildHit(origin, part)
     }
 end
 
--- Hook Remote Silent Aim, Tracer, Hit Sound & Hit Overlay Engine
+-- Hook Remote Silent Aim, Tracer, Hit Sound & Hit Effect Engine
 local ok, Remotes = pcall(require, game:GetService("ReplicatedStorage").Database.Security.Remotes)
 local shootRemote = ok and Remotes and Remotes.Inventory and Remotes.Inventory.ShootWeapon
 
@@ -1204,6 +1381,8 @@ if shootRemote and shootRemote.Send then
                             bullet.Hits = { buildHit(origin, part) }
                             playHitSound()
                             triggerHitOverlay()
+                            triggerHitEffect(part.Position)
+                            triggerHitChams(part.Parent)
                             drawBulletTracer(origin, part.Position)
                         else
                             local endPos = origin + (bullet.Direction * 1000)
@@ -1517,6 +1696,82 @@ local VisualsTab = window:AddTab({
     Name = "Visuals"
 })
 
+-- HIT CHAMS SECTION
+local HitChamsSection = VisualsTab:AddSection({
+    Name = "HIT CHAMS",
+    Position = 'left'
+})
+
+HitChamsSection:AddLabel('Enable Hit Chams'):AddToggle({
+    Default = HitChamsConfig.Enabled,
+    Callback = function(v) HitChamsConfig.Enabled = v end,
+    Flag = "hit_chams_enabled"
+})
+
+HitChamsSection:AddLabel('Color'):AddDropdown({
+    Default = 'Cyan',
+    Values = {'Cyan', 'Red', 'Green', 'Purple', 'Yellow', 'White'},
+    Callback = function(v)
+        local colors = {
+            ["Cyan"] = Color3.fromRGB(0, 255, 255),
+            ["Red"] = Color3.fromRGB(255, 50, 50),
+            ["Green"] = Color3.fromRGB(0, 255, 128),
+            ["Purple"] = Color3.fromRGB(180, 0, 255),
+            ["Yellow"] = Color3.fromRGB(255, 255, 0),
+            ["White"] = Color3.fromRGB(255, 255, 255)
+        }
+        HitChamsConfig.Color = colors[v] or Color3.fromRGB(0, 255, 255)
+    end,
+    Flag = "hit_chams_color"
+})
+
+HitChamsSection:AddLabel('Duration'):AddSlider({
+    Min = 0.1,
+    Max = 3.0,
+    Rounding = 1,
+    Default = HitChamsConfig.Duration,
+    Type = "s",
+    Size = 100,
+    Callback = function(v) HitChamsConfig.Duration = v end,
+    Flag = "hit_chams_duration"
+})
+
+-- HIT EFFECT PARTICLE SECTION
+local HitParticleSection = VisualsTab:AddSection({
+    Name = "HIT EFFECT PARTICLES",
+    Position = 'left'
+})
+
+HitParticleSection:AddLabel('Enable Hit Effect'):AddToggle({
+    Default = HitEffectConfig.Enabled,
+    Callback = function(v) HitEffectConfig.Enabled = v end,
+    Flag = "hit_particle_enabled"
+})
+
+HitParticleSection:AddLabel('Effect Style'):AddDropdown({
+    Default = 'Sparks',
+    Values = {'Sparks', 'Bubble', 'Orbs', 'Air'},
+    Callback = function(v) HitEffectConfig.Style = v end,
+    Flag = "hit_particle_style"
+})
+
+HitParticleSection:AddLabel('Color'):AddDropdown({
+    Default = 'Green',
+    Values = {'Green', 'Cyan', 'Red', 'Purple', 'Yellow', 'White'},
+    Callback = function(v)
+        local colors = {
+            ["Green"] = Color3.fromRGB(0, 255, 128),
+            ["Cyan"] = Color3.fromRGB(85, 255, 255),
+            ["Red"] = Color3.fromRGB(255, 50, 50),
+            ["Purple"] = Color3.fromRGB(180, 0, 255),
+            ["Yellow"] = Color3.fromRGB(255, 255, 0),
+            ["White"] = Color3.fromRGB(255, 255, 255)
+        }
+        HitEffectConfig.Color = colors[v] or Color3.fromRGB(0, 255, 128)
+    end,
+    Flag = "hit_particle_color"
+})
+
 -- Enhanced Bullet Tracer Section
 local TracerSection = VisualsTab:AddSection({
     Name = "BULLET TRACERS",
@@ -1532,7 +1787,7 @@ TracerSection:AddLabel('Enable Bullet Tracer'):AddToggle({
 TracerSection:AddLabel('Color'):AddDropdown({
     Default = 'Electric Blue',
     Values = {
-        'Electric Blue', 'White', 'Hot Pink', 'Crimson Red', 'Lime Green', 
+        'Electric Blue', 'White', 'cool red', 'Hot Pink', 'Crimson Red', 'Lime Green', 
         'Gold Yellow', 'Cyan', 'Neon Purple', 'Rainbow', 
         'Gradient', 'Pulse RGB', 'Fire', 'Cyber Neon'
     },
