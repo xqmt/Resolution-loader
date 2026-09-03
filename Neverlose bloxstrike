@@ -12,32 +12,7 @@ local Camera = Workspace.CurrentCamera
 -- NeverLose UI Library
 local NeverLose = loadstring(game:HttpGet("https://raw.githubusercontent.com/4lpaca-pin/NeverLose/refs/heads/main/source.luau"))()
 
--- Hitbox Configuration
-local HitboxConfig = {
-    Enabled = false,
-    Size = 1,
-    Transparency = 0.7,
-    Color = Color3.fromRGB(255, 0, 0),
-    TeamCheck = true
-}
-
--- Movement Configuration (Third Person Removed)
-local MovementConfig = {
-    BhopEnabled = false,
-    SpeedEnabled = false,
-    SpeedMultiplier = 1.0,
-    BaseSpeed = 16,
-    JumpBoost = 12,
-    SpeedCap = 180,
-    DecelRate = 30,
-    LowFriction = 0.01
-}
-
-local currSpeed = MovementConfig.BaseSpeed
-
--- Hit Sound Config & Setup
-local HitSoundMode = "None"
-local HitSoundVolume = 2
+-- Sound Lists Engine for Hit Sound
 local SoundIDs = {
     ["None"] = "None",
     ["Spark"] = "rbxassetid://110241936966089",
@@ -55,26 +30,183 @@ local SoundIDs = {
     ["Skeet"] = "rbxassetid://80461265049096"
 }
 
-local function playHitSound()
-    if HitSoundMode == "None" or not SoundIDs[HitSoundMode] then return end
+-- Exclusive Shoot Sound List
+local ShootSoundIDs = {
+    ["SGG 08"] = "rbxassetid://110661851940409"
+}
+
+-- Independent Shoot Sound Configuration
+local ShootSoundConfig = {
+    Enabled = true,
+    Mode = "SGG 08",
+    Volume = 2
+}
+
+-- Independent Hit Sound Configuration
+local HitSoundConfig = {
+    Enabled = true,
+    Mode = "Skeet",
+    Volume = 2
+}
+
+-- Hit Overlay Configuration
+local HitOverlayConfig = {
+    Enabled = true,
+    Color = Color3.fromRGB(255, 0, 50),
+    Duration = 0.25,
+    MaxTransparency = 0.6
+}
+
+-- Hit Overlay Core Engine Setup (Fixed Fullscreen)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "HitOverlayGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.DisplayOrder = 99999
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local HitOverlayFrame = Instance.new("Frame")
+HitOverlayFrame.Name = "Overlay"
+HitOverlayFrame.Size = UDim2.fromScale(1, 1)
+HitOverlayFrame.Position = UDim2.fromScale(0, 0)
+HitOverlayFrame.BackgroundColor3 = HitOverlayConfig.Color
+HitOverlayFrame.BackgroundTransparency = 1
+HitOverlayFrame.BorderSizePixel = 0
+HitOverlayFrame.Parent = ScreenGui
+
+local activeTween = nil
+local function triggerHitOverlay()
+    if not HitOverlayConfig.Enabled then return end
     
-    local sound = Instance.new("Sound")
-    sound.SoundId = SoundIDs[HitSoundMode]
-    sound.Volume = HitSoundVolume
-    sound.Parent = SoundService
+    HitOverlayFrame.BackgroundColor3 = HitOverlayConfig.Color
+    HitOverlayFrame.BackgroundTransparency = 1 - HitOverlayConfig.MaxTransparency
+
+    if activeTween then activeTween:Cancel() end
     
-    sound:Play()
-    sound.Ended:Connect(function()
-        sound:Destroy()
+    activeTween = TweenService:Create(
+        HitOverlayFrame,
+        TweenInfo.new(HitOverlayConfig.Duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        { BackgroundTransparency = 1 }
+    )
+    activeTween:Play()
+end
+
+-- Fixed Sound Engine
+local function playCustomSound(soundId, volume)
+    if not soundId or soundId == "None" or soundId == "" then return end
+    
+    task.spawn(function()
+        local sound = Instance.new("Sound")
+        sound.Name = "CustomSoundEffect"
+        sound.SoundId = soundId
+        sound.Volume = volume or 2
+        sound.PlayOnRemove = false
+        sound.Parent = SoundService
+        
+        SoundService:PlayLocalSound(sound)
+        
+        sound.Ended:Once(function()
+            sound:Destroy()
+        end)
+        
+        task.delay(3, function()
+            if sound and sound.Parent then
+                sound:Destroy()
+            end
+        end)
     end)
 end
 
--- Enhanced Bullet Tracer Configuration
+local function playShootSound()
+    if not ShootSoundConfig.Enabled then return end
+    local soundId = ShootSoundIDs[ShootSoundConfig.Mode]
+    if soundId then
+        playCustomSound(soundId, ShootSoundConfig.Volume)
+    end
+end
+
+local function playHitSound()
+    if not HitSoundConfig.Enabled then return end
+    local soundId = SoundIDs[HitSoundConfig.Mode]
+    if soundId then
+        playCustomSound(soundId, HitSoundConfig.Volume)
+    end
+end
+
+-- Mute Original Weapon Sounds Engine
+local function isGameGunSound(sound)
+    if not sound or not sound:IsA("Sound") then return false end
+    if sound.Name == "CustomSoundEffect" then return false end
+    
+    local name = sound.Name:lower()
+    if name:find("shoot") or name:find("fire") or name:find("shot") or name:find("gun") or name:find("weapon") or name:find("bang") or sound:IsDescendantOf(Camera) then
+        return true
+    end
+    return false
+end
+
+local function muteSound(sound)
+    if ShootSoundConfig.Enabled and isGameGunSound(sound) then
+        sound.Volume = 0
+        sound:Stop()
+        sound:GetPropertyChangedSignal("Playing"):Connect(function()
+            if sound.Playing and ShootSoundConfig.Enabled then
+                sound.Volume = 0
+                sound:Stop()
+            end
+        end)
+    end
+end
+
+local function setupSoundMuter(parent)
+    if not parent then return end
+    for _, descendant in ipairs(parent:GetDescendants()) do
+        if descendant:IsA("Sound") then
+            muteSound(descendant)
+        end
+    end
+    parent.DescendantAdded:Connect(function(descendant)
+        if descendant:IsA("Sound") then
+            muteSound(descendant)
+        end
+    end)
+end
+
+setupSoundMuter(Workspace)
+setupSoundMuter(SoundService)
+setupSoundMuter(Camera)
+if LocalPlayer.Character then setupSoundMuter(LocalPlayer.Character) end
+LocalPlayer.CharacterAdded:Connect(setupSoundMuter)
+
+-- Hitbox Configuration
+local HitboxConfig = {
+    Enabled = false,
+    Size = 1,
+    Transparency = 0.7,
+    Color = Color3.fromRGB(255, 0, 0),
+    TeamCheck = true
+}
+
+-- Movement Configuration
+local MovementConfig = {
+    BhopEnabled = false,
+    SpeedEnabled = false,
+    SpeedMultiplier = 1.0,
+    BaseSpeed = 16,
+    JumpBoost = 12,
+    SpeedCap = 180,
+    DecelRate = 30,
+    LowFriction = 0.01
+}
+
+local currSpeed = MovementConfig.BaseSpeed
+
+-- Bullet Tracer Configuration
 local BulletTracer = {
     Enabled = true,
     Type = "Corner",
-    FadeMode = "Smooth", -- Smooth, Instant, Shrink, Pulse, Expand-Out
-    AnimEasing = "Sine", -- Linear, Sine, Elastic, Bounce, Back
+    FadeMode = "Smooth",
+    AnimEasing = "Sine",
     ColorMode = "Electric Blue",
     Color = Color3.fromRGB(0, 170, 255),
     Transparency = 0,
@@ -237,25 +369,16 @@ local function applySky(presetName)
     end
 end
 
--- Expanded Color Options Function
 local function getTracerColor()
     local mode = BulletTracer.ColorMode
-    if mode == "Electric Blue" then
-        return Color3.fromRGB(0, 170, 255)
-    elseif mode == "Hot Pink" then
-        return Color3.fromRGB(255, 20, 147)
-    elseif mode == "White" then
-        return Color3.fromRGB(255, 255, 255)
-    elseif mode == "Crimson Red" then
-        return Color3.fromRGB(255, 30, 30)
-    elseif mode == "Lime Green" then
-        return Color3.fromRGB(50, 255, 50)
-    elseif mode == "Gold Yellow" then
-        return Color3.fromRGB(255, 215, 0)
-    elseif mode == "Cyan" then
-        return Color3.fromRGB(0, 255, 255)
-    elseif mode == "Neon Purple" then
-        return Color3.fromRGB(180, 0, 255)
+    if mode == "Electric Blue" then return Color3.fromRGB(0, 170, 255)
+    elseif mode == "Hot Pink" then return Color3.fromRGB(255, 20, 147)
+    elseif mode == "White" then return Color3.fromRGB(255, 255, 255)
+    elseif mode == "Crimson Red" then return Color3.fromRGB(255, 30, 30)
+    elseif mode == "Lime Green" then return Color3.fromRGB(50, 255, 50)
+    elseif mode == "Gold Yellow" then return Color3.fromRGB(255, 215, 0)
+    elseif mode == "Cyan" then return Color3.fromRGB(0, 255, 255)
+    elseif mode == "Neon Purple" then return Color3.fromRGB(180, 0, 255)
     elseif mode == "Rainbow" then
         local hue = (tick() % 2) / 2
         return Color3.fromHSV(hue, 1, 1)
@@ -322,7 +445,7 @@ local function getMuzzlePosition(defaultOrigin)
     return defaultOrigin
 end
 
--- Enhanced Bullet Tracer Drawing Engine with Advanced Animations
+-- Bullet Tracer Drawing Engine
 local function drawBulletTracer(startPos, targetPos)
     if not BulletTracer.Enabled then return end
 
@@ -379,7 +502,6 @@ local function drawBulletTracer(startPos, targetPos)
         targetSize = Vector3.new(distance, BulletTracer.Thickness, BulletTracer.Thickness)
     end
 
-    -- Easing Style Selection
     local easingStyle = Enum.EasingStyle.Sine
     if BulletTracer.AnimEasing == "Linear" then easingStyle = Enum.EasingStyle.Linear
     elseif BulletTracer.AnimEasing == "Elastic" then easingStyle = Enum.EasingStyle.Elastic
@@ -429,7 +551,7 @@ local function drawBulletTracer(startPos, targetPos)
                 })
                 fadeTween:Play()
                 fadeTween.Completed:Connect(function() tracer:Destroy() end)
-            else -- Smooth (Default)
+            else
                 local fadeSize = BulletTracer.Type == "Square" and Vector3.new(0, 0, distance) or Vector3.new(distance, 0, 0)
                 if highlight then
                     TweenService:Create(highlight, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
@@ -446,7 +568,7 @@ local function drawBulletTracer(startPos, targetPos)
     end)
 end
 
--- FOV Outline & Drawings
+-- FOV Drawings Setup
 local fovOutlineOuter = Drawing.new("Circle")
 fovOutlineOuter.Thickness = 1.25
 fovOutlineOuter.Color = Color3.fromRGB(0, 0, 0)
@@ -649,7 +771,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- RenderStepped Logic (Third Person Removed)
+-- RenderStepped Logic
 RunService.RenderStepped:Connect(function()
     updateWorldLighting()
 
@@ -1047,7 +1169,7 @@ local function buildHit(origin, part)
     }
 end
 
--- Hook Remote Silent Aim, Tracer & Hit Sound
+-- Hook Remote Silent Aim, Tracer, Hit Sound & Hit Overlay Engine
 local ok, Remotes = pcall(require, game:GetService("ReplicatedStorage").Database.Security.Remotes)
 local shootRemote = ok and Remotes and Remotes.Inventory and Remotes.Inventory.ShootWeapon
 
@@ -1055,6 +1177,23 @@ if shootRemote and shootRemote.Send then
     local oldSend
     local function hookedSend(packet, ...)
         if packet and packet.Bullets then
+            if ShootSoundConfig.Enabled then
+                for _, s in ipairs(Workspace:GetDescendants()) do
+                    if s:IsA("Sound") and isGameGunSound(s) then
+                        s.Volume = 0
+                        s:Stop()
+                    end
+                end
+                for _, s in ipairs(SoundService:GetDescendants()) do
+                    if s:IsA("Sound") and isGameGunSound(s) then
+                        s.Volume = 0
+                        s:Stop()
+                    end
+                end
+                
+                playShootSound()
+            end
+
             for _, bullet in ipairs(packet.Bullets) do
                 local origin = bullet.Origin
                 if origin then
@@ -1064,6 +1203,7 @@ if shootRemote and shootRemote.Send then
                             bullet.Direction = (part.Position - origin).Unit
                             bullet.Hits = { buildHit(origin, part) }
                             playHitSound()
+                            triggerHitOverlay()
                             drawBulletTracer(origin, part.Position)
                         else
                             local endPos = origin + (bullet.Direction * 1000)
@@ -1245,34 +1385,80 @@ HitboxSection:AddLabel('Transparency'):AddSlider({
     Flag = "hitbox_transparency"
 })
 
-local MiscSection = LegitTab:AddSection({
-    Name = "MISC",
+-- Build sound menu options list for Hit Sounds
+local hitSoundList = {}
+for name, _ in pairs(SoundIDs) do
+    table.insert(hitSoundList, name)
+end
+
+-- SHOOT SOUND SECTION
+local ShootSoundSection = LegitTab:AddSection({
+    Name = "SHOOT SOUND",
     Position = 'right'
 })
 
-local soundList = {}
-for name, _ in pairs(SoundIDs) do
-    table.insert(soundList, name)
-end
-
-MiscSection:AddLabel('Hit Sound'):AddDropdown({
-    Default = 'None',
-    Values = soundList,
+ShootSoundSection:AddLabel('Enable Shoot Sound'):AddToggle({
+    Default = ShootSoundConfig.Enabled,
     Callback = function(v)
-        HitSoundMode = v
+        ShootSoundConfig.Enabled = v
+    end,
+    Flag = "shootsound_enabled"
+})
+
+ShootSoundSection:AddLabel('Shoot Sound'):AddDropdown({
+    Default = "SGG 08",
+    Values = {"SGG 08"},
+    Callback = function(v)
+        ShootSoundConfig.Mode = v
+    end,
+    Flag = "shootsound_mode"
+})
+
+ShootSoundSection:AddLabel('Shoot Volume'):AddSlider({
+    Min = 0,
+    Max = 10,
+    Rounding = 1,
+    Default = ShootSoundConfig.Volume,
+    Type = "",
+    Size = 100,
+    Callback = function(v)
+        ShootSoundConfig.Volume = v
+    end,
+    Flag = "shootsound_volume"
+})
+
+-- HIT SOUND SECTION
+local HitSoundSection = LegitTab:AddSection({
+    Name = "HIT SOUND",
+    Position = 'right'
+})
+
+HitSoundSection:AddLabel('Enable Hit Sound'):AddToggle({
+    Default = HitSoundConfig.Enabled,
+    Callback = function(v)
+        HitSoundConfig.Enabled = v
+    end,
+    Flag = "hitsound_enabled"
+})
+
+HitSoundSection:AddLabel('Hit Sound Style'):AddDropdown({
+    Default = HitSoundConfig.Mode,
+    Values = hitSoundList,
+    Callback = function(v)
+        HitSoundConfig.Mode = v
     end,
     Flag = "hitsound_mode"
 })
 
-MiscSection:AddLabel('Volume'):AddSlider({
+HitSoundSection:AddLabel('Hit Volume'):AddSlider({
     Min = 0,
     Max = 10,
     Rounding = 1,
-    Default = HitSoundVolume,
+    Default = HitSoundConfig.Volume,
     Type = "",
     Size = 100,
     Callback = function(v)
-        HitSoundVolume = v
+        HitSoundConfig.Volume = v
     end,
     Flag = "hitsound_volume"
 })
@@ -1361,7 +1547,7 @@ TracerSection:AddLabel('Tracer Type'):AddDropdown({
     Flag = "tracer_type"
 })
 
-TracerSection:AddLabel('Travel Animation'):AddDropdown({
+TracerSection:AddLabel('Animation'):AddDropdown({
     Default = 'Sine',
     Values = {'Linear', 'Sine', 'Elastic', 'Bounce', 'Back'},
     Callback = function(v) BulletTracer.AnimEasing = v end,
@@ -1430,6 +1616,45 @@ TracerSection:AddLabel('Fade Duration'):AddSlider({
     Size = 100,
     Callback = function(v) BulletTracer.FadeTime = v end,
     Flag = "tracer_fadetime"
+})
+
+-- HIT OVERLAY SECTION
+local HitOverlaySection = VisualsTab:AddSection({
+    Name = "HIT OVERLAY",
+    Position = 'left'
+})
+
+HitOverlaySection:AddLabel('Enable Hit Overlay'):AddToggle({
+    Default = HitOverlayConfig.Enabled,
+    Callback = function(v) HitOverlayConfig.Enabled = v end,
+    Flag = "hit_overlay_enabled"
+})
+
+HitOverlaySection:AddLabel('Color'):AddDropdown({
+    Default = 'Red',
+    Values = {'Red', 'White', 'Cyan', 'Purple', 'Yellow'},
+    Callback = function(v)
+        local colors = {
+            ["Red"] = Color3.fromRGB(255, 0, 50),
+            ["White"] = Color3.fromRGB(255, 255, 255),
+            ["Cyan"] = Color3.fromRGB(0, 255, 255),
+            ["Purple"] = Color3.fromRGB(180, 0, 255),
+            ["Yellow"] = Color3.fromRGB(255, 255, 0)
+        }
+        HitOverlayConfig.Color = colors[v] or Color3.fromRGB(255, 0, 50)
+    end,
+    Flag = "hit_overlay_color"
+})
+
+HitOverlaySection:AddLabel('Duration'):AddSlider({
+    Min = 0.05,
+    Max = 2.0,
+    Rounding = 1,
+    Default = HitOverlayConfig.Duration,
+    Type = "s",
+    Size = 100,
+    Callback = function(v) HitOverlayConfig.Duration = v end,
+    Flag = "hit_overlay_duration"
 })
 
 local FOVSection = VisualsTab:AddSection({
@@ -1566,7 +1791,7 @@ CameraSection:AddLabel('Blur'):AddSlider({
 
 local NightModeSection = WorldTab:AddSection({
     Name = "LIGHTING & NIGHT MODE",
-    Position = 'left'
+    Position = 'right'
 })
 
 NightModeSection:AddLabel('Enable Night Mode'):AddToggle({
