@@ -1585,7 +1585,7 @@ end)
 -- TAB: LEGIT
 local LegitTab = window:AddTab({
     Icon = 'mouse-scrollwheel',
-    Name = "Legit"
+    Name = "Blatant"
 })
 
 local SilentAimSection = LegitTab:AddSection({
@@ -2219,7 +2219,7 @@ ESPSection:AddLabel('Chams Team Check'):AddToggle({
 
 -- TAB: WORLD
 local WorldTab = window:AddTab({
-    Icon = 'sun',
+    Icon = 'moon',
     Name = "World"
 })
 
