@@ -5,6 +5,7 @@ local UserInputService = game:GetService("UserInputService")
 local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -49,6 +50,21 @@ local GunModsConfig = {
     FirerateEnabled = false,
     FirerateValue = 0.01
 }
+
+-- SKIN CHANGER CONFIGURATION & ENGINE SETUP
+local SelectedSkins = {}
+local ApplySkinTextures = nil
+
+for _, obj in next, getgc() do
+    if type(obj) == "function" and debug.getinfo(obj).name == "ApplySkinTextures" then
+        ApplySkinTextures = obj
+        break 
+    end 
+end
+
+local function getCurrentWeaponModel() 
+    return Camera:FindFirstChildOfClass("Model") 
+end
 
 -- Function to Spawn Hit Chams Ghost
 local function triggerHitChams(targetCharacter)
@@ -1010,6 +1026,34 @@ function WeaponModsModule.StartFirerateLoop()
     end)
 end
 
+-- Skin Changer Loop Engine
+local lastWeaponModel = nil
+local lastSkinApplied = nil
+
+task.spawn(function()
+    while task.wait(0.1) do
+        if typeof(ApplySkinTextures) == "function" then
+            local currweapon = getCurrentWeaponModel()
+            if currweapon then
+                local selectedSkinObj = SelectedSkins[currweapon.Name]
+
+                if currweapon ~= lastWeaponModel or selectedSkinObj ~= lastSkinApplied then
+                    pcall(function()
+                        if selectedSkinObj and selectedSkinObj:FindFirstChild("Camera") and selectedSkinObj.Camera:FindFirstChild("Factory New") then
+                            ApplySkinTextures(currweapon, selectedSkinObj.Camera["Factory New"])
+                        end
+                    end)
+                    lastWeaponModel = currweapon
+                    lastSkinApplied = selectedSkinObj
+                end
+            else
+                lastWeaponModel = nil
+                lastSkinApplied = nil
+            end
+        end
+    end
+end)
+
 -- Head Hitbox Extender Engine
 local originalHeadSizes = {}
 local originalHeadColors = {}
@@ -1737,6 +1781,72 @@ GunModsSection:AddLabel('Firerate Delay'):AddSlider({
 })
 
 
+-- TAB: SKINS (SKIN CHANGER)
+local SkinsTab = window:AddTab({
+    Icon = 'shirt',
+    Name = "Inventory"
+})
+
+local SkinsSectionLeft = SkinsTab:AddSection({
+    Name = "WEAPON SKINS 1",
+    Position = 'left'
+})
+
+local SkinsSectionRight = SkinsTab:AddSection({
+    Name = "WEAPON SKINS 2",
+    Position = 'right'
+})
+
+local function setupSkinChangerUI()
+    local skinsFolder = ReplicatedStorage:FindFirstChild("Assets") and ReplicatedStorage.Assets:FindFirstChild("Skins")
+    if not skinsFolder then return end
+
+    local function isKnife(modelName)
+        if not modelName then return false end
+        local name = modelName:lower()
+        return name:find("knife") or name:find("karambit") or name:find("bayonet") or name:find("butterfly") or name:find("dagger") or name:find("cleaver") or name:find("m9") or name:find("kunai") or name:find("blade")
+    end
+
+    -- Setup Regular Gun Skins Only
+    local validGunSkins = {}
+    for _, skinFolder in ipairs(skinsFolder:GetChildren()) do
+        if not isKnife(skinFolder.Name) and #skinFolder:GetChildren() > 1 then
+            table.insert(validGunSkins, skinFolder)
+        end
+    end
+
+    local midPoint = math.ceil(#validGunSkins / 2)
+
+    for i, skinFolder in ipairs(validGunSkins) do
+        local gunName = skinFolder.Name
+        local skinNames = {"None"}
+        local skinObjects = {}
+
+        for _, skinObj in ipairs(skinFolder:GetChildren()) do
+            table.insert(skinNames, skinObj.Name)
+            skinObjects[skinObj.Name] = skinObj
+        end
+
+        local targetSection = (i <= midPoint) and SkinsSectionLeft or SkinsSectionRight
+
+        targetSection:AddLabel(gunName):AddDropdown({
+            Default = "None",
+            Values = skinNames,
+            Callback = function(selectedName)
+                if selectedName == "None" then
+                    SelectedSkins[gunName] = nil
+                else
+                    SelectedSkins[gunName] = skinObjects[selectedName]
+                end
+            end,
+            Flag = "skin_" .. gunName
+        })
+    end
+end
+
+setupSkinChangerUI()
+
+
 -- TAB: MOVEMENT
 local MovementTab = window:AddTab({
     Icon = 'person-running',
@@ -2109,7 +2219,7 @@ ESPSection:AddLabel('Chams Team Check'):AddToggle({
 
 -- TAB: WORLD
 local WorldTab = window:AddTab({
-    Icon = 'crosshairs',
+    Icon = 'sun',
     Name = "World"
 })
 
