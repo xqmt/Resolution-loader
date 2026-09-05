@@ -35,41 +35,19 @@ local ShootSoundIDs = {
     ["SGG 08"] = "rbxassetid://110661851940409"
 }
 
--- Independent Shoot Sound Configuration
-local ShootSoundConfig = {
-    Enabled = true,
-    Mode = "SGG 08",
-    Volume = 2
-}
+-- Independent Configurations
+local ShootSoundConfig = { Enabled = true, Mode = "SGG 08", Volume = 2 }
+local HitSoundConfig = { Enabled = true, Mode = "Skeet", Volume = 2 }
+local HitOverlayConfig = { Enabled = true, Color = Color3.fromRGB(255, 0, 50), Duration = 0.25, MaxTransparency = 0.6 }
+local HitEffectConfig = { Enabled = true, Style = "Sparks", Color = Color3.fromRGB(0, 255, 128) }
+local HitChamsConfig = { Enabled = true, Color = Color3.fromRGB(0, 255, 255), Duration = 1.0, Material = Enum.Material.Neon }
 
--- Independent Hit Sound Configuration
-local HitSoundConfig = {
-    Enabled = true,
-    Mode = "Skeet",
-    Volume = 2
-}
-
--- Hit Overlay Configuration
-local HitOverlayConfig = {
-    Enabled = true,
-    Color = Color3.fromRGB(255, 0, 50),
-    Duration = 0.25,
-    MaxTransparency = 0.6
-}
-
--- Hit Effect Particle Configuration
-local HitEffectConfig = {
-    Enabled = true,
-    Style = "Sparks",
-    Color = Color3.fromRGB(0, 255, 128)
-}
-
--- Hit Chams Neon Configuration
-local HitChamsConfig = {
-    Enabled = true,
-    Color = Color3.fromRGB(0, 255, 255),
-    Duration = 1.0,
-    Material = Enum.Material.Neon
+-- GUN MODS CONFIGURATION
+local GunModsConfig = {
+    NoRecoil = false,
+    NoSpread = false,
+    FirerateEnabled = false,
+    FirerateValue = 0.01
 }
 
 -- Function to Spawn Hit Chams Ghost
@@ -90,7 +68,6 @@ local function triggerHitChams(targetCharacter)
             ghostPart.Transparency = 0
             ghostPart.Parent = cloneModel
             
-            -- Fade Out Animation
             TweenService:Create(
                 ghostPart,
                 TweenInfo.new(HitChamsConfig.Duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
@@ -102,9 +79,7 @@ local function triggerHitChams(targetCharacter)
     cloneModel.Parent = Workspace
     
     task.delay(HitChamsConfig.Duration + 0.1, function()
-        if cloneModel then
-            cloneModel:Destroy()
-        end
+        if cloneModel then pcall(function() cloneModel:Destroy() end) end
     end)
 end
 
@@ -233,7 +208,7 @@ local function triggerHitEffect(position)
     end
 end
 
--- Hit Overlay Core Engine Setup (Fixed Fullscreen)
+-- Hit Overlay Core Engine Setup
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "HitOverlayGui"
 ScreenGui.ResetOnSpawn = false
@@ -282,12 +257,12 @@ local function playCustomSound(soundId, volume)
         SoundService:PlayLocalSound(sound)
         
         sound.Ended:Once(function()
-            sound:Destroy()
+            pcall(function() sound:Destroy() end)
         end)
         
         task.delay(3, function()
             if sound and sound.Parent then
-                sound:Destroy()
+                pcall(function() sound:Destroy() end)
             end
         end)
     end)
@@ -383,15 +358,20 @@ local BulletTracer = {
     Type = "Corner",
     FadeMode = "Smooth",
     AnimEasing = "Sine",
-    ColorMode = "Electric Blue",
+    ColorMode = "Gradient 2 Colors",
+    GradientColor1 = Color3.fromRGB(0, 255, 255),
+    GradientColor2 = Color3.fromRGB(255, 0, 150),
+    GradientColor3 = Color3.fromRGB(150, 0, 255),
     Color = Color3.fromRGB(0, 170, 255),
     Transparency = 0,
     Material = "Neon",
-    Thickness = 0.02,
+    Thickness = 0.12,
     LifeTime = 0.5,
     FadeTime = 0.3,
     TravelTime = 0.08,
-    BloomEffect = true
+    BloomEffect = true,
+    GlowLight = true,
+    GlowBrightness = 2
 }
 
 -- Config
@@ -545,39 +525,68 @@ local function applySky(presetName)
     end
 end
 
-local function getTracerColor()
+-- Tracer Color Sequence
+local function getTracerColorSequence()
     local mode = BulletTracer.ColorMode
-    if mode == "Electric Blue" then return Color3.fromRGB(0, 170, 255)
-    elseif mode == "Hot Pink" then return Color3.fromRGB(255, 20, 147)
-    elseif mode == "White" then return Color3.fromRGB(255, 255, 255)
-    elseif mode == "cool red" then return Color3.fromRGB(255, 100, 100)
-    elseif mode == "Crimson Red" then return Color3.fromRGB(255, 30, 30)
-    elseif mode == "Lime Green" then return Color3.fromRGB(50, 255, 50)
-    elseif mode == "Gold Yellow" then return Color3.fromRGB(255, 215, 0)
-    elseif mode == "Cyan" then return Color3.fromRGB(0, 255, 255)
-    elseif mode == "Neon Purple" then return Color3.fromRGB(180, 0, 255)
-    elseif mode == "Rainbow" then
-        local hue = (tick() % 2) / 2
-        return Color3.fromHSV(hue, 1, 1)
-    elseif mode == "Gradient" then
-        local t = (math.sin(tick() * 4) + 1) / 2
-        return Color3.fromRGB(0, 255, 200):Lerp(Color3.fromRGB(255, 0, 150), t)
-    elseif mode == "Pulse RGB" then
-        local t = (math.sin(tick() * 8) + 1) / 2
-        return Color3.fromRGB(255, 255, 255):Lerp(Color3.fromRGB(255, 0, 80), t)
-    elseif mode == "Fire" then
-        local t = (math.sin(tick() * 5) + 1) / 2
-        return Color3.fromRGB(255, 50, 0):Lerp(Color3.fromRGB(255, 200, 0), t)
+    if mode == "Gradient 2 Colors" then
+        return ColorSequence.new{
+            ColorSequenceKeypoint.new(0, BulletTracer.GradientColor1),
+            ColorSequenceKeypoint.new(1, BulletTracer.GradientColor2)
+        }
+    elseif mode == "Gradient 3 Colors" then
+        return ColorSequence.new{
+            ColorSequenceKeypoint.new(0, BulletTracer.GradientColor1),
+            ColorSequenceKeypoint.new(0.5, BulletTracer.GradientColor2),
+            ColorSequenceKeypoint.new(1, BulletTracer.GradientColor3)
+        }
     elseif mode == "Cyber Neon" then
-        local t = (math.sin(tick() * 6) + 1) / 2
-        return Color3.fromRGB(0, 255, 180):Lerp(Color3.fromRGB(255, 0, 200), t)
+        return ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 240)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 180)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 0, 255))
+        }
+    elseif mode == "Sunset Glow" then
+        return ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 0)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 100)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 0, 200))
+        }
+    elseif mode == "Cotton Candy" then
+        return ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 150, 220)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 200, 255))
+        }
+    elseif mode == "Fire" then
+        return ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 240, 0)),
+            ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 90, 0)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 0))
+        }
+    elseif mode == "Rainbow" then
+        return ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+            ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255, 150, 0)),
+            ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 255, 0)),
+            ColorSequenceKeypoint.new(0.6, Color3.fromRGB(0, 255, 100)),
+            ColorSequenceKeypoint.new(0.8, Color3.fromRGB(0, 150, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 255))
+        }
     end
-    return BulletTracer.Color
+    
+    local singleColor = BulletTracer.Color
+    if mode == "Electric Blue" then singleColor = Color3.fromRGB(0, 170, 255)
+    elseif mode == "Hot Pink" then singleColor = Color3.fromRGB(255, 20, 147)
+    elseif mode == "White" then singleColor = Color3.fromRGB(255, 255, 255)
+    elseif mode == "Crimson Red" then singleColor = Color3.fromRGB(255, 30, 30)
+    elseif mode == "Lime Green" then singleColor = Color3.fromRGB(50, 255, 50)
+    elseif mode == "Neon Purple" then singleColor = Color3.fromRGB(180, 0, 255)
+    end
+    return ColorSequence.new(singleColor)
 end
 
 local function updateWorldLighting()
     Camera.FieldOfView = WorldConfig.CameraFOV
-    
     BlurObj.Enabled = WorldConfig.WorldBlur
     BlurObj.Size = WorldConfig.BlurSize
 
@@ -622,61 +631,57 @@ local function getMuzzlePosition(defaultOrigin)
     return defaultOrigin
 end
 
--- Bullet Tracer Drawing Engine
+-- Bullet Tracer Beam Engine
 local function drawBulletTracer(startPos, targetPos)
-    if not BulletTracer.Enabled then return end
-
     local origin = getMuzzlePosition(startPos)
     local distance = (targetPos - origin).Magnitude
     if distance < 1 then return end
 
-    local currentColor = getTracerColor()
+    local colorSeq = getTracerColorSequence()
+    local leadColor = colorSeq.Keypoints[1].Value
 
-    local tracer = Instance.new("Part")
-    tracer.Name = "BulletTracer"
-    
-    if BulletTracer.Type == "Square" then
-        tracer.Shape = Enum.PartType.Block
-        tracer.Size = Vector3.new(BulletTracer.Thickness, BulletTracer.Thickness, 0)
-    else
-        tracer.Shape = Enum.PartType.Cylinder
-        tracer.Size = Vector3.new(0, BulletTracer.Thickness, BulletTracer.Thickness)
+    local att0 = Instance.new("Attachment")
+    local att1 = Instance.new("Attachment")
+    att0.WorldPosition = origin
+    att1.WorldPosition = origin
+
+    att0.Parent = Workspace.Terrain
+    att1.Parent = Workspace.Terrain
+
+    local light
+    if BulletTracer.GlowLight then
+        light = Instance.new("PointLight")
+        light.Color = leadColor
+        light.Brightness = BulletTracer.GlowBrightness * 2.5
+        light.Range = 15
+        light.Shadows = false
+        light.Parent = att1
     end
 
-    tracer.Anchored = true
-    tracer.CanCollide = false
-    tracer.CastShadow = false
-    tracer.Material = Enum.Material[BulletTracer.Material] or Enum.Material.Neon
-    tracer.Color = currentColor
-    tracer.Transparency = BulletTracer.Transparency
-    
-    if BulletTracer.Type == "Square" then
-        tracer.CFrame = CFrame.lookAt(origin, targetPos) * CFrame.new(0, 0, 0)
-    else
-        tracer.CFrame = CFrame.lookAt(origin, targetPos) * CFrame.new(0, 0, 0) * CFrame.Angles(0, math.rad(90), 0)
-    end
-    
-    tracer.Parent = Workspace
+    local beam = Instance.new("Beam")
+    beam.Name = "BulletTracerBeam"
+    beam.Attachment0 = att0
+    beam.Attachment1 = att1
+    beam.Color = colorSeq
+    beam.Width0 = BulletTracer.Thickness
+    beam.Width1 = BulletTracer.Thickness
+    beam.FaceCamera = true
+    beam.LightEmission = BulletTracer.BloomEffect and 1 or 0.5
+    beam.LightInfluence = 0
+    beam.Texture = "rbxassetid://446111271"
+    beam.TextureMode = Enum.TextureMode.Stretch
+    beam.TextureLength = 1
+    beam.TextureSpeed = 0
+    beam.Transparency = NumberSequence.new(BulletTracer.Transparency)
+    beam.Parent = Workspace.Terrain
 
-    local highlight = nil
-    if BulletTracer.BloomEffect then
-        highlight = Instance.new("Highlight")
-        highlight.Adornee = tracer
-        highlight.FillColor = currentColor
-        highlight.OutlineColor = currentColor
-        highlight.FillTransparency = math.clamp(BulletTracer.Transparency + 0.2, 0, 1)
-        highlight.OutlineTransparency = math.clamp(BulletTracer.Transparency + 0.5, 0, 1)
-        highlight.Parent = tracer
-    end
-
-    local targetCFrame
-    local targetSize
-    if BulletTracer.Type == "Square" then
-        targetCFrame = CFrame.lookAt(origin, targetPos) * CFrame.new(0, 0, -distance / 2)
-        targetSize = Vector3.new(BulletTracer.Thickness, BulletTracer.Thickness, distance)
-    else
-        targetCFrame = CFrame.lookAt(origin, targetPos) * CFrame.new(0, 0, -distance / 2) * CFrame.Angles(0, math.rad(90), 0)
-        targetSize = Vector3.new(distance, BulletTracer.Thickness, BulletTracer.Thickness)
+    local cleaned = false
+    local function forceCleanup()
+        if cleaned then return end
+        cleaned = true
+        pcall(function() beam:Destroy() end)
+        pcall(function() att0:Destroy() end)
+        pcall(function() att1:Destroy() end)
     end
 
     local easingStyle = Enum.EasingStyle.Sine
@@ -685,63 +690,44 @@ local function drawBulletTracer(startPos, targetPos)
     elseif BulletTracer.AnimEasing == "Bounce" then easingStyle = Enum.EasingStyle.Bounce
     elseif BulletTracer.AnimEasing == "Back" then easingStyle = Enum.EasingStyle.Back end
 
-    local growTween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.TravelTime, easingStyle, Enum.EasingDirection.Out), {
-        Size = targetSize,
-        CFrame = targetCFrame
-    })
-    
-    growTween:Play()
+    local travelTween = TweenService:Create(
+        att1,
+        TweenInfo.new(BulletTracer.TravelTime, easingStyle, Enum.EasingDirection.Out),
+        { WorldPosition = targetPos }
+    )
+    travelTween:Play()
 
     task.delay(BulletTracer.LifeTime, function()
-        if tracer and tracer.Parent then
-            if BulletTracer.FadeMode == "Instant" then
-                tracer:Destroy()
-            elseif BulletTracer.FadeMode == "Shrink" then
-                local shrinkSize = Vector3.new(0, 0, 0)
-                if highlight then
-                    TweenService:Create(highlight, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-                        FillTransparency = 1, OutlineTransparency = 1
-                    }):Play()
-                end
-                local fadeTween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-                    Size = shrinkSize,
-                    Transparency = 1
-                })
-                fadeTween:Play()
-                fadeTween.Completed:Connect(function() tracer:Destroy() end)
-            elseif BulletTracer.FadeMode == "Pulse" then
-                local pulseTween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.FadeTime / 2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, 1, true), {
-                    Transparency = 0.8
-                })
-                pulseTween:Play()
-                pulseTween.Completed:Connect(function() tracer:Destroy() end)
-            elseif BulletTracer.FadeMode == "Expand-Out" then
-                local expSize = targetSize * 2.5
-                if highlight then
-                    TweenService:Create(highlight, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                        FillTransparency = 1, OutlineTransparency = 1
-                    }):Play()
-                end
-                local fadeTween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                    Size = expSize,
-                    Transparency = 1
-                })
-                fadeTween:Play()
-                fadeTween.Completed:Connect(function() tracer:Destroy() end)
-            else
-                local fadeSize = BulletTracer.Type == "Square" and Vector3.new(0, 0, distance) or Vector3.new(distance, 0, 0)
-                if highlight then
-                    TweenService:Create(highlight, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                        FillTransparency = 1, OutlineTransparency = 1
-                    }):Play()
-                end
-                local fadeTween = TweenService:Create(tracer, TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                    Transparency = 1, Size = fadeSize
-                })
-                fadeTween:Play()
-                fadeTween.Completed:Connect(function() tracer:Destroy() end)
-            end
+        if not beam or not beam.Parent then 
+            forceCleanup()
+            return 
         end
+
+        if light then
+            TweenService:Create(light, TweenInfo.new(BulletTracer.FadeTime), { Brightness = 0 }):Play()
+        end
+
+        if BulletTracer.FadeMode == "Instant" then
+            forceCleanup()
+        elseif BulletTracer.FadeMode == "Shrink" then
+            local fadeTween = TweenService:Create(
+                beam,
+                TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+                { Width0 = 0, Width1 = 0 }
+            )
+            fadeTween:Play()
+            fadeTween.Completed:Once(forceCleanup)
+        else
+            local fadeTween = TweenService:Create(
+                beam,
+                TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                { Width0 = 0, Width1 = 0 }
+            )
+            fadeTween:Play()
+            fadeTween.Completed:Once(forceCleanup)
+        end
+
+        task.delay(BulletTracer.FadeTime + 0.1, forceCleanup)
     end)
 end
 
@@ -770,7 +756,7 @@ fovOutlineInner.Transparency = 0.65
 fovOutlineInner.Visible = false
 fovOutlineInner.NumSides = 144
 
--- Target Drawings & Visual Objects
+-- Target Drawings
 local snapLine = Drawing.new("Line")
 snapLine.Thickness = TargetVisuals.SnapLineThickness
 snapLine.Color = TargetVisuals.SnapLineColor
@@ -869,6 +855,11 @@ local function isObstructed(origin, target, character)
     return ray ~= nil and ray.Instance ~= nil and not ray.Instance:IsDescendantOf(character)
 end
 
+local function isEnemyUser(player)
+    if not player then return false end
+    return player:GetAttribute("Team") ~= LocalPlayer:GetAttribute("Team")
+end
+
 local function getTarget(origin)
     local localTeam = LocalPlayer:GetAttribute("Team")
     local look = Camera.CFrame.LookVector
@@ -910,6 +901,113 @@ local function getTarget(origin)
     end
 
     return best
+end
+
+local activeEquippedWeapon = nil
+
+-- WEAPON MODS MODULE IMPLEMENTATION
+local WeaponModsModule = {
+    OriginalData = {},
+    FireRateObjects = {},
+    SendFunc = nil
+}
+
+function WeaponModsModule.InitHooks()
+    if typeof(hookfunction) ~= "function" then return end
+
+    pcall(function()
+        for _, obj in next, getgc(true) do
+            if type(obj) == "table" then
+                if rawget(obj, "FireRate") then
+                    pcall(function()
+                        table.insert(WeaponModsModule.OriginalData, table.clone(obj))
+                        table.insert(WeaponModsModule.FireRateObjects, obj)
+                    end)
+                end
+
+                if rawget(obj, "setWeaponRecoil") then
+                    local oldSetRecoil
+                    oldSetRecoil = hookfunction(obj.setWeaponRecoil, function(...)
+                        if GunModsConfig.NoRecoil then return end
+                        return oldSetRecoil(...)
+                    end)
+                end
+
+                if rawget(obj, "weaponKick") then
+                    local oldKick
+                    oldKick = hookfunction(obj.weaponKick, function(p1, p2)
+                        if GunModsConfig.NoRecoil then return end
+                        return oldKick(p1, p2)
+                    end)
+                end
+
+                if rawget(obj, "getTrueSpread") then
+                    local oldSpread
+                    oldSpread = hookfunction(obj.getTrueSpread, function(p1)
+                        if GunModsConfig.NoSpread then return 0 end
+                        return oldSpread(p1)
+                    end)
+                end
+
+                if rawget(obj, "shoot") then
+                    activeEquippedWeapon = obj
+                    if typeof(obj.shoot) == "function" and #debug.getupvalues(obj.shoot) >= 14 then
+                        pcall(function()
+                            WeaponModsModule.SendFunc = debug.getupvalue(obj.shoot, 14).Inventory.ShootWeapon.Send
+                        end)
+                    end
+                end
+            end
+
+            if type(obj) == "function" and debug.getinfo(obj).name == "calculateRecoilOffset" then
+                local oldCalc
+                oldCalc = hookfunction(obj, function(...)
+                    if GunModsConfig.NoRecoil then return UDim2.new() end
+                    return oldCalc(...)
+                end)
+            end
+        end
+    end)
+
+    if WeaponModsModule.SendFunc then
+        local oldSend
+        oldSend = hookfunction(WeaponModsModule.SendFunc, function(...)
+            local args = {...}
+            if args[1] and args[1].Bullets and args[1].Bullets[1] and args[1].Bullets[1].Hits[1] then
+                if SilentAim.Enabled and currentTargetPart then
+                    args[1].Bullets[1].Hits[1].Instance = currentTargetPart
+                    args[1].Bullets[1].Hits[1].Position = currentTargetPart.Position
+                end
+            end
+            return oldSend(unpack(args))
+        end)
+    end
+end
+
+function WeaponModsModule.StartFirerateLoop()
+    task.spawn(function()
+        while task.wait(0.05) do
+            pcall(function()
+                if GunModsConfig.FirerateEnabled then
+                    for _, obj in next, WeaponModsModule.FireRateObjects do
+                        pcall(function()
+                            if typeof(setreadonly) == "function" then setreadonly(obj, false) end
+                            rawset(obj, "FireRate", math.max(GunModsConfig.FirerateValue, 0.01))
+                            if typeof(setreadonly) == "function" then setreadonly(obj, true) end
+                        end)
+                    end
+                else
+                    for i, obj in next, WeaponModsModule.FireRateObjects do
+                        pcall(function()
+                            if typeof(setreadonly) == "function" then setreadonly(obj, false) end
+                            rawset(obj, "FireRate", WeaponModsModule.OriginalData[i] and WeaponModsModule.OriginalData[i].FireRate or 0.1)
+                            if typeof(setreadonly) == "function" then setreadonly(obj, true) end
+                        end)
+                    end
+                end
+            end)
+        end
+    end)
 end
 
 -- Head Hitbox Extender Engine
@@ -1124,10 +1222,12 @@ RunService.RenderStepped:Connect(function()
         currentTargetPart = nil
     end
 
-    if currentTargetPart and currentTargetPart.Parent then
-        local targetChar = currentTargetPart.Parent
-        local targetHead = targetChar:FindFirstChild("Head") or currentTargetPart
-        local screenPos, onScreen = Camera:WorldToViewportPoint(currentTargetPart.Position)
+    local activeTarget = currentTargetPart
+
+    if activeTarget and activeTarget.Parent then
+        local targetChar = activeTarget.Parent
+        local targetHead = targetChar:FindFirstChild("Head") or activeTarget
+        local screenPos, onScreen = Camera:WorldToViewportPoint(activeTarget.Position)
         local headScreenPos, headOnScreen = Camera:WorldToViewportPoint(targetHead.Position)
 
         if TargetVisuals.SnapLine and onScreen then
@@ -1213,9 +1313,7 @@ local function applyChams(player)
     updateChams()
 end
 
-for _, player in ipairs(Players:GetPlayers()) do
-    applyChams(player)
-end
+for _, player in ipairs(Players:GetPlayers()) do applyChams(player) end
 Players.PlayerAdded:Connect(applyChams)
 
 RunService.Heartbeat:Connect(function()
@@ -1282,16 +1380,11 @@ local function setupCharacterMovement(character)
     end)
 
     character.AncestryChanged:Connect(function(_, parent)
-        if not parent then
-            if stateConn then stateConn:Disconnect() end
-        end
+        if not parent and stateConn then stateConn:Disconnect() end
     end)
 end
 
-if LocalPlayer.Character then
-    setupCharacterMovement(LocalPlayer.Character)
-end
-
+if LocalPlayer.Character then setupCharacterMovement(LocalPlayer.Character) end
 LocalPlayer.CharacterAdded:Connect(function(char)
     currSpeed = MovementConfig.BaseSpeed
     setupCharacterMovement(char)
@@ -1346,7 +1439,7 @@ local function buildHit(origin, part)
     }
 end
 
--- Hook Remote Silent Aim, Tracer, Hit Sound & Hit Effect Engine
+-- Hook Remote Engine (Safe Bullet Tracer & Hit Effects)
 local ok, Remotes = pcall(require, game:GetService("ReplicatedStorage").Database.Security.Remotes)
 local shootRemote = ok and Remotes and Remotes.Inventory and Remotes.Inventory.ShootWeapon
 
@@ -1356,41 +1449,31 @@ if shootRemote and shootRemote.Send then
         if packet and packet.Bullets then
             if ShootSoundConfig.Enabled then
                 for _, s in ipairs(Workspace:GetDescendants()) do
-                    if s:IsA("Sound") and isGameGunSound(s) then
-                        s.Volume = 0
-                        s:Stop()
-                    end
+                    if s:IsA("Sound") and isGameGunSound(s) then s.Volume = 0 s:Stop() end
                 end
                 for _, s in ipairs(SoundService:GetDescendants()) do
-                    if s:IsA("Sound") and isGameGunSound(s) then
-                        s.Volume = 0
-                        s:Stop()
-                    end
+                    if s:IsA("Sound") and isGameGunSound(s) then s.Volume = 0 s:Stop() end
                 end
-                
                 playShootSound()
             end
 
             for _, bullet in ipairs(packet.Bullets) do
                 local origin = bullet.Origin
                 if origin then
-                    if SilentAim.Enabled then
-                        local part = getTarget(origin)
-                        if part then
-                            bullet.Direction = (part.Position - origin).Unit
-                            bullet.Hits = { buildHit(origin, part) }
-                            playHitSound()
-                            triggerHitOverlay()
-                            triggerHitEffect(part.Position)
-                            triggerHitChams(part.Parent)
-                            drawBulletTracer(origin, part.Position)
-                        else
-                            local endPos = origin + (bullet.Direction * 1000)
-                            drawBulletTracer(origin, endPos)
-                        end
+                    local targetToHit = SilentAim.Enabled and getTarget(origin)
+                    
+                    if targetToHit then
+                        bullet.Direction = (targetToHit.Position - origin).Unit
+                        bullet.Hits = { buildHit(origin, targetToHit) }
+                        playHitSound()
+                        triggerHitOverlay()
+                        triggerHitEffect(targetToHit.Position)
+                        triggerHitChams(targetToHit.Parent)
+                        
+                        if BulletTracer.Enabled then drawBulletTracer(origin, targetToHit.Position) end
                     else
                         local endPos = origin + (bullet.Direction * 1000)
-                        drawBulletTracer(origin, endPos)
+                        if BulletTracer.Enabled then drawBulletTracer(origin, endPos) end
                     end
                 end
             end
@@ -1420,37 +1503,28 @@ local window = NeverLose:CreateWindow({
 
 window.UserSettings:AddLabel("Menu Keybind"):AddKeybind({
     Default = 'Insert',
-    Callback = function(v)
-        window.Keybind = v;
-    end,
+    Callback = function(v) window.Keybind = v end,
 })
 
 window.UserSettings:AddLabel('Menu Scale'):AddDropdown({
     Default = "Large",
     Values = {"Default",'Large','Mobile','Small'},
-    Callback = function(v)
-        window:SetSize(NeverLose.Scales[v]);
-    end,
+    Callback = function(v) window:SetSize(NeverLose.Scales[v]) end,
 })
 
 window.UserSettings:AddLabel('3D Menu'):AddToggle({
     Default = false,
-    Callback = function(v)
-        window:Set3DRender(v);
-    end,
+    Callback = function(v) window:Set3DRender(v) end,
 })
 
--- WATERMARK --
+-- WATERMARK
 local Watermark = window:Watermark()
 local pingBlock = Watermark:AddBlock("chart-four-vertical-bars", "0MS")
 local uiToggleBlock = Watermark:AddBlock("cube-vertexes", "Toggle ui")
 
 uiToggleBlock:Input(function()
-    if window.ToggleInterface then
-        window:ToggleInterface()
-    elseif window.Toggle then
-        window:Toggle()
-    end
+    if window.ToggleInterface then window:ToggleInterface()
+    elseif window.Toggle then window:Toggle() end
 end)
 
 Watermark:SetRender(true)
@@ -1463,7 +1537,8 @@ task.spawn(function()
     end
 end)
 
--- Tab: Legit
+
+-- TAB: LEGIT
 local LegitTab = window:AddTab({
     Icon = 'mouse-scrollwheel',
     Name = "Legit"
@@ -1506,13 +1581,10 @@ SilentAimSection:AddLabel('Field of View'):AddSlider({
 SilentAimSection:AddLabel('Hit Part'):AddDropdown({
     Default = 'Head',
     Values = {'Head', 'HumanoidRootPart', 'Closest'},
-    Callback = function(v) 
-        SilentAim.AimPart = v
-    end,
+    Callback = function(v) SilentAim.AimPart = v end,
     Flag = "silent_hitpart"
 })
 
--- Hitbox Extender Controls
 local HitboxSection = LegitTab:AddSection({
     Name = "HITBOX EXTENDER",
     Position = 'right'
@@ -1564,13 +1636,9 @@ HitboxSection:AddLabel('Transparency'):AddSlider({
     Flag = "hitbox_transparency"
 })
 
--- Build sound menu options list for Hit Sounds
 local hitSoundList = {}
-for name, _ in pairs(SoundIDs) do
-    table.insert(hitSoundList, name)
-end
+for name, _ in pairs(SoundIDs) do table.insert(hitSoundList, name) end
 
--- SHOOT SOUND SECTION
 local ShootSoundSection = LegitTab:AddSection({
     Name = "SHOOT SOUND",
     Position = 'right'
@@ -1578,18 +1646,14 @@ local ShootSoundSection = LegitTab:AddSection({
 
 ShootSoundSection:AddLabel('Enable Shoot Sound'):AddToggle({
     Default = ShootSoundConfig.Enabled,
-    Callback = function(v)
-        ShootSoundConfig.Enabled = v
-    end,
+    Callback = function(v) ShootSoundConfig.Enabled = v end,
     Flag = "shootsound_enabled"
 })
 
 ShootSoundSection:AddLabel('Shoot Sound'):AddDropdown({
     Default = "SGG 08",
     Values = {"SGG 08"},
-    Callback = function(v)
-        ShootSoundConfig.Mode = v
-    end,
+    Callback = function(v) ShootSoundConfig.Mode = v end,
     Flag = "shootsound_mode"
 })
 
@@ -1600,32 +1664,25 @@ ShootSoundSection:AddLabel('Shoot Volume'):AddSlider({
     Default = ShootSoundConfig.Volume,
     Type = "",
     Size = 100,
-    Callback = function(v)
-        ShootSoundConfig.Volume = v
-    end,
+    Callback = function(v) ShootSoundConfig.Volume = v end,
     Flag = "shootsound_volume"
 })
 
--- HIT SOUND SECTION
 local HitSoundSection = LegitTab:AddSection({
     Name = "HIT SOUND",
-    Position = 'right'
+    Position = 'left'
 })
 
 HitSoundSection:AddLabel('Enable Hit Sound'):AddToggle({
     Default = HitSoundConfig.Enabled,
-    Callback = function(v)
-        HitSoundConfig.Enabled = v
-    end,
+    Callback = function(v) HitSoundConfig.Mode = v end,
     Flag = "hitsound_enabled"
 })
 
 HitSoundSection:AddLabel('Hit Sound Style'):AddDropdown({
     Default = HitSoundConfig.Mode,
     Values = hitSoundList,
-    Callback = function(v)
-        HitSoundConfig.Mode = v
-    end,
+    Callback = function(v) HitSoundConfig.Mode = v end,
     Flag = "hitsound_mode"
 })
 
@@ -1636,13 +1693,51 @@ HitSoundSection:AddLabel('Hit Volume'):AddSlider({
     Default = HitSoundConfig.Volume,
     Type = "",
     Size = 100,
-    Callback = function(v)
-        HitSoundConfig.Volume = v
-    end,
+    Callback = function(v) HitSoundConfig.Volume = v end,
     Flag = "hitsound_volume"
 })
 
--- Tab: Movement
+local GunModsTab = window:AddTab({
+    Icon = 'flame',
+    Name = "Gun Mods"
+})
+
+local GunModsSection = GunModsTab:AddSection({
+    Name = "WEAPON MODIFICATIONS",
+    Position = 'left'
+})
+
+GunModsSection:AddLabel('No Recoil'):AddToggle({
+    Default = GunModsConfig.NoRecoil,
+    Callback = function(v) GunModsConfig.NoRecoil = v end,
+    Flag = "gun_norecoil"
+})
+
+GunModsSection:AddLabel('No Spread'):AddToggle({
+    Default = GunModsConfig.NoSpread,
+    Callback = function(v) GunModsConfig.NoSpread = v end,
+    Flag = "gun_nospread"
+})
+
+GunModsSection:AddLabel('Enable Rapid Firerate'):AddToggle({
+    Default = GunModsConfig.FirerateEnabled,
+    Callback = function(v) GunModsConfig.FirerateEnabled = v end,
+    Flag = "gun_firerate_enabled"
+})
+
+GunModsSection:AddLabel('Firerate Delay'):AddSlider({
+    Min = 0.01,
+    Max = 0.5,
+    Rounding = 2,
+    Default = GunModsConfig.FirerateValue,
+    Type = "s",
+    Size = 100,
+    Callback = function(v) GunModsConfig.FirerateValue = v end,
+    Flag = "gun_firerate_val"
+})
+
+
+-- TAB: MOVEMENT
 local MovementTab = window:AddTab({
     Icon = 'person-running',
     Name = "Movement"
@@ -1684,19 +1779,16 @@ MovementSection:AddLabel('Speed Multiplier'):AddSlider({
     Default = MovementConfig.SpeedMultiplier,
     Type = "x",
     Size = 100,
-    Callback = function(v) 
-        MovementConfig.SpeedMultiplier = v 
-    end,
+    Callback = function(v) MovementConfig.SpeedMultiplier = v end,
     Flag = "speed_multiplier"
 })
 
--- Tab: Visuals
+-- TAB: VISUALS
 local VisualsTab = window:AddTab({
     Icon = 'eye',
     Name = "Visuals"
 })
 
--- HIT CHAMS SECTION
 local HitChamsSection = VisualsTab:AddSection({
     Name = "HIT CHAMS",
     Position = 'left'
@@ -1736,7 +1828,6 @@ HitChamsSection:AddLabel('Duration'):AddSlider({
     Flag = "hit_chams_duration"
 })
 
--- HIT EFFECT PARTICLE SECTION
 local HitParticleSection = VisualsTab:AddSection({
     Name = "HIT EFFECT PARTICLES",
     Position = 'left'
@@ -1772,7 +1863,6 @@ HitParticleSection:AddLabel('Color'):AddDropdown({
     Flag = "hit_particle_color"
 })
 
--- Enhanced Bullet Tracer Section
 local TracerSection = VisualsTab:AddSection({
     Name = "BULLET TRACERS",
     Position = 'left'
@@ -1784,22 +1874,14 @@ TracerSection:AddLabel('Enable Bullet Tracer'):AddToggle({
     Flag = "tracer_enabled"
 })
 
-TracerSection:AddLabel('Color'):AddDropdown({
-    Default = 'Electric Blue',
+TracerSection:AddLabel('Color Style'):AddDropdown({
+    Default = 'Gradient 2 Colors',
     Values = {
-        'Electric Blue', 'White', 'cool red', 'Hot Pink', 'Crimson Red', 'Lime Green', 
-        'Gold Yellow', 'Cyan', 'Neon Purple', 'Rainbow', 
-        'Gradient', 'Pulse RGB', 'Fire', 'Cyber Neon'
+        'Gradient 2 Colors', 'Gradient 3 Colors', 'Cyber Neon', 'Sunset Glow', 'Cotton Candy', 'Fire', 'Rainbow',
+        'Electric Blue', 'Hot Pink', 'White', 'Crimson Red', 'Lime Green', 'Neon Purple'
     },
     Callback = function(v) BulletTracer.ColorMode = v end,
     Flag = "tracer_colormode"
-})
-
-TracerSection:AddLabel('Tracer Type'):AddDropdown({
-    Default = 'Corner',
-    Values = {'Corner', 'Square'},
-    Callback = function(v) BulletTracer.Type = v end,
-    Flag = "tracer_type"
 })
 
 TracerSection:AddLabel('Animation'):AddDropdown({
@@ -1811,26 +1893,47 @@ TracerSection:AddLabel('Animation'):AddDropdown({
 
 TracerSection:AddLabel('Fade Style'):AddDropdown({
     Default = 'Smooth',
-    Values = {'Smooth', 'Instant', 'Shrink', 'Pulse', 'Expand-Out'},
+    Values = {'Smooth', 'Instant', 'Shrink'},
     Callback = function(v) BulletTracer.FadeMode = v end,
     Flag = "tracer_fade_mode"
 })
 
-TracerSection:AddLabel('Bloom / Neon Glow'):AddToggle({
+TracerSection:AddLabel('Glow / Light Emission'):AddToggle({
     Default = BulletTracer.BloomEffect,
     Callback = function(v) BulletTracer.BloomEffect = v end,
     Flag = "tracer_bloom"
 })
 
-TracerSection:AddLabel('Material'):AddDropdown({
-    Default = 'Neon',
-    Values = {'Neon', 'ForceField', 'SmoothPlastic', 'Glass'},
-    Callback = function(v) BulletTracer.Material = v end,
-    Flag = "tracer_material"
+TracerSection:AddLabel('Dynamic Glow Light'):AddToggle({
+    Default = BulletTracer.GlowLight,
+    Callback = function(v) BulletTracer.GlowLight = v end,
+    Flag = "tracer_glow_light"
+})
+
+TracerSection:AddLabel('Glow Light Intensity'):AddSlider({
+    Min = 0.5,
+    Max = 10.0,
+    Rounding = 1,
+    Default = BulletTracer.GlowBrightness,
+    Type = "",
+    Size = 100,
+    Callback = function(v) BulletTracer.GlowBrightness = v end,
+    Flag = "tracer_glow_brightness"
+})
+
+TracerSection:AddLabel('Bullet Speed (Travel Time)'):AddSlider({
+    Min = 0.01,
+    Max = 0.50,
+    Rounding = 2,
+    Default = BulletTracer.TravelTime,
+    Type = "s",
+    Size = 100,
+    Callback = function(v) BulletTracer.TravelTime = v end,
+    Flag = "tracer_traveltime"
 })
 
 TracerSection:AddLabel('Thickness'):AddSlider({
-    Min = 0.01,
+    Min = 0.05,
     Max = 1.0,
     Rounding = 2,
     Default = BulletTracer.Thickness,
@@ -1873,7 +1976,6 @@ TracerSection:AddLabel('Fade Duration'):AddSlider({
     Flag = "tracer_fadetime"
 })
 
--- HIT OVERLAY SECTION
 local HitOverlaySection = VisualsTab:AddSection({
     Name = "HIT OVERLAY",
     Position = 'left'
@@ -2005,7 +2107,7 @@ ESPSection:AddLabel('Chams Team Check'):AddToggle({
     Flag = "chams_teamcheck"
 })
 
--- ==================== TAB: WORLD ==================== --
+-- TAB: WORLD
 local WorldTab = window:AddTab({
     Icon = 'crosshairs',
     Name = "World"
@@ -2103,3 +2205,7 @@ NightModeSection:AddLabel('Skybox Preset'):AddDropdown({
     end,
     Flag = "world_skybox"
 })
+
+-- INITIALIZE HOOKS
+WeaponModsModule.InitHooks()
+WeaponModsModule.StartFirerateLoop()
