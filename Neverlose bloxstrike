@@ -588,9 +588,9 @@ local function getTracerColorSequence()
         }
     elseif mode == "Rainbow" then
         return ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
-            ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255, 150, 0)),
-            ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 255, 0)),
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 100, 100)),
+            ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255, 150, 100)),
+            ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 255, 100)),
             ColorSequenceKeypoint.new(0.6, Color3.fromRGB(0, 255, 100)),
             ColorSequenceKeypoint.new(0.8, Color3.fromRGB(0, 150, 255)),
             ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 255))
@@ -708,8 +708,8 @@ local function drawBulletTracer(startPos, targetPos)
     beam.LightInfluence = 0
     beam.Texture = "rbxassetid://446111271"
     beam.TextureMode = Enum.TextureMode.Stretch
-    beam.TextureLength = 0.2 
-    beam.TextureSpeed = 0.5
+    beam.TextureLength = 0.1 
+    beam.TextureSpeed = 0.25 
     beam.Transparency = NumberSequence.new(BulletTracer.Transparency)
     beam.Parent = Workspace.Terrain
 
