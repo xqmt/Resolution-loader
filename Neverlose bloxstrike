@@ -418,7 +418,7 @@ local Chams = {
     Enabled = true,
     TeamCheck = true,
     FillColor = Color3.fromRGB(255, 0, 0),
-    OutlineColor = Color3.fromRGB(255, 255, 255),
+    OutlineColor = Color3.fromRGB(255, 100, 100),
     FillTransparency = 0.5,
     OutlineTransparency = 0
 }
@@ -428,7 +428,7 @@ local ESPConfig = {
     Enabled = true,
     TeamCheck = true,
     Boxes = true,
-    BoxColor = Color3.fromRGB(255, 255, 255),
+    BoxColor = Color3.fromRGB(255, 100, 100),
     HealthBar = true,
     Skeletons = true,
     SkeletonColor = Color3.fromRGB(255, 255, 255),
