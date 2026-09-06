@@ -296,7 +296,7 @@ local function playHitSound()
     if not HitSoundConfig.Enabled then return end
     local soundId = SoundIDs[HitSoundConfig.Mode]
     if soundId then
-        playCustomSound(soundId, HitSoundConfig.Volume)
+        playCustomSound(soundId, HitSoundConfig.Mode)
     end
 end
 
@@ -368,26 +368,26 @@ local MovementConfig = {
 
 local currSpeed = MovementConfig.BaseSpeed
 
--- Bullet Tracer Configuration
+-- Neverlose Style Bullet Tracer Configuration
 local BulletTracer = {
     Enabled = true,
     Type = "Corner",
     FadeMode = "Smooth",
     AnimEasing = "Sine",
-    ColorMode = "Gradient 2 Colors",
+    ColorMode = "Cyber Neon",
     GradientColor1 = Color3.fromRGB(0, 255, 255),
-    GradientColor2 = Color3.fromRGB(255, 0, 150),
+    GradientColor2 = Color3.fromRGB(0, 150, 255),
     GradientColor3 = Color3.fromRGB(150, 0, 255),
-    Color = Color3.fromRGB(0, 170, 255),
+    Color = Color3.fromRGB(0, 200, 255),
     Transparency = 0,
     Material = "Neon",
-    Thickness = 0.12,
-    LifeTime = 0.5,
-    FadeTime = 0.3,
-    TravelTime = 0.08,
+    Thickness = 0.18,
+    LifeTime = 0.4,
+    FadeTime = 0.35,
+    TravelTime = 0.05,
     BloomEffect = true,
     GlowLight = true,
-    GlowBrightness = 2
+    GlowBrightness = 5.0
 }
 
 -- Config
@@ -423,13 +423,19 @@ local Chams = {
     OutlineTransparency = 0
 }
 
--- ESP Configuration
+-- ESP Configuration with Multi-Gradient Glow Engine
 local ESPConfig = {
     Enabled = true,
     TeamCheck = true,
     Boxes = true,
     BoxColor = Color3.fromRGB(255, 255, 255),
+    BoxGlow = true,
+    BoxGlowColor = Color3.fromRGB(100, 255, 100),
     HealthBar = true,
+    HealthBarGlow = true,
+    HealthGradient1 = Color3.fromRGB(0, 255, 100),   -- High HP (Neon Green)
+    HealthGradient2 = Color3.fromRGB(255, 200, 0),   -- Mid HP (Yellow)
+    HealthGradient3 = Color3.fromRGB(255, 0, 80),     -- Low HP (Crimson Red)
     Skeletons = true,
     SkeletonColor = Color3.fromRGB(255, 255, 255),
     Outline = true,
@@ -541,7 +547,18 @@ local function applySky(presetName)
     end
 end
 
--- Tracer Color Sequence
+-- Dynamic 3-Color Gradient Color Engine
+local function get3ColorGradient(percent)
+    if percent > 0.5 then
+        local factor = (percent - 0.5) * 2
+        return ESPConfig.HealthGradient2:Lerp(ESPConfig.HealthGradient1, factor)
+    else
+        local factor = percent * 2
+        return ESPConfig.HealthGradient3:Lerp(ESPConfig.HealthGradient2, factor)
+    end
+end
+
+-- Tracer Color Sequence Engine
 local function getTracerColorSequence()
     local mode = BulletTracer.ColorMode
     if mode == "Gradient 2 Colors" then
@@ -551,11 +568,11 @@ local function getTracerColorSequence()
         }
 
     elseif mode == "cool" then
-    return ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(135, 133, 255)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(133, 156, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(135, 133, 255)) -- เพิ่มจุดที่ 1.0 ให้ครบลูป
-       }
+        return ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(135, 133, 255)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(133, 156, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(135, 133, 255))
+        }
     elseif mode == "Gradient 3 Colors" then
         return ColorSequence.new{
             ColorSequenceKeypoint.new(0, BulletTracer.GradientColor1),
@@ -564,9 +581,9 @@ local function getTracerColorSequence()
         }
     elseif mode == "Cyber Neon" then
         return ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 240)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 180)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 0, 255))
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 255)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 120, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(170, 0, 255))
         }
     elseif mode == "Sunset Glow" then
         return ColorSequence.new{
@@ -588,13 +605,13 @@ local function getTracerColorSequence()
         }
     elseif mode == "Rainbow" then
         return ColorSequence.new{
-            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 105, 120)), -- แดงอมชมพู
-            ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 170, 90)),  -- ส้มพาสเทล
-            ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 230, 110)), -- เหลืองนุ่มนวล
-            ColorSequenceKeypoint.new(0.50, Color3.fromRGB(110, 230, 150)), -- เขียวมิ้นต์
-            ColorSequenceKeypoint.new(0.67, Color3.fromRGB(100, 200, 255)), -- ฟ้าพาสเทล
-            ColorSequenceKeypoint.new(0.83, Color3.fromRGB(160, 140, 255)), -- ม่วงลาเวนเดอร์
-            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 105, 120))  -- วนกลับมาสีแรก (ช่วยให้ทำ Animation แบบไร้รอยต่อได้)
+            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 105, 120)),
+            ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 170, 90)),
+            ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 230, 110)),
+            ColorSequenceKeypoint.new(0.50, Color3.fromRGB(110, 230, 150)),
+            ColorSequenceKeypoint.new(0.67, Color3.fromRGB(100, 200, 255)),
+            ColorSequenceKeypoint.new(0.83, Color3.fromRGB(160, 140, 255)),
+            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 105, 120))
         }
     end
    
@@ -655,11 +672,10 @@ local function getMuzzlePosition(defaultOrigin)
     return defaultOrigin
 end
 
--- Bullet Tracer Beam Engine (Fixed Wall Penetration)
+-- Neverlose Style Bullet Tracer Beam Engine
 local function drawBulletTracer(startPos, targetPos)
     local origin = getMuzzlePosition(startPos)
     
-    -- Raycast Check เพื่อไม่ให้ Tracer ทะลุกำแพง
     local raycastParams = RaycastParams.new()
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
     local filterList = {}
@@ -670,7 +686,6 @@ local function drawBulletTracer(startPos, targetPos)
     local direction = targetPos - origin
     local rayResult = Workspace:Raycast(origin, direction, raycastParams)
     
-    -- ถ้าติดกำแพง ให้เปลี่ยนจุดสิ้นสุด Tracer เป็นจุดที่ Raycast ชน
     local finalTargetPos = rayResult and rayResult.Position or targetPos
 
     local distance = (finalTargetPos - origin).Magnitude
@@ -687,12 +702,13 @@ local function drawBulletTracer(startPos, targetPos)
     att0.Parent = Workspace.Terrain
     att1.Parent = Workspace.Terrain
 
+    -- Neverlose Glow Light
     local light
     if BulletTracer.GlowLight then
         light = Instance.new("PointLight")
         light.Color = leadColor
-        light.Brightness = BulletTracer.GlowBrightness * 2.5
-        light.Range = 15
+        light.Brightness = BulletTracer.GlowBrightness * 3.5
+        light.Range = 25
         light.Shadows = false
         light.Parent = att1
     end
@@ -705,7 +721,7 @@ local function drawBulletTracer(startPos, targetPos)
     beam.Width0 = BulletTracer.Thickness
     beam.Width1 = BulletTracer.Thickness
     beam.FaceCamera = true
-    beam.LightEmission = BulletTracer.BloomEffect and 1 or 0.5
+    beam.LightEmission = 1
     beam.LightInfluence = 0
     beam.Texture = "rbxassetid://446111271"
     beam.TextureMode = Enum.TextureMode.Stretch
@@ -829,14 +845,26 @@ end
 
 local espObjects = {}
 
+-- ESP Creation with Soft Glow Box & Health Bar Glow
 local function createPlayerESP(player)
     if espObjects[player] then return end
     
     local objects = {
-        BoxOutline = createDrawing("Square", {Thickness = 3.5, Color = ESPConfig.OutlineColor, Filled = false, Visible = false}),
-        Box = createDrawing("Square", {Thickness = 1.5, Color = ESPConfig.BoxColor, Filled = false, Visible = false}),
+        -- Soft Outer Glow Layers for Box
+        BoxGlowOuter = createDrawing("Square", {Thickness = 5, Color = ESPConfig.BoxGlowColor, Filled = false, Visible = false, Transparency = 0.15}),
+        BoxGlowMid = createDrawing("Square", {Thickness = 3, Color = ESPConfig.BoxGlowColor, Filled = false, Visible = false, Transparency = 0.35}),
+        BoxGlowInner = createDrawing("Square", {Thickness = 1.5, Color = ESPConfig.BoxGlowColor, Filled = false, Visible = false, Transparency = 0.6}),
+        
+        BoxOutline = createDrawing("Square", {Thickness = 3, Color = ESPConfig.OutlineColor, Filled = false, Visible = false}),
+        Box = createDrawing("Square", {Thickness = 1, Color = ESPConfig.BoxColor, Filled = false, Visible = false}),
+        
+        -- Health Bar Soft Glow Layers
+        HealthBarGlowOuter = createDrawing("Square", {Thickness = 4, Color = Color3.fromRGB(0, 255, 100), Filled = true, Visible = false, Transparency = 0.2}),
+        HealthBarGlowInner = createDrawing("Square", {Thickness = 2, Color = Color3.fromRGB(0, 255, 100), Filled = true, Visible = false, Transparency = 0.4}),
+        
         HealthBarOutline = createDrawing("Square", {Thickness = 1, Color = ESPConfig.OutlineColor, Filled = true, Visible = false}),
         HealthBar = createDrawing("Square", {Thickness = 1, Color = Color3.fromRGB(0, 255, 100), Filled = true, Visible = false}),
+        
         Skeletons = {},
         SkeletonOutlines = {}
     }
@@ -863,8 +891,14 @@ local function removePlayerESP(player)
     if not espObjects[player] then return end
     local objs = espObjects[player]
     
+    objs.BoxGlowOuter:Remove()
+    objs.BoxGlowMid:Remove()
+    objs.BoxGlowInner:Remove()
     objs.BoxOutline:Remove()
     objs.Box:Remove()
+    
+    objs.HealthBarGlowOuter:Remove()
+    objs.HealthBarGlowInner:Remove()
     objs.HealthBarOutline:Remove()
     objs.HealthBar:Remove()
     
@@ -1173,6 +1207,28 @@ RunService.RenderStepped:Connect(function()
                     local boxPos = Vector2.new(hrpPos.X - boxWidth / 2, topPos.Y)
 
                     if ESPConfig.Boxes then
+                        -- Smooth Multi-layered Box Glow Engine
+                        if ESPConfig.BoxGlow then
+                            objs.BoxGlowOuter.Size = Vector2.new(boxWidth + 6, boxHeight + 6)
+                            objs.BoxGlowOuter.Position = Vector2.new(boxPos.X - 3, boxPos.Y - 3)
+                            objs.BoxGlowOuter.Color = ESPConfig.BoxGlowColor
+                            objs.BoxGlowOuter.Visible = true
+
+                            objs.BoxGlowMid.Size = Vector2.new(boxWidth + 4, boxHeight + 4)
+                            objs.BoxGlowMid.Position = Vector2.new(boxPos.X - 2, boxPos.Y - 2)
+                            objs.BoxGlowMid.Color = ESPConfig.BoxGlowColor
+                            objs.BoxGlowMid.Visible = true
+
+                            objs.BoxGlowInner.Size = Vector2.new(boxWidth + 2, boxHeight + 2)
+                            objs.BoxGlowInner.Position = Vector2.new(boxPos.X - 1, boxPos.Y - 1)
+                            objs.BoxGlowInner.Color = ESPConfig.BoxGlowColor
+                            objs.BoxGlowInner.Visible = true
+                        else
+                            objs.BoxGlowOuter.Visible = false
+                            objs.BoxGlowMid.Visible = false
+                            objs.BoxGlowInner.Visible = false
+                        end
+
                         if ESPConfig.Outline then
                             objs.BoxOutline.Size = Vector2.new(boxWidth, boxHeight)
                             objs.BoxOutline.Position = boxPos
@@ -1186,6 +1242,9 @@ RunService.RenderStepped:Connect(function()
                         objs.Box.Color = ESPConfig.BoxColor
                         objs.Box.Visible = true
                     else
+                        objs.BoxGlowOuter.Visible = false
+                        objs.BoxGlowMid.Visible = false
+                        objs.BoxGlowInner.Visible = false
                         objs.BoxOutline.Visible = false
                         objs.Box.Visible = false
                     end
@@ -1196,6 +1255,9 @@ RunService.RenderStepped:Connect(function()
                         local healthPercent = math.clamp(health / maxHealth, 0, 1)
                         local barHeight = boxHeight * healthPercent
                         local barPos = Vector2.new(boxPos.X - 5, boxPos.Y + (boxHeight - barHeight))
+                        
+                        -- Dynamic 3-Color Interpolated Gradient
+                        local healthColor = get3ColorGradient(healthPercent)
 
                         if ESPConfig.Outline then
                             objs.HealthBarOutline.Size = Vector2.new(3, boxHeight + 2)
@@ -1205,11 +1267,29 @@ RunService.RenderStepped:Connect(function()
                             objs.HealthBarOutline.Visible = false
                         end
 
+                        -- Health Bar Outer Glow Layers
+                        if ESPConfig.HealthBarGlow then
+                            objs.HealthBarGlowOuter.Size = Vector2.new(5, barHeight + 4)
+                            objs.HealthBarGlowOuter.Position = Vector2.new(boxPos.X - 7, barPos.Y - 2)
+                            objs.HealthBarGlowOuter.Color = healthColor
+                            objs.HealthBarGlowOuter.Visible = true
+
+                            objs.HealthBarGlowInner.Size = Vector2.new(3, barHeight + 2)
+                            objs.HealthBarGlowInner.Position = Vector2.new(boxPos.X - 6, barPos.Y - 1)
+                            objs.HealthBarGlowInner.Color = healthColor
+                            objs.HealthBarGlowInner.Visible = true
+                        else
+                            objs.HealthBarGlowOuter.Visible = false
+                            objs.HealthBarGlowInner.Visible = false
+                        end
+
                         objs.HealthBar.Size = Vector2.new(1, barHeight)
                         objs.HealthBar.Position = barPos
-                        objs.HealthBar.Color = Color3.fromRGB(255, 0, 0):Lerp(Color3.fromRGB(0, 255, 0), healthPercent)
+                        objs.HealthBar.Color = healthColor
                         objs.HealthBar.Visible = true
                     else
+                        objs.HealthBarGlowOuter.Visible = false
+                        objs.HealthBarGlowInner.Visible = false
                         objs.HealthBarOutline.Visible = false
                         objs.HealthBar.Visible = false
                     end
@@ -1261,8 +1341,13 @@ RunService.RenderStepped:Connect(function()
                         end
                     end
                 else
+                    objs.BoxGlowOuter.Visible = false
+                    objs.BoxGlowMid.Visible = false
+                    objs.BoxGlowInner.Visible = false
                     objs.BoxOutline.Visible = false
                     objs.Box.Visible = false
+                    objs.HealthBarGlowOuter.Visible = false
+                    objs.HealthBarGlowInner.Visible = false
                     objs.HealthBarOutline.Visible = false
                     objs.HealthBar.Visible = false
                     for idx = 1, #objs.Skeletons do
@@ -1272,8 +1357,13 @@ RunService.RenderStepped:Connect(function()
                 end
             end
         else
+            objs.BoxGlowOuter.Visible = false
+            objs.BoxGlowMid.Visible = false
+            objs.BoxGlowInner.Visible = false
             objs.BoxOutline.Visible = false
             objs.Box.Visible = false
+            objs.HealthBarGlowOuter.Visible = false
+            objs.HealthBarGlowInner.Visible = false
             objs.HealthBarOutline.Visible = false
             objs.HealthBar.Visible = false
             for idx = 1, #objs.Skeletons do
@@ -1542,7 +1632,6 @@ if shootRemote and shootRemote.Send then
                         local dir = bullet.Direction or Camera.CFrame.LookVector
                         local maxDistance = 1000
                         
-                        -- Raycast เช็กกำแพงฉากยิงปกติ
                         local rayParams = RaycastParams.new()
                         rayParams.FilterType = Enum.RaycastFilterType.Exclude
                         local ignoreList = {}
@@ -1843,7 +1932,6 @@ local function setupSkinChangerUI()
         return name:find("knife") or name:find("karambit") or name:find("bayonet") or name:find("butterfly") or name:find("dagger") or name:find("cleaver") or name:find("m9") or name:find("kunai") or name:find("blade")
     end
 
-    -- Setup Regular Gun Skins Only
     local validGunSkins = {}
     for _, skinFolder in ipairs(skinsFolder:GetChildren()) do
         if not isKnife(skinFolder.Name) and #skinFolder:GetChildren() > 1 then
@@ -2021,7 +2109,7 @@ TracerSection:AddLabel('Enable Bullet Tracer'):AddToggle({
 })
 
 TracerSection:AddLabel('Color Style'):AddDropdown({
-    Default = 'Gradient 2 Colors',
+    Default = 'Cyber Neon',
     Values = {
         'Gradient 2 Colors', 'cool', 'Gradient 3 Colors', 'Cyber Neon', 'Sunset Glow', 'Cotton Candy', 'Fire', 'Rainbow',
         'Electric Blue', 'Hot Pink', 'White', 'Crimson Red', 'Lime Green', 'Neon Purple'
@@ -2223,10 +2311,22 @@ ESPSection:AddLabel('Box ESP'):AddToggle({
     Flag = "esp_boxes"
 })
 
+ESPSection:AddLabel('Box Glow Effect'):AddToggle({
+    Default = ESPConfig.BoxGlow,
+    Callback = function(v) ESPConfig.BoxGlow = v end,
+    Flag = "esp_boxglow"
+})
+
 ESPSection:AddLabel('Health Bar'):AddToggle({
     Default = ESPConfig.HealthBar,
     Callback = function(v) ESPConfig.HealthBar = v end,
     Flag = "esp_healthbar"
+})
+
+ESPSection:AddLabel('Health Bar Glow'):AddToggle({
+    Default = ESPConfig.HealthBarGlow,
+    Callback = function(v) ESPConfig.HealthBarGlow = v end,
+    Flag = "esp_healthbarglow"
 })
 
 ESPSection:AddLabel('Skeleton ESP'):AddToggle({
