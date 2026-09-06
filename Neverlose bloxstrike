@@ -549,6 +549,12 @@ local function getTracerColorSequence()
             ColorSequenceKeypoint.new(0, BulletTracer.GradientColor1),
             ColorSequenceKeypoint.new(1, BulletTracer.GradientColor2)
         }
+
+    elseif mode == "cool" then
+        return ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(135, 133, 255)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(133, 156, 255)),
+        }
     elseif mode == "Gradient 3 Colors" then
         return ColorSequence.new{
             ColorSequenceKeypoint.new(0, BulletTracer.GradientColor1),
@@ -647,10 +653,25 @@ local function getMuzzlePosition(defaultOrigin)
     return defaultOrigin
 end
 
--- Bullet Tracer Beam Engine
+-- Bullet Tracer Beam Engine (Fixed Wall Penetration)
 local function drawBulletTracer(startPos, targetPos)
     local origin = getMuzzlePosition(startPos)
-    local distance = (targetPos - origin).Magnitude
+    
+    -- Raycast Check เพื่อไม่ให้ Tracer ทะลุกำแพง
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+    local filterList = {}
+    if LocalPlayer.Character then table.insert(filterList, LocalPlayer.Character) end
+    if Camera:FindFirstChildOfClass("Model") then table.insert(filterList, Camera:FindFirstChildOfClass("Model")) end
+    raycastParams.FilterDescendantsInstances = filterList
+
+    local direction = targetPos - origin
+    local rayResult = Workspace:Raycast(origin, direction, raycastParams)
+    
+    -- ถ้าติดกำแพง ให้เปลี่ยนจุดสิ้นสุด Tracer เป็นจุดที่ Raycast ชน
+    local finalTargetPos = rayResult and rayResult.Position or targetPos
+
+    local distance = (finalTargetPos - origin).Magnitude
     if distance < 1 then return end
 
     local colorSeq = getTracerColorSequence()
@@ -686,8 +707,8 @@ local function drawBulletTracer(startPos, targetPos)
     beam.LightInfluence = 0
     beam.Texture = "rbxassetid://446111271"
     beam.TextureMode = Enum.TextureMode.Stretch
-    beam.TextureLength = 1
-    beam.TextureSpeed = 0
+    beam.TextureLength = 0.5 
+    beam.TextureSpeed = 0.5
     beam.Transparency = NumberSequence.new(BulletTracer.Transparency)
     beam.Parent = Workspace.Terrain
 
@@ -709,7 +730,7 @@ local function drawBulletTracer(startPos, targetPos)
     local travelTween = TweenService:Create(
         att1,
         TweenInfo.new(BulletTracer.TravelTime, easingStyle, Enum.EasingDirection.Out),
-        { WorldPosition = targetPos }
+        { WorldPosition = finalTargetPos }
     )
     travelTween:Play()
 
@@ -1516,7 +1537,20 @@ if shootRemote and shootRemote.Send then
                         
                         if BulletTracer.Enabled then drawBulletTracer(origin, targetToHit.Position) end
                     else
-                        local endPos = origin + (bullet.Direction * 1000)
+                        local dir = bullet.Direction or Camera.CFrame.LookVector
+                        local maxDistance = 1000
+                        
+                        -- Raycast เช็กกำแพงฉากยิงปกติ
+                        local rayParams = RaycastParams.new()
+                        rayParams.FilterType = Enum.RaycastFilterType.Exclude
+                        local ignoreList = {}
+                        if LocalPlayer.Character then table.insert(ignoreList, LocalPlayer.Character) end
+                        if Camera:FindFirstChildOfClass("Model") then table.insert(ignoreList, Camera:FindFirstChildOfClass("Model")) end
+                        rayParams.FilterDescendantsInstances = ignoreList
+
+                        local rayRes = Workspace:Raycast(origin, dir * maxDistance, rayParams)
+                        local endPos = rayRes and rayRes.Position or (origin + (dir * maxDistance))
+
                         if BulletTracer.Enabled then drawBulletTracer(origin, endPos) end
                     end
                 end
@@ -1987,7 +2021,7 @@ TracerSection:AddLabel('Enable Bullet Tracer'):AddToggle({
 TracerSection:AddLabel('Color Style'):AddDropdown({
     Default = 'Gradient 2 Colors',
     Values = {
-        'Gradient 2 Colors', 'Gradient 3 Colors', 'Cyber Neon', 'Sunset Glow', 'Cotton Candy', 'Fire', 'Rainbow',
+        'Gradient 2 Colors', 'cool', 'Gradient 3 Colors', 'Cyber Neon', 'Sunset Glow', 'Cotton Candy', 'Fire', 'Rainbow',
         'Electric Blue', 'Hot Pink', 'White', 'Crimson Red', 'Lime Green', 'Neon Purple'
     },
     Callback = function(v) BulletTracer.ColorMode = v end,
