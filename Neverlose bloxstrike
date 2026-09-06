@@ -428,7 +428,7 @@ local ESPConfig = {
     Enabled = true,
     TeamCheck = true,
     Boxes = true,
-    BoxColor = Color3.fromRGB(255, 100, 100),
+    BoxColor = Color3.fromRGB(133, 135, 255),
     HealthBar = true,
     Skeletons = true,
     SkeletonColor = Color3.fromRGB(255, 255, 255),
@@ -774,13 +774,13 @@ local fovOutlineOuter = Drawing.new("Circle")
 fovOutlineOuter.Thickness = 1.25
 fovOutlineOuter.Color = Color3.fromRGB(0, 0, 0)
 fovOutlineOuter.Filled = false
-fovOutlineOuter.Transparency = 0.85
+fovOutlineOuter.Transparency = 0.8
 fovOutlineOuter.Visible = false
 fovOutlineOuter.NumSides = 144
 
 local fovCircle = Drawing.new("Circle")
 fovCircle.Thickness = 1.5
-fovCircle.Color = Color3.fromRGB(255, 255, 255)
+fovCircle.Color = Color3.fromRGB(133, 135, 255)
 fovCircle.Filled = false
 fovCircle.Transparency = 0.85
 fovCircle.Visible = false
@@ -833,9 +833,9 @@ local function createPlayerESP(player)
     
     local objects = {
         BoxOutline = createDrawing("Square", {Thickness = 2.5, Color = ESPConfig.OutlineColor, Filled = false, Visible = false}),
-        Box = createDrawing("Square", {Thickness = 1, Color = ESPConfig.BoxColor, Filled = false, Visible = false}),
+        Box = createDrawing("Square", {Thickness = 1.5, Color = ESPConfig.BoxColor, Filled = false, Visible = false}),
         HealthBarOutline = createDrawing("Square", {Thickness = 1, Color = ESPConfig.OutlineColor, Filled = true, Visible = false}),
-        HealthBar = createDrawing("Square", {Thickness = 1, Color = Color3.fromRGB(0, 255, 0), Filled = true, Visible = false}),
+        HealthBar = createDrawing("Square", {Thickness = 1, Color = Color3.fromRGB(0, 255, 100), Filled = true, Visible = false}),
         Skeletons = {},
         SkeletonOutlines = {}
     }
