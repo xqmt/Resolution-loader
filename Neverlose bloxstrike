@@ -551,10 +551,11 @@ local function getTracerColorSequence()
         }
 
     elseif mode == "cool" then
-        return ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(135, 133, 255)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(133, 156, 255)),
-        }
+    return ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(135, 133, 255)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(133, 156, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(135, 133, 255)) -- เพิ่มจุดที่ 1.0 ให้ครบลูป
+       }
     elseif mode == "Gradient 3 Colors" then
         return ColorSequence.new{
             ColorSequenceKeypoint.new(0, BulletTracer.GradientColor1),
