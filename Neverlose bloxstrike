@@ -833,7 +833,7 @@ local function createPlayerESP(player)
     if espObjects[player] then return end
     
     local objects = {
-        BoxOutline = createDrawing("Square", {Thickness = 3, Color = ESPConfig.OutlineColor, Filled = false, Visible = false}),
+        BoxOutline = createDrawing("Square", {Thickness = 3.5, Color = ESPConfig.OutlineColor, Filled = false, Visible = false}),
         Box = createDrawing("Square", {Thickness = 1.5, Color = ESPConfig.BoxColor, Filled = false, Visible = false}),
         HealthBarOutline = createDrawing("Square", {Thickness = 1, Color = ESPConfig.OutlineColor, Filled = true, Visible = false}),
         HealthBar = createDrawing("Square", {Thickness = 1, Color = Color3.fromRGB(0, 255, 100), Filled = true, Visible = false}),
