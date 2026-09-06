@@ -428,7 +428,7 @@ local ESPConfig = {
     Enabled = true,
     TeamCheck = true,
     Boxes = true,
-    BoxColor = Color3.fromRGB(133, 135, 255),
+    BoxColor = Color3.fromRGB(255, 255, 255),
     HealthBar = true,
     Skeletons = true,
     SkeletonColor = Color3.fromRGB(255, 255, 255),
@@ -774,20 +774,20 @@ local fovOutlineOuter = Drawing.new("Circle")
 fovOutlineOuter.Thickness = 1.25
 fovOutlineOuter.Color = Color3.fromRGB(0, 0, 0)
 fovOutlineOuter.Filled = false
-fovOutlineOuter.Transparency = 0.8
+fovOutlineOuter.Transparency = 0.65
 fovOutlineOuter.Visible = false
 fovOutlineOuter.NumSides = 144
 
 local fovCircle = Drawing.new("Circle")
 fovCircle.Thickness = 1.5
-fovCircle.Color = Color3.fromRGB(133, 135, 255)
+fovCircle.Color = Color3.fromRGB(255, 255, 255)
 fovCircle.Filled = false
 fovCircle.Transparency = 0.85
 fovCircle.Visible = false
 fovCircle.NumSides = 144
 
 local fovOutlineInner = Drawing.new("Circle")
-fovOutlineInner.Thickness = 1
+fovOutlineInner.Thickness = 1.25
 fovOutlineInner.Color = Color3.fromRGB(0, 0, 0)
 fovOutlineInner.Filled = false
 fovOutlineInner.Transparency = 0.65
@@ -1805,7 +1805,7 @@ GunModsSection:AddLabel('Enable Rapid Firerate'):AddToggle({
 })
 
 GunModsSection:AddLabel('Firerate Delay'):AddSlider({
-    Min = 0.01,
+    Min = 0.001,
     Max = 0.5,
     Rounding = 2,
     Default = GunModsConfig.FirerateValue,
