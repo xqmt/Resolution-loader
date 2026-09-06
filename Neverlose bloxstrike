@@ -588,15 +588,16 @@ local function getTracerColorSequence()
         }
     elseif mode == "Rainbow" then
         return ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 100, 100)),
-            ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255, 150, 100)),
-            ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 255, 100)),
-            ColorSequenceKeypoint.new(0.6, Color3.fromRGB(0, 255, 100)),
-            ColorSequenceKeypoint.new(0.8, Color3.fromRGB(0, 150, 255)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 255))
+            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 105, 120)), -- แดงอมชมพู
+            ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 170, 90)),  -- ส้มพาสเทล
+            ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 230, 110)), -- เหลืองนุ่มนวล
+            ColorSequenceKeypoint.new(0.50, Color3.fromRGB(110, 230, 150)), -- เขียวมิ้นต์
+            ColorSequenceKeypoint.new(0.67, Color3.fromRGB(100, 200, 255)), -- ฟ้าพาสเทล
+            ColorSequenceKeypoint.new(0.83, Color3.fromRGB(160, 140, 255)), -- ม่วงลาเวนเดอร์
+            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 105, 120))  -- วนกลับมาสีแรก (ช่วยให้ทำ Animation แบบไร้รอยต่อได้)
         }
     end
-    
+   
     local singleColor = BulletTracer.Color
     if mode == "Electric Blue" then singleColor = Color3.fromRGB(0, 170, 255)
     elseif mode == "Hot Pink" then singleColor = Color3.fromRGB(255, 20, 147)
