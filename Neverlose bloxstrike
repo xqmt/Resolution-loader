@@ -607,7 +607,7 @@ local TargetVisuals = {
     HeadDotRadius = 4,
     
     Highlight = true,
-    HighlightColor = Color3.fromRGB(255, 255, 0)
+    HighlightColor = Color3.fromRGB(0, 255, 0)
 }
 
 local Chams = {
@@ -1006,7 +1006,7 @@ headDot.Visible = false
 local targetHighlight = Instance.new("Highlight")
 targetHighlight.Name = "SilentAimTargetHighlight"
 targetHighlight.FillColor = TargetVisuals.HighlightColor
-targetHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+targetHighlight.OutlineColor = Color3.fromRGB(0, 255, 100)
 targetHighlight.FillTransparency = 0.3
 targetHighlight.OutlineTransparency = 0
 targetHighlight.Enabled = false
