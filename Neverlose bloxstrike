@@ -1,4 +1,3 @@
-
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -52,20 +51,216 @@ local GunModsConfig = {
     FirerateValue = 0.01
 }
 
--- SKIN CHANGER CONFIGURATION & ENGINE SETUP
-local SelectedSkins = {}
-local ApplySkinTextures = nil
+-- ADVANCED SKIN CHANGER & KNIFE CHANGER ENGINE (ENHANCED & OPTIMIZED)
+local WeaponComponent = nil
+local SkinsLib = nil
+pcall(function()
+    WeaponComponent = require(ReplicatedStorage:WaitForChild("Classes", 5):WaitForChild("WeaponComponent", 5))
+    SkinsLib = require(ReplicatedStorage:WaitForChild("Database", 5):WaitForChild("Components", 5):WaitForChild("Libraries", 5):WaitForChild("Skins", 5))
+end)
 
-for _, obj in next, getgc() do
-    if type(obj) == "function" and debug.getinfo(obj).name == "ApplySkinTextures" then
-        ApplySkinTextures = obj
-        break 
-    end 
+local SkinsFolder = ReplicatedStorage:FindFirstChild("Assets") and ReplicatedStorage.Assets:FindFirstChild("Skins")
+
+local SkinChangerConfig = {
+    SKINS_ENABLED = true,
+    KNIFE_ENABLED = true,
+    KNIFE_MODEL = "Butterfly Knife",
+    KNIFE_SKIN = "Vanilla",
+    SELECTED_SKINS = {}
+}
+
+local SkinChanger = {
+    Connections = {},
+    Initialized = false
+}
+
+local function isLocalPlayerAlive()
+    local charsFolder = Workspace:FindFirstChild("Characters")
+    local myChar = LocalPlayer.Character
+    if not myChar or (charsFolder and myChar.Parent ~= charsFolder) then
+        return false
+    end
+    if myChar:GetAttribute("Dead") == true then
+        return false
+    end
+    return true
 end
 
-local function getCurrentWeaponModel() 
-    return Camera:FindFirstChildOfClass("Model") 
+local function isViewingLocalPlayer()
+    if not isLocalPlayerAlive() then return false end
+    local myChar = LocalPlayer.Character
+    local subject = Camera.CameraSubject
+    if not subject then return true end
+    return subject == myChar or subject:IsDescendantOf(myChar)
 end
+
+local function isKnife(weaponName)
+    if typeof(weaponName) ~= "string" then return false end
+    if weaponName:find("Zeus") or weaponName:find("Taser") then return false end
+    return weaponName == "CT Knife" or weaponName == "T Knife" or weaponName:find("Knife") or weaponName:find("Bayonet") or weaponName:find("Karambit") or weaponName == "LightSaber"
+end
+
+local function isExemptUtility(weaponName)
+    if typeof(weaponName) ~= "string" then return false end
+    return weaponName:find("Zeus") or weaponName:find("Grenade") or weaponName == "Molotov" or weaponName == "Flashbang" or weaponName == "C4"
+end
+
+function SkinChanger.getKnifeSelection()
+    if not SkinChangerConfig.KNIFE_ENABLED then return nil, nil end
+    local targetKnife = SkinChangerConfig.KNIFE_MODEL or "Butterfly Knife"
+    local skinName = SkinChangerConfig.KNIFE_SKIN or "Vanilla"
+    return targetKnife, skinName
+end
+
+function SkinChanger.getValidSkin(weaponName)
+    if not SkinsFolder or not weaponName or isExemptUtility(weaponName) then return nil end
+    local folder = SkinsFolder:FindFirstChild(weaponName)
+    if not folder then return nil end
+
+    local custom = SkinChangerConfig.SELECTED_SKINS[weaponName]
+    if custom and custom ~= "None" and folder:FindFirstChild(custom) then
+        return custom, "Factory New"
+    end
+    return nil
+end
+
+function SkinChanger.applySkinToViewModel(viewmodel, weaponName, skinName, wear)
+    if not SkinsFolder or not viewmodel or not weaponName or not skinName or isExemptUtility(weaponName) then return false end
+    local weaponFolder = SkinsFolder:FindFirstChild(weaponName)
+    if not weaponFolder then return false end
+
+    local skin = weaponFolder:FindFirstChild(skinName)
+    if not skin then return false end
+
+    local camFolder = skin:FindFirstChild("Camera") or skin
+    local wearFolder = camFolder:FindFirstChild(wear or "Factory New") or camFolder:GetChildren()[1]
+
+    if not wearFolder then return false end
+
+    pcall(function()
+        for _, sa in ipairs(wearFolder:GetChildren()) do
+            if sa:IsA("SurfaceAppearance") then
+                local targetPart = viewmodel:FindFirstChild(sa.Name, true)
+                if targetPart and (targetPart:IsA("MeshPart") or targetPart:IsA("BasePart")) then
+                    local old = targetPart:FindFirstChildOfClass("SurfaceAppearance")
+                    if old then pcall(function() old:Destroy() end) end
+
+                    local clone = sa:Clone()
+                    clone.Parent = targetPart
+                end
+            end
+        end
+    end)
+    return true
+end
+
+-- Refresh Viewmodel Realtime with Improved Mesh Swap Logic
+function SkinChanger.forceRefreshCurrentKnife()
+    if not isViewingLocalPlayer() then return end
+    for _, child in ipairs(Camera:GetChildren()) do
+        if child:IsA("Model") and (isKnife(child.Name) or child:FindFirstChild("Knife") or child:FindFirstChild("Weapon")) then
+            local targetKnife, knifeSkin = SkinChanger.getKnifeSelection()
+            if targetKnife then
+                SkinChanger.applySkinToViewModel(child, targetKnife, knifeSkin, "Factory New")
+            end
+        end
+    end
+end
+
+function SkinChanger.applyToCurrentViewModel(targetGunName)
+    if not SkinChangerConfig.SKINS_ENABLED or not isViewingLocalPlayer() then return end
+    for _, child in ipairs(Camera:GetChildren()) do
+        if child:IsA("Model") and (child:FindFirstChild("Weapon") or child:FindFirstChild("WeaponL") or child:FindFirstChild("WeaponR")) then
+            local weaponName = child.Name
+            if (not targetGunName or weaponName == targetGunName) and not isExemptUtility(weaponName) and not isKnife(weaponName) then
+                local skinName, wear = SkinChanger.getValidSkin(weaponName)
+                if skinName then
+                    SkinChanger.applySkinToViewModel(child, weaponName, skinName, wear)
+                end
+            end
+        end
+    end
+end
+
+function SkinChanger.init()
+    if SkinChanger.Initialized or not WeaponComponent or not SkinsLib then return end
+    SkinChanger.Initialized = true
+
+    local originalWeaponNew = WeaponComponent.new
+    local originalGetCameraModel = SkinsLib.GetCameraModel
+    local originalGetCharacterModel = SkinsLib.GetCharacterModel
+
+    WeaponComponent.new = function(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, ...)
+        if not SkinChangerConfig.SKINS_ENABLED or p1 ~= LocalPlayer or not isLocalPlayerAlive() then
+            return originalWeaponNew(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, ...)
+        end
+
+        if isKnife(p5) and SkinChangerConfig.KNIFE_ENABLED then
+            local targetKnife, skinName = SkinChanger.getKnifeSelection()
+            if targetKnife then
+                return originalWeaponNew(p1, p2, p3, p4, targetKnife, skinName, 0.001, p8, p9, p10, p11, p12, ...)
+            end
+        end
+
+        return originalWeaponNew(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, ...)
+    end
+
+    SkinsLib.GetCameraModel = function(weaponName, skinName, float, statTrack, nameTag, charm, stickers, team)
+        if not SkinChangerConfig.SKINS_ENABLED or not isViewingLocalPlayer() then
+            return originalGetCameraModel(weaponName, skinName, float, statTrack, nameTag, charm, stickers, team)
+        end
+
+        if isKnife(weaponName) and SkinChangerConfig.KNIFE_ENABLED then
+            local targetKnife, knifeSkin = SkinChanger.getKnifeSelection()
+            if targetKnife then
+                local model = originalGetCameraModel(targetKnife, knifeSkin, 0.001, statTrack, nameTag, charm, stickers, team)
+                if model then model.Name = targetKnife end
+                return model
+            end
+        end
+
+        return originalGetCameraModel(weaponName, skinName, float, statTrack, nameTag, charm, stickers, team)
+    end
+
+    SkinsLib.GetCharacterModel = function(weaponName, skinName, float, statTrack, nameTag, charm, stickers, team)
+        if SkinChangerConfig.SKINS_ENABLED and isKnife(weaponName) and SkinChangerConfig.KNIFE_ENABLED then
+            local targetKnife, knifeSkin = SkinChanger.getKnifeSelection()
+            if targetKnife then
+                return originalGetCharacterModel(targetKnife, knifeSkin, 0.001, statTrack, nameTag, charm, stickers, team)
+            end
+        end
+        return originalGetCharacterModel(weaponName, skinName, float, statTrack, nameTag, charm, stickers, team)
+    end
+
+    Camera.ChildAdded:Connect(function(child)
+        if not SkinChangerConfig.SKINS_ENABLED or not isViewingLocalPlayer() then return end
+
+        if child:IsA("Model") then
+            local weaponName = child.Name
+            if isKnife(weaponName) and SkinChangerConfig.KNIFE_ENABLED then
+                task.defer(function()
+                    task.wait(0.01)
+                    local targetKnife, knifeSkin = SkinChanger.getKnifeSelection()
+                    if targetKnife then
+                        SkinChanger.applySkinToViewModel(child, targetKnife, knifeSkin, "Factory New")
+                    end
+                end)
+            elseif not isExemptUtility(weaponName) then
+                task.defer(function()
+                    task.wait(0.02)
+                    if SkinChangerConfig.SKINS_ENABLED and isViewingLocalPlayer() then
+                        local skinName, wear = SkinChanger.getValidSkin(weaponName)
+                        if skinName then
+                            SkinChanger.applySkinToViewModel(child, weaponName, skinName, wear)
+                        end
+                    end
+                end)
+            end
+        end
+    end)
+end
+
+SkinChanger.init()
 
 -- Function to Spawn Hit Chams Ghost
 local function triggerHitChams(targetCharacter)
@@ -555,7 +750,7 @@ local function getTracerColorSequence()
     return ColorSequence.new{
         ColorSequenceKeypoint.new(0, Color3.fromRGB(135, 133, 255)),
         ColorSequenceKeypoint.new(0.5, Color3.fromRGB(133, 156, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(135, 133, 255)) -- เพิ่มจุดที่ 1.0 ให้ครบลูป
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(135, 133, 255))
        }
     elseif mode == "Gradient 3 Colors" then
         return ColorSequence.new{
@@ -589,13 +784,13 @@ local function getTracerColorSequence()
         }
     elseif mode == "Rainbow" then
         return ColorSequence.new{
-            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 105, 120)), -- แดงอมชมพู
-            ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 170, 90)),  -- ส้มพาสเทล
-            ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 230, 110)), -- เหลืองนุ่มนวล
-            ColorSequenceKeypoint.new(0.50, Color3.fromRGB(110, 230, 150)), -- เขียวมิ้นต์
-            ColorSequenceKeypoint.new(0.67, Color3.fromRGB(100, 200, 255)), -- ฟ้าพาสเทล
-            ColorSequenceKeypoint.new(0.83, Color3.fromRGB(160, 140, 255)), -- ม่วงลาเวนเดอร์
-            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 105, 120))  -- วนกลับมาสีแรก (ช่วยให้ทำ Animation แบบไร้รอยต่อได้)
+            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 105, 120)),
+            ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 170, 90)),
+            ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 230, 110)),
+            ColorSequenceKeypoint.new(0.50, Color3.fromRGB(110, 230, 150)),
+            ColorSequenceKeypoint.new(0.67, Color3.fromRGB(100, 200, 255)),
+            ColorSequenceKeypoint.new(0.83, Color3.fromRGB(160, 140, 255)),
+            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 105, 120))
         }
     end
    
@@ -660,7 +855,6 @@ end
 local function drawBulletTracer(startPos, targetPos)
     local origin = getMuzzlePosition(startPos)
     
-    -- Raycast Check เพื่อไม่ให้ Tracer ทะลุกำแพง
     local raycastParams = RaycastParams.new()
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
     local filterList = {}
@@ -671,7 +865,6 @@ local function drawBulletTracer(startPos, targetPos)
     local direction = targetPos - origin
     local rayResult = Workspace:Raycast(origin, direction, raycastParams)
     
-    -- ถ้าติดกำแพง ให้เปลี่ยนจุดสิ้นสุด Tracer เป็นจุดที่ Raycast ชน
     local finalTargetPos = rayResult and rayResult.Position or targetPos
 
     local distance = (finalTargetPos - origin).Magnitude
@@ -895,11 +1088,6 @@ local function isObstructed(origin, target, character)
     return ray ~= nil and ray.Instance ~= nil and not ray.Instance:IsDescendantOf(character)
 end
 
-local function isEnemyUser(player)
-    if not player then return false end
-    return player:GetAttribute("Team") ~= LocalPlayer:GetAttribute("Team")
-end
-
 local function getTarget(origin)
     local localTeam = LocalPlayer:GetAttribute("Team")
     local look = Camera.CFrame.LookVector
@@ -1049,34 +1237,6 @@ function WeaponModsModule.StartFirerateLoop()
         end
     end)
 end
-
--- Skin Changer Loop Engine
-local lastWeaponModel = nil
-local lastSkinApplied = nil
-
-task.spawn(function()
-    while task.wait(0.1) do
-        if typeof(ApplySkinTextures) == "function" then
-            local currweapon = getCurrentWeaponModel()
-            if currweapon then
-                local selectedSkinObj = SelectedSkins[currweapon.Name]
-
-                if currweapon ~= lastWeaponModel or selectedSkinObj ~= lastSkinApplied then
-                    pcall(function()
-                        if selectedSkinObj and selectedSkinObj:FindFirstChild("Camera") and selectedSkinObj.Camera:FindFirstChild("Factory New") then
-                            ApplySkinTextures(currweapon, selectedSkinObj.Camera["Factory New"])
-                        end
-                    end)
-                    lastWeaponModel = currweapon
-                    lastSkinApplied = selectedSkinObj
-                end
-            else
-                lastWeaponModel = nil
-                lastSkinApplied = nil
-            end
-        end
-    end
-end)
 
 -- Head Hitbox Extender Engine
 local originalHeadSizes = {}
@@ -1543,7 +1703,6 @@ if shootRemote and shootRemote.Send then
                         local dir = bullet.Direction or Camera.CFrame.LookVector
                         local maxDistance = 1000
                         
-                        -- Raycast เช็กกำแพงฉากยิงปกติ
                         local rayParams = RaycastParams.new()
                         rayParams.FilterType = Enum.RaycastFilterType.Exclude
                         local ignoreList = {}
@@ -1617,7 +1776,6 @@ task.spawn(function()
         pingBlock:SetText(tostring(pingValue) .. "MS")
     end
 end)
-
 
 -- TAB: LEGIT
 local LegitTab = window:AddTab({
@@ -1817,11 +1975,74 @@ GunModsSection:AddLabel('Firerate Delay'):AddSlider({
     Flag = "gun_firerate_val"
 })
 
-
--- TAB: SKINS (SKIN CHANGER)
+-- TAB: SKINS (SKIN CHANGER & KNIFE CHANGER)
 local SkinsTab = window:AddTab({
     Icon = 'shirt',
     Name = "Inventory"
+})
+
+local KnifeSection = SkinsTab:AddSection({
+    Name = "KNIFE CHANGER",
+    Position = 'left'
+})
+
+local knifeTypeDropdown = nil
+local knifeSkinDropdown = nil
+
+local knifeModels = {}
+local knifeSkinsMap = {}
+
+if SkinsFolder then
+    for _, folder in ipairs(SkinsFolder:GetChildren()) do
+        if isKnife(folder.Name) then
+            table.insert(knifeModels, folder.Name)
+            knifeSkinsMap[folder.Name] = {"Vanilla"}
+            for _, skinObj in ipairs(folder:GetChildren()) do
+                if skinObj.Name ~= "Stock" and skinObj.Name ~= "Vanilla" then
+                    table.insert(knifeSkinsMap[folder.Name], skinObj.Name)
+                end
+            end
+        end
+    end
+end
+
+if #knifeModels == 0 then
+    knifeModels = {"Butterfly Knife", "Karambit", "M9 Bayonet", "Skeleton Knife", "Flip Knife", "Gut Knife", "CT Knife", "T Knife"}
+end
+
+KnifeSection:AddLabel('Enable Knife Changer'):AddToggle({
+    Default = SkinChangerConfig.KNIFE_ENABLED,
+    Callback = function(v) 
+        SkinChangerConfig.KNIFE_ENABLED = v 
+        SkinChanger.forceRefreshCurrentKnife()
+    end,
+    Flag = "knife_changer_enabled"
+})
+
+knifeTypeDropdown = KnifeSection:AddLabel('Knife Type'):AddDropdown({
+    Default = SkinChangerConfig.KNIFE_MODEL,
+    Values = knifeModels,
+    Callback = function(v)
+        SkinChangerConfig.KNIFE_MODEL = v
+        if knifeSkinDropdown and knifeSkinsMap[v] then
+            knifeSkinDropdown:SetValues(knifeSkinsMap[v])
+            knifeSkinDropdown:Set("Vanilla")
+            SkinChangerConfig.KNIFE_SKIN = "Vanilla"
+        end
+        SkinChanger.forceRefreshCurrentKnife()
+    end,
+    Flag = "knife_model_type"
+})
+
+local initialSkins = knifeSkinsMap[SkinChangerConfig.KNIFE_MODEL] or {"Vanilla", "Fade", "Lore", "Crimson Web"}
+knifeSkinDropdown = KnifeSection:AddLabel('Knife Skin'):AddDropdown({
+    Default = SkinChangerConfig.KNIFE_SKIN,
+    Values = initialSkins,
+    Callback = function(v)
+        SkinChangerConfig.KNIFE_SKIN = v
+        SkinChanger.forceRefreshCurrentKnife()
+    end,
+    Flag = "knife_skin_type"
 })
 
 local SkinsSectionLeft = SkinsTab:AddSection({
@@ -1835,19 +2056,11 @@ local SkinsSectionRight = SkinsTab:AddSection({
 })
 
 local function setupSkinChangerUI()
-    local skinsFolder = ReplicatedStorage:FindFirstChild("Assets") and ReplicatedStorage.Assets:FindFirstChild("Skins")
-    if not skinsFolder then return end
+    if not SkinsFolder then return end
 
-    local function isKnife(modelName)
-        if not modelName then return false end
-        local name = modelName:lower()
-        return name:find("knife") or name:find("karambit") or name:find("bayonet") or name:find("butterfly") or name:find("dagger") or name:find("cleaver") or name:find("m9") or name:find("kunai") or name:find("blade")
-    end
-
-    -- Setup Regular Gun Skins Only
     local validGunSkins = {}
-    for _, skinFolder in ipairs(skinsFolder:GetChildren()) do
-        if not isKnife(skinFolder.Name) and #skinFolder:GetChildren() > 1 then
+    for _, skinFolder in ipairs(SkinsFolder:GetChildren()) do
+        if not isKnife(skinFolder.Name) and not isExemptUtility(skinFolder.Name) and #skinFolder:GetChildren() > 0 then
             table.insert(validGunSkins, skinFolder)
         end
     end
@@ -1857,11 +2070,11 @@ local function setupSkinChangerUI()
     for i, skinFolder in ipairs(validGunSkins) do
         local gunName = skinFolder.Name
         local skinNames = {"None"}
-        local skinObjects = {}
 
         for _, skinObj in ipairs(skinFolder:GetChildren()) do
-            table.insert(skinNames, skinObj.Name)
-            skinObjects[skinObj.Name] = skinObj
+            if skinObj.Name ~= "Stock" and skinObj.Name ~= "Vanilla" then
+                table.insert(skinNames, skinObj.Name)
+            end
         end
 
         local targetSection = (i <= midPoint) and SkinsSectionLeft or SkinsSectionRight
@@ -1870,11 +2083,8 @@ local function setupSkinChangerUI()
             Default = "None",
             Values = skinNames,
             Callback = function(selectedName)
-                if selectedName == "None" then
-                    SelectedSkins[gunName] = nil
-                else
-                    SelectedSkins[gunName] = skinObjects[selectedName]
-                end
+                SkinChangerConfig.SELECTED_SKINS[gunName] = selectedName
+                SkinChanger.applyToCurrentViewModel(gunName)
             end,
             Flag = "skin_" .. gunName
         })
@@ -1882,7 +2092,6 @@ local function setupSkinChangerUI()
 end
 
 setupSkinChangerUI()
-
 
 -- TAB: MOVEMENT
 local MovementTab = window:AddTab({
@@ -2057,7 +2266,7 @@ TracerSection:AddLabel('Dynamic Glow Light'):AddToggle({
     Flag = "tracer_glow_light"
 })
 
-TracerSection:AddLabel('Glow Light Intensity'):AddSlider({
+TracerSection:AddLabel('Intensity'):AddSlider({
     Min = 0.5,
     Max = 10.0,
     Rounding = 1,
@@ -2068,7 +2277,7 @@ TracerSection:AddLabel('Glow Light Intensity'):AddSlider({
     Flag = "tracer_glow_brightness"
 })
 
-TracerSection:AddLabel('Bullet Speed (Travel Time)'):AddSlider({
+TracerSection:AddLabel('Travel Time'):AddSlider({
     Min = 0.01,
     Max = 0.50,
     Rounding = 2,
