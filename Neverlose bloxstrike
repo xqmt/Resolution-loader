@@ -901,9 +901,9 @@ local function drawBulletTracer(startPos, targetPos)
     beam.FaceCamera = true
     beam.LightEmission = BulletTracer.BloomEffect and 1 or 0.5
     beam.LightInfluence = 0
-    beam.Texture = "rbxassetid://446111271"
+    beam.Texture = "rbxassetid://12781800668"
     beam.TextureMode = Enum.TextureMode.Stretch
-    beam.TextureLength = 0.1 
+    beam.TextureLength = 2 
     beam.TextureSpeed = 0.25 
     beam.Transparency = NumberSequence.new(BulletTracer.Transparency)
     beam.Parent = Workspace.Terrain
