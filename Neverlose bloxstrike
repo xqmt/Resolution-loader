@@ -48,10 +48,11 @@ local GunModsConfig = {
     NoRecoil = false,
     NoSpread = false,
     FirerateEnabled = false,
-    FirerateValue = 0.01
+    FirerateValue = 0.01,
+    InstantReload = false
 }
 
--- ADVANCED SKIN CHANGER & KNIFE CHANGER ENGINE (ENHANCED & OPTIMIZED)
+-- ADVANCED SKIN CHANGER & KNIFE CHANGER ENGINE
 local WeaponComponent = nil
 local SkinsLib = nil
 pcall(function()
@@ -154,7 +155,6 @@ function SkinChanger.applySkinToViewModel(viewmodel, weaponName, skinName, wear)
     return true
 end
 
--- Refresh Viewmodel Realtime with Improved Mesh Swap Logic
 function SkinChanger.forceRefreshCurrentKnife()
     if not isViewingLocalPlayer() then return end
     for _, child in ipairs(Camera:GetChildren()) do
@@ -261,6 +261,108 @@ function SkinChanger.init()
 end
 
 SkinChanger.init()
+
+-- INSTANT RELOAD LOGIC ENGINE
+local RELOAD_ANIMS = {
+    ["Reload"]       = true,
+    ["ReloadStart"]  = true,
+    ["ReloadAction"] = true,
+    ["ReloadEnd"]    = true,
+}
+
+local RELOAD_SPEED = 199
+local reloadHooked = {}
+
+local function getWeaponObjectSafe()
+    local ok, IC = pcall(function()
+        return require(ReplicatedStorage:WaitForChild("Controllers", 2):WaitForChild("InventoryController", 2))
+    end)
+    if not ok or not IC then return nil end
+    return IC.peekCurrentEquippedForMovement and IC.peekCurrentEquippedForMovement() or nil
+end
+
+local function hookAnimationReload(animModule)
+    if not animModule or reloadHooked[animModule] then return end
+    reloadHooked[animModule] = true
+
+    pcall(function()
+        local origPlay = animModule.play
+        animModule.play = function(self_anim, animName, ...)
+            local track = origPlay(self_anim, animName, ...)
+            if track and RELOAD_ANIMS[animName] then
+                task.defer(function()
+                    pcall(function()
+                        if GunModsConfig.InstantReload then
+                            if track.IsPlaying then
+                                track:AdjustSpeed(RELOAD_SPEED)
+                            end
+                        end
+                    end)
+                end)
+            end
+            return track
+        end
+    end)
+end
+
+local lastReloadWeapon = nil
+
+task.spawn(function()
+    while task.wait(0.1) do
+        pcall(function()
+            local weapon = getWeaponObjectSafe()
+            if not weapon then return end
+
+            if weapon ~= lastReloadWeapon then
+                lastReloadWeapon = weapon
+                if weapon.Viewmodel and weapon.Viewmodel.Animation then
+                    hookAnimationReload(weapon.Viewmodel.Animation)
+                end
+                if weapon.CharacterAnimator then
+                    hookAnimationReload(weapon.CharacterAnimator)
+                end
+            end
+
+            if not GunModsConfig.InstantReload then return end
+
+            if weapon.IsReloading then
+                pcall(function()
+                    if weapon.Viewmodel and weapon.Viewmodel.Animation and weapon.Viewmodel.Animation.Animations then
+                        for name, track in pairs(weapon.Viewmodel.Animation.Animations) do
+                            if RELOAD_ANIMS[name] and track.IsPlaying then
+                                track:AdjustSpeed(RELOAD_SPEED)
+                            end
+                        end
+                    end
+                    if weapon.CharacterAnimator and weapon.CharacterAnimator.Animations then
+                        for name, track in pairs(weapon.CharacterAnimator.Animations) do
+                            if RELOAD_ANIMS[name] and track.IsPlaying then
+                                track:AdjustSpeed(RELOAD_SPEED)
+                            end
+                        end
+                    end
+                end)
+            end
+        end)
+    end
+end)
+
+pcall(function()
+    local IC = require(ReplicatedStorage:WaitForChild("Controllers", 2):WaitForChild("InventoryController", 2))
+    if IC and IC.OnInventoryItemEquipped then
+        IC.OnInventoryItemEquipped:Connect(function(_, weapon)
+            if not weapon then return end
+            task.defer(function()
+                if weapon.Viewmodel and weapon.Viewmodel.Animation then
+                    hookAnimationReload(weapon.Viewmodel.Animation)
+                end
+                if weapon.CharacterAnimator then
+                    hookAnimationReload(weapon.CharacterAnimator)
+                end
+            end)
+        end)
+    end
+end)
 
 -- Function to Spawn Hit Chams Ghost
 local function triggerHitChams(targetCharacter)
@@ -851,7 +953,7 @@ local function getMuzzlePosition(defaultOrigin)
     return defaultOrigin
 end
 
--- Bullet Tracer Beam Engine (Fixed Wall Penetration)
+-- Bullet Tracer Beam Engine
 local function drawBulletTracer(startPos, targetPos)
     local origin = getMuzzlePosition(startPos)
     
@@ -903,8 +1005,8 @@ local function drawBulletTracer(startPos, targetPos)
     beam.LightInfluence = 0
     beam.Texture = "rbxassetid://12781800668"
     beam.TextureMode = Enum.TextureMode.Stretch
-    beam.TextureLength = 2 
-    beam.TextureSpeed = 0.25 
+    beam.TextureLength = 0.2 
+    beam.TextureSpeed = 1 
     beam.Transparency = NumberSequence.new(BulletTracer.Transparency)
     beam.Parent = Workspace.Terrain
 
@@ -1668,7 +1770,7 @@ local function buildHit(origin, part)
 end
 
 -- Hook Remote Engine (Safe Bullet Tracer & Hit Effects)
-local ok, Remotes = pcall(require, game:GetService("ReplicatedStorage").Database.Security.Remotes)
+local ok, Remotes = pcall(require, ReplicatedStorage:WaitForChild("Database", 2):WaitForChild("Security", 2):WaitForChild("Remotes", 2))
 local shootRemote = ok and Remotes and Remotes.Inventory and Remotes.Inventory.ShootWeapon
 
 if shootRemote and shootRemote.Send then
@@ -1956,6 +2058,12 @@ GunModsSection:AddLabel('No Spread'):AddToggle({
     Default = GunModsConfig.NoSpread,
     Callback = function(v) GunModsConfig.NoSpread = v end,
     Flag = "gun_nospread"
+})
+
+GunModsSection:AddLabel('Instant Reload'):AddToggle({
+    Default = GunModsConfig.InstantReload,
+    Callback = function(v) GunModsConfig.InstantReload = v end,
+    Flag = "gun_instantreload"
 })
 
 GunModsSection:AddLabel('Enable Rapid Firerate'):AddToggle({
