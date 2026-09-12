@@ -1006,7 +1006,7 @@ local function drawBulletTracer(startPos, targetPos)
     beam.Texture = "rbxassetid://12781800668"
     beam.TextureMode = Enum.TextureMode.Stretch
     beam.TextureLength = 0.2 
-    beam.TextureSpeed = 1 
+    beam.TextureSpeed = 0.5 
     beam.Transparency = NumberSequence.new(BulletTracer.Transparency)
     beam.Parent = Workspace.Terrain
 
