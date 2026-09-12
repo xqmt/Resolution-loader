@@ -1,5 +1,7 @@
+-- waiting game loaded
 repeat task.wait() until game:IsLoaded()
 
+-- Bypass adonis
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/Bypass.lua", true))()
@@ -8,6 +10,7 @@ end)
 
 task.wait(2)
 
+-- load ui
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
@@ -40,7 +43,7 @@ Library.ShowCustomCursor = true
 Library.NotifySide = "Right" 
 
 local Window = Library:CreateWindow({
-    Title = "Resolution.flyㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
+    Title = "Resolution.flyㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ  ",
     Center = true, 
     AutoShow = true,
     Resizable = true,
@@ -51,6 +54,7 @@ local Window = Library:CreateWindow({
     MenuFadeTime = 0.2
 })
 
+-- local
 local SilentAimEnabled = false
 local ResolverEnabled = false
 local BulletTPEnabled = false
@@ -201,6 +205,7 @@ local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 local TargetVelocityHistory = {}
 
+-- esp connection 
 local SkeletonConnections = {
     {"Head", "UpperTorso"},
     {"UpperTorso", "LowerTorso"},
@@ -223,6 +228,7 @@ local SkeletonConnections = {
     {"Torso", "Right Leg"}
 }
 
+-- material
 local SelfNeonEnabled = false
 local SelfNeonColor = Color3.fromRGB(0, 255, 150)
 local OriginalMaterials = {}
@@ -300,6 +306,7 @@ end)
 
 local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
 
+-- hit overlay
 local HitOverlayGui = Instance.new("ScreenGui")
 HitOverlayGui.Name = "hooksense_HitOverlayGui"
 HitOverlayGui.ResetOnSpawn = false
@@ -330,6 +337,7 @@ local function TriggerHitOverlay()
     end)
 end
 
+-- hit notify
 local function ShowCustomHitNotification(targetName, partName, damage, weaponName)
     if not HitNotifyEnabled then return end
     
@@ -344,6 +352,7 @@ local function ShowCustomHitNotification(targetName, partName, damage, weaponNam
     Library:Notify(notifyText, HitNotifyDuration)
 end
 
+-- hit sounds 
 local function PlayHitSound()
     if HitSoundMode == "None" or not SoundIDs[HitSoundMode] then return end
     local Sound = Instance.new("Sound")
@@ -354,6 +363,7 @@ local function PlayHitSound()
     Sound:Destroy()
 end
 
+-- skybox
 local function UpdateSkybox()
     for _, obj in ipairs(Lighting:GetChildren()) do
         if obj:IsA("Sky") and (obj.Name == "hooksenseSky" or obj.Name == "Sky") then
@@ -381,6 +391,7 @@ local function UpdateSkybox()
     end
 end
 
+-- atmosphere 
 local function UpdateAtmosphere()
     local atmos = Lighting:FindFirstChildOfClass("Atmosphere")
     if AtmosphereEnabled then
@@ -415,6 +426,7 @@ end
 
 UpdateAtmosphere()
 
+-- aura particle
 local function ClearAuraParticles()
 	for i = #ActiveParticles, 1, -1 do
 		if ActiveParticles[i] then
@@ -489,7 +501,7 @@ if LocalPlayer.Character then
 end
 
 
-
+-- other
 local DeltaGradientGui = Instance.new("ScreenGui")
 DeltaGradientGui.Name = "hooksense_DeltaGradientGui"
 DeltaGradientGui.ResetOnSpawn = false
@@ -640,6 +652,7 @@ local function GetTargetInFOV()
     return TempPlayer, TempTargetChar
 end
 
+-- lock button 
 local LockButtonGui = Instance.new("ScreenGui")
 LockButtonGui.Name = "hooksense_TargetLockButtonGui"
 LockButtonGui.ResetOnSpawn = false
@@ -914,6 +927,7 @@ local function BindHealthTracker(targetPlayer)
     end)
 end
 
+-- void hide
 local RunService = game:GetService("RunService")
 local spinAngle = 0
 local jitterToggle = false
