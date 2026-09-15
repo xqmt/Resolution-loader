@@ -225,81 +225,6 @@ local SkeletonConnections = {
     {"Torso", "Right Leg"}
 }
 
--- material
-local SelfNeonEnabled = false
-local SelfNeonColor = Color3.fromRGB(0, 255, 150)
-local OriginalMaterials = {}
-local OriginalColors = {}
-
-local function UpdateSelfNeon()
-    local char = LocalPlayer.Character
-    if not char then return end
-
-    if SelfNeonEnabled then
-        for _, part in ipairs(char:GetDescendants()) do
-            
-            if part:IsA("SurfaceAppearance") then
-                part.Enabled = false
-            elseif part:IsA("Decal") or part:IsA("Texture") then
-                if not OriginalMaterials[part] then
-                    OriginalMaterials[part] = part.Transparency
-                end
-                part.Transparency = 1
-            end
-
-            
-            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                if not OriginalMaterials[part] then
-                    OriginalMaterials[part] = part.Material
-                    OriginalColors[part] = part.Color
-                end
-
-                part.Material = Enum.Material.Neon
-                part.Color = SelfNeonColor
-
-                
-                local mesh = part:FindFirstChildOfClass("SpecialMesh")
-                if mesh then
-                    if not OriginalMaterials[mesh] then
-                        OriginalMaterials[mesh] = mesh.TextureId
-                    end
-                    mesh.TextureId = "" 
-                end
-            end
-        end
-    else
-        
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("SurfaceAppearance") then
-                part.Enabled = true
-            end
-        end
-
-        for item, originalValue in pairs(OriginalMaterials) do
-            if item and item.Parent then
-                if item:IsA("BasePart") then
-                    item.Material = originalValue
-                    item.Color = OriginalColors[item] or item.Color
-                elseif item:IsA("Decal") or item:IsA("Texture") then
-                    item.Transparency = originalValue
-                elseif item:IsA("SpecialMesh") then
-                    item.TextureId = originalValue
-                end
-            end
-        end
-        table.clear(OriginalMaterials)
-        table.clear(OriginalColors)
-    end
-end
-
-
-LocalPlayer.CharacterAdded:Connect(function(newChar)
-    table.clear(OriginalMaterials)
-    table.clear(OriginalColors)
-    task.wait(0.5)
-    UpdateSelfNeon()
-end)
-
 
 local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
 
@@ -1348,7 +1273,6 @@ end)
 
 local SoundLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Sound")
 local OverlayLeftBox = Tabs.HitEffects:AddLeftGroupbox("Hit Overlay") 
-local SelfHighlightLeftBox = Tabs.HitEffects:AddLeftGroupbox("Material")
 local NotifyRightBox = Tabs.HitEffects:AddRightGroupbox("Hit Notification")
 
 SoundLeftBox:AddDropdown("HitSoundDropdown", { Text = "Target Hit Sound", Values = {"None", "Spark", "Neverlose", "Rust", "Break", "Fatality", "Primordial", "Minecraft xp", "Minecraft Bow", "Crack", "Pop", "Headshot", "Manbo", "Skeet"}, Default = 1, Multi = false })
@@ -1388,19 +1312,6 @@ end)
 OverlayLeftBox:AddLabel("Overlay Color"):AddColorPicker("HitOverlayColorPicker", { Default = Color3.fromRGB(255, 0, 0) })
 Options.HitOverlayColorPicker:OnChanged(function()
     HitOverlayColor = Options.HitOverlayColorPicker.Value
-end)
-
-local SelfNeonToggle = SelfHighlightLeftBox:AddToggle("SelfNeonToggle", { Text = "Enable Self Neon", Default = false })
-SelfNeonToggle:AddColorPicker("SelfNeonColorPicker", { Default = Color3.fromRGB(0, 255, 150), Title = "Neon Color" })
-
-Toggles.SelfNeonToggle:OnChanged(function()
-    SelfNeonEnabled = Toggles.SelfNeonToggle.Value
-    UpdateSelfNeon()
-end)
-
-Options.SelfNeonColorPicker:OnChanged(function()
-    SelfNeonColor = Options.SelfNeonColorPicker.Value
-    UpdateSelfNeon()
 end)
 
 
