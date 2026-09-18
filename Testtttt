@@ -46,7 +46,7 @@ Library.ShowCustomCursor = true
 Library.NotifySide = "Right" 
 
 local Window = Library:CreateWindow({
-    Title = "swiftly.flyㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ  ",
+    Title = "swiftly.flyㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ  ",
     Center = true, 
     AutoShow = true,
     Resizable = true,
@@ -1121,7 +1121,7 @@ local Tabs = {
     Movement = Window:AddTab("character"),
     World = Window:AddTab("world"),
     Addons = Window:AddTab("misc"),
-    ['UI'] = Window:AddTab("Settings")
+    ['UI'] = Window:AddTab("settings")
 }
 
 local Options = getgenv().Options
@@ -2167,7 +2167,7 @@ Toggles.SpeedCFrameToggle:OnChanged(function()
     SpeedCFrameEnabled = Toggles.SpeedCFrameToggle.Value
 end)
 
-MovementEnhancementBox:AddSlider("SpeedCFrameSlider", { Text = "Multiplier", Default = 2, Min = 1, Max = 30, Rounding = 2 })
+MovementEnhancementBox:AddSlider("SpeedCFrameSlider", { Text = "Multiplier", Default = 2, Min = 1, Max = 100, Rounding = 2 })
 Options.SpeedCFrameSlider:OnChanged(function()
     SpeedCFrameValue = Options.SpeedCFrameSlider.Value
 end)
