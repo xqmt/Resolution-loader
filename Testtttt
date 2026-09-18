@@ -46,7 +46,7 @@ Library.ShowCustomCursor = true
 Library.NotifySide = "Right" 
 
 local Window = Library:CreateWindow({
-    Title = "Resolution.flyㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ  ",
+    Title = "solution.clubㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ  ",
     Center = true, 
     AutoShow = true,
     Resizable = true,
@@ -75,7 +75,6 @@ local VoidEnabled = false
 -- New Features Variables
 local ThirdPersonEnabled = false
 local ThirdPersonDistance = 12
-local BhopEnabled = false
 local InfJumpEnabled = false
 local SpeedCFrameEnabled = false
 local SpeedCFrameValue = 2
@@ -883,14 +882,6 @@ RunService.RenderStepped:Connect(function()
         local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
         if root and hum and hum.MoveDirection.Magnitude > 0 then
             root.CFrame = root.CFrame + (hum.MoveDirection * (SpeedCFrameValue / 10))
-        end
-    end
-
-    -- Bhop Logic
-    if BhopEnabled and LocalPlayer.Character then
-        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if hum and hum.MoveDirection.Magnitude > 0 and hum.FloorMaterial ~= Enum.Material.Air then
-            hum:ChangeState(Enum.HumanoidStateType.Jumping)
         end
     end
 
@@ -2128,8 +2119,8 @@ TextTransparencyGroup:AddSlider("DistanceTransparencySlider", { Text = "Distance
 TextTransparencyGroup:AddSlider("ToolEquippedTransparencySlider", { Text = "Tool Equipped Transparency", Default = 0.15, Min = 0, Max = 1, Rounding = 2 })
 
 local MoveLeftBox = Tabs.Movement:AddLeftGroupbox("Anti Aim")
-local MovementEnhancementBox = Tabs.Movement:AddLeftGroupbox("Movement Enhancement")
 local CharacterModifierBox = Tabs.Movement:AddRightGroupbox("Void Hide")
+local MovementEnhancementBox = Tabs.Movement:AddRightGroupbox("Movement")
 
 MoveLeftBox:AddToggle("AntiAimToggle", { Text = "Enable Anti Aim", Default = false })
     :AddKeyPicker("AntiAimKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Anti Aim Bind" })
@@ -2163,25 +2154,20 @@ Options.SpinSpeedSlider:OnChanged(function()
     AntiAimSpeed = Options.SpinSpeedSlider.Value
 end)
 
--- Movement Enhancement UI (Bhop, Inf Jump, Speed CFrame)
-MovementEnhancementBox:AddToggle("BhopToggle", { Text = "Enable Bhop", Default = false })
-Toggles.BhopToggle:OnChanged(function()
-    BhopEnabled = Toggles.BhopToggle.Value
-end)
 
-MovementEnhancementBox:AddToggle("InfJumpToggle", { Text = "Enable Infinite Jump", Default = false })
+MovementEnhancementBox:AddToggle("InfJumpToggle", { Text = "Enable Infjump", Default = false })
 Toggles.InfJumpToggle:OnChanged(function()
     InfJumpEnabled = Toggles.InfJumpToggle.Value
 end)
 
-MovementEnhancementBox:AddToggle("SpeedCFrameToggle", { Text = "Enable Speed (CFrame)", Default = false })
+MovementEnhancementBox:AddToggle("SpeedCFrameToggle", { Text = "Enable CFrame", Default = false })
     :AddKeyPicker("SpeedCFrameKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Speed CFrame Bind" })
 
 Toggles.SpeedCFrameToggle:OnChanged(function()
     SpeedCFrameEnabled = Toggles.SpeedCFrameToggle.Value
 end)
 
-MovementEnhancementBox:AddSlider("SpeedCFrameSlider", { Text = "Speed Multiplier", Default = 2, Min = 1, Max = 10, Rounding = 1 })
+MovementEnhancementBox:AddSlider("SpeedCFrameSlider", { Text = "Multiplier", Default = 2, Min = 1, Max = 30, Rounding = 2 })
 Options.SpeedCFrameSlider:OnChanged(function()
     SpeedCFrameValue = Options.SpeedCFrameSlider.Value
 end)
