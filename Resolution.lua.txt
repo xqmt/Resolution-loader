@@ -46,7 +46,7 @@ Library.ShowCustomCursor = true
 Library.NotifySide = "Right" 
 
 local Window = Library:CreateWindow({
-    Title = "Resolution.flyㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ  ",
+    Title = "Resolution.wtfㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ  ",
     Center = true, 
     AutoShow = true,
     Resizable = true,
@@ -57,7 +57,7 @@ local Window = Library:CreateWindow({
     MenuFadeTime = 0.2
 })
 
--- local
+-- local variables
 local SilentAimEnabled = false
 local ResolverEnabled = false
 local BulletTPEnabled = false
@@ -71,6 +71,13 @@ local FOVVisible = false
 local TracerEnabled = false
 
 local VoidEnabled = false
+
+-- New Features Variables
+local ThirdPersonEnabled = false
+local ThirdPersonDistance = 12
+local InfJumpEnabled = false
+local SpeedCFrameEnabled = false
+local SpeedCFrameValue = 2
 
 local AutoPredictionEnabled = false
 local PredictionValue = 0.1
@@ -152,7 +159,6 @@ local ParticleAuras = {
 }
 local AuraOptions = {"starlight", "Heart", "heavenly", "ribbon", "sakura", "angel", "wind", "flow", "star", "Fire"}
 
-
 local FOVCircleColor = Color3.fromRGB(255, 255, 255)
 local FOVCircleOutlineColor = Color3.fromRGB(0, 0, 0)
 local FOVThickness = 1.0
@@ -207,6 +213,7 @@ local UserInputService = game:GetService("UserInputService")
 local SoundService = game:GetService("SoundService")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 local TargetVelocityHistory = {}
 
 -- esp connection 
@@ -231,7 +238,6 @@ local SkeletonConnections = {
     {"Torso", "Left Leg"},
     {"Torso", "Right Leg"}
 }
-
 
 local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
 
@@ -428,7 +434,6 @@ if LocalPlayer.Character then
 		end)
 	end
 end
-
 
 -- other
 local DeltaGradientGui = Instance.new("ScreenGui")
@@ -856,13 +861,37 @@ local function BindHealthTracker(targetPlayer)
     end)
 end
 
--- void hide
-local RunService = game:GetService("RunService")
+-- Infinite Jump Logic
+UserInputService.JumpRequest:Connect(function()
+    if InfJumpEnabled and LocalPlayer.Character then
+        local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
 local spinAngle = 0
 local jitterToggle = false
 local LastCameraRotation = Camera.CFrame.LookVector
 
 RunService.RenderStepped:Connect(function()
+    -- Speed CFrame Logic
+    if SpeedCFrameEnabled and LocalPlayer.Character then
+        local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if root and hum and hum.MoveDirection.Magnitude > 0 then
+            root.CFrame = root.CFrame + (hum.MoveDirection * (SpeedCFrameValue / 10))
+        end
+    end
+
+    -- Third Person Logic
+    if ThirdPersonEnabled and LocalPlayer.Character then
+        LocalPlayer.CameraMode = Enum.CameraMode.Classic
+        LocalPlayer.CameraMinZoomDistance = ThirdPersonDistance
+        LocalPlayer.CameraMaxZoomDistance = ThirdPersonDistance
+    end
+
     if VoidEnabled and LocalPlayer.Character then
         local Root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if Root then
@@ -1092,7 +1121,7 @@ local Tabs = {
     Movement = Window:AddTab("character"),
     World = Window:AddTab("world"),
     Addons = Window:AddTab("misc"),
-    ['UI'] = Window:AddTab("Settings")
+    ['UI'] = Window:AddTab("settings")
 }
 
 local Options = getgenv().Options
@@ -1161,7 +1190,7 @@ Options.TransitionSpeedSlider:OnChanged(function()
     TransitionSpeed = Options.TransitionSpeedSlider.Value
 end)
 
-TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Distance", Default = 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999, Min = 1, Max = 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999, Rounding = 0 })
+TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Distance", Default = 9999, Min = 1, Max = 10000, Rounding = 0 })
 Options.MaxDistanceSlider:OnChanged(function()
     MaxTargetDistance = Options.MaxDistanceSlider.Value
 end)
@@ -1310,7 +1339,6 @@ SoundLeftBox:AddButton({
     end
 })
 
-
 OverlayLeftBox:AddToggle("HitOverlayToggle", { Text = "Enable Hit Overlay", Default = false })
 Toggles.HitOverlayToggle:OnChanged(function()
     HitOverlayEnabled = Toggles.HitOverlayToggle.Value
@@ -1320,7 +1348,6 @@ OverlayLeftBox:AddLabel("Overlay Color"):AddColorPicker("HitOverlayColorPicker",
 Options.HitOverlayColorPicker:OnChanged(function()
     HitOverlayColor = Options.HitOverlayColorPicker.Value
 end)
-
 
 NotifyRightBox:AddToggle("HitNotifyToggle", { Text = "Enable Hit Notification", Default = false })
 Toggles.HitNotifyToggle:OnChanged(function()
@@ -1373,7 +1400,6 @@ Options.AuraSelectionDropdown:OnChanged(function()
     SelectedAuras = Options.AuraSelectionDropdown.Value
     UpdateAuraSystem()
 end)
-
 
 local LastCameraCFrame = workspace.CurrentCamera.CFrame
 
@@ -2094,6 +2120,7 @@ TextTransparencyGroup:AddSlider("ToolEquippedTransparencySlider", { Text = "Tool
 
 local MoveLeftBox = Tabs.Movement:AddLeftGroupbox("Anti Aim")
 local CharacterModifierBox = Tabs.Movement:AddRightGroupbox("Void Hide")
+local MovementEnhancementBox = Tabs.Movement:AddRightGroupbox("Movement")
 
 MoveLeftBox:AddToggle("AntiAimToggle", { Text = "Enable Anti Aim", Default = false })
     :AddKeyPicker("AntiAimKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Anti Aim Bind" })
@@ -2125,6 +2152,24 @@ end)
 MoveLeftBox:AddSlider("SpinSpeedSlider", { Text = "Rotation Spin Speed", Default = 15, Min = 5, Max = 50, Rounding = 0 })
 Options.SpinSpeedSlider:OnChanged(function()
     AntiAimSpeed = Options.SpinSpeedSlider.Value
+end)
+
+
+MovementEnhancementBox:AddToggle("InfJumpToggle", { Text = "Enable Infjump", Default = false })
+Toggles.InfJumpToggle:OnChanged(function()
+    InfJumpEnabled = Toggles.InfJumpToggle.Value
+end)
+
+MovementEnhancementBox:AddToggle("SpeedCFrameToggle", { Text = "Enable CFrame", Default = false })
+    :AddKeyPicker("SpeedCFrameKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Speed CFrame Bind" })
+
+Toggles.SpeedCFrameToggle:OnChanged(function()
+    SpeedCFrameEnabled = Toggles.SpeedCFrameToggle.Value
+end)
+
+MovementEnhancementBox:AddSlider("SpeedCFrameSlider", { Text = "Multiplier", Default = 2, Min = 1, Max = 100, Rounding = 2 })
+Options.SpeedCFrameSlider:OnChanged(function()
+    SpeedCFrameValue = Options.SpeedCFrameSlider.Value
 end)
 
 CharacterModifierBox:AddToggle("VoidToggle", { Text = "Enable Void", Default = false })
@@ -2234,6 +2279,23 @@ Options.AtmosDensitySlider:OnChanged(function()
     UpdateAtmosphere()
 end)
 
+-- Camera & Display UI (Third Person & Custom FOV)
+CameraDisplayBox:AddToggle("ThirdPersonToggle", { Text = "Enable Third Person", Default = false })
+    :AddKeyPicker("ThirdPersonKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Third Person Bind" })
+
+Toggles.ThirdPersonToggle:OnChanged(function()
+    ThirdPersonEnabled = Toggles.ThirdPersonToggle.Value
+    if not ThirdPersonEnabled and LocalPlayer.Character then
+        LocalPlayer.CameraMinZoomDistance = 0.5
+        LocalPlayer.CameraMaxZoomDistance = 400
+    end
+end)
+
+CameraDisplayBox:AddSlider("ThirdPersonDistSlider", { Text = "Third Person Distance", Default = 12, Min = 5, Max = 30, Rounding = 0 })
+Options.ThirdPersonDistSlider:OnChanged(function()
+    ThirdPersonDistance = Options.ThirdPersonDistSlider.Value
+end)
+
 CameraDisplayBox:AddSlider("CustomFovSlider", { Text = "Custom FOV", Default = 70, Min = 70, Max = 120, Rounding = 0 })
 Options.CustomFovSlider:OnChanged(function()
     CustomFOVValue = Options.CustomFovSlider.Value
@@ -2323,7 +2385,6 @@ BlacklistPlayersGroup:AddButton({ Text = "Primordial visual gui", Func = functio
         Library:Notify("Error loading script: " .. tostring(err))
     end
 end })
-
 
 local function StopViewingPlayer()
     if ViewPlayerConnection then
