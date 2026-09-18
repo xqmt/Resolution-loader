@@ -46,7 +46,7 @@ Library.ShowCustomCursor = true
 Library.NotifySide = "Right" 
 
 local Window = Library:CreateWindow({
-    Title = "solution.clubㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ  ",
+    Title = "swiftly.flyㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ  ",
     Center = true, 
     AutoShow = true,
     Resizable = true,
