@@ -1,3 +1,6 @@
+-- waiting game loaded
+repeat task.wait() until game:IsLoaded()
+
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/Bypass.lua", true))()
@@ -43,8 +46,7 @@ Library.ShowCustomCursor = true
 Library.NotifySide = "Right" 
 
 local Window = Library:CreateWindow({
-    Title = "Resolution.cc ㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ
-",
+    Title = "Resolution.flyㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ  ",
     Center = true, 
     AutoShow = true,
     Resizable = true,
@@ -55,7 +57,7 @@ local Window = Library:CreateWindow({
     MenuFadeTime = 0.2
 })
 
--- local variables
+-- local
 local SilentAimEnabled = false
 local ResolverEnabled = false
 local BulletTPEnabled = false
@@ -69,13 +71,6 @@ local FOVVisible = false
 local TracerEnabled = false
 
 local VoidEnabled = false
-
--- New Features Variables
-local ThirdPersonEnabled = false
-local ThirdPersonDistance = 12
-local InfJumpEnabled = false
-local SpeedCFrameEnabled = false
-local SpeedCFrameValue = 2
 
 local AutoPredictionEnabled = false
 local PredictionValue = 0.1
@@ -157,6 +152,7 @@ local ParticleAuras = {
 }
 local AuraOptions = {"starlight", "Heart", "heavenly", "ribbon", "sakura", "angel", "wind", "flow", "star", "Fire"}
 
+
 local FOVCircleColor = Color3.fromRGB(255, 255, 255)
 local FOVCircleOutlineColor = Color3.fromRGB(0, 0, 0)
 local FOVThickness = 1.0
@@ -211,7 +207,6 @@ local UserInputService = game:GetService("UserInputService")
 local SoundService = game:GetService("SoundService")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
 local TargetVelocityHistory = {}
 
 -- esp connection 
@@ -236,6 +231,7 @@ local SkeletonConnections = {
     {"Torso", "Left Leg"},
     {"Torso", "Right Leg"}
 }
+
 
 local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
 
@@ -432,6 +428,7 @@ if LocalPlayer.Character then
 		end)
 	end
 end
+
 
 -- other
 local DeltaGradientGui = Instance.new("ScreenGui")
@@ -859,37 +856,13 @@ local function BindHealthTracker(targetPlayer)
     end)
 end
 
--- Infinite Jump Logic
-UserInputService.JumpRequest:Connect(function()
-    if InfJumpEnabled and LocalPlayer.Character then
-        local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
-    end
-end)
-
+-- void hide
+local RunService = game:GetService("RunService")
 local spinAngle = 0
 local jitterToggle = false
 local LastCameraRotation = Camera.CFrame.LookVector
 
 RunService.RenderStepped:Connect(function()
-    -- Speed CFrame Logic
-    if SpeedCFrameEnabled and LocalPlayer.Character then
-        local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if root and hum and hum.MoveDirection.Magnitude > 0 then
-            root.CFrame = root.CFrame + (hum.MoveDirection * (SpeedCFrameValue / 10))
-        end
-    end
-
-    -- Third Person Logic
-    if ThirdPersonEnabled and LocalPlayer.Character then
-        LocalPlayer.CameraMode = Enum.CameraMode.Classic
-        LocalPlayer.CameraMinZoomDistance = ThirdPersonDistance
-        LocalPlayer.CameraMaxZoomDistance = ThirdPersonDistance
-    end
-
     if VoidEnabled and LocalPlayer.Character then
         local Root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if Root then
@@ -1119,7 +1092,7 @@ local Tabs = {
     Movement = Window:AddTab("character"),
     World = Window:AddTab("world"),
     Addons = Window:AddTab("misc"),
-    ['UI'] = Window:AddTab("settings")
+    ['UI'] = Window:AddTab("Settings")
 }
 
 local Options = getgenv().Options
@@ -1337,6 +1310,7 @@ SoundLeftBox:AddButton({
     end
 })
 
+
 OverlayLeftBox:AddToggle("HitOverlayToggle", { Text = "Enable Hit Overlay", Default = false })
 Toggles.HitOverlayToggle:OnChanged(function()
     HitOverlayEnabled = Toggles.HitOverlayToggle.Value
@@ -1346,6 +1320,7 @@ OverlayLeftBox:AddLabel("Overlay Color"):AddColorPicker("HitOverlayColorPicker",
 Options.HitOverlayColorPicker:OnChanged(function()
     HitOverlayColor = Options.HitOverlayColorPicker.Value
 end)
+
 
 NotifyRightBox:AddToggle("HitNotifyToggle", { Text = "Enable Hit Notification", Default = false })
 Toggles.HitNotifyToggle:OnChanged(function()
@@ -1398,6 +1373,7 @@ Options.AuraSelectionDropdown:OnChanged(function()
     SelectedAuras = Options.AuraSelectionDropdown.Value
     UpdateAuraSystem()
 end)
+
 
 local LastCameraCFrame = workspace.CurrentCamera.CFrame
 
@@ -2118,7 +2094,6 @@ TextTransparencyGroup:AddSlider("ToolEquippedTransparencySlider", { Text = "Tool
 
 local MoveLeftBox = Tabs.Movement:AddLeftGroupbox("Anti Aim")
 local CharacterModifierBox = Tabs.Movement:AddRightGroupbox("Void Hide")
-local MovementEnhancementBox = Tabs.Movement:AddRightGroupbox("Movement")
 
 MoveLeftBox:AddToggle("AntiAimToggle", { Text = "Enable Anti Aim", Default = false })
     :AddKeyPicker("AntiAimKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Anti Aim Bind" })
@@ -2150,24 +2125,6 @@ end)
 MoveLeftBox:AddSlider("SpinSpeedSlider", { Text = "Rotation Spin Speed", Default = 15, Min = 5, Max = 50, Rounding = 0 })
 Options.SpinSpeedSlider:OnChanged(function()
     AntiAimSpeed = Options.SpinSpeedSlider.Value
-end)
-
-
-MovementEnhancementBox:AddToggle("InfJumpToggle", { Text = "Enable Infjump", Default = false })
-Toggles.InfJumpToggle:OnChanged(function()
-    InfJumpEnabled = Toggles.InfJumpToggle.Value
-end)
-
-MovementEnhancementBox:AddToggle("SpeedCFrameToggle", { Text = "Enable CFrame", Default = false })
-    :AddKeyPicker("SpeedCFrameKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Speed CFrame Bind" })
-
-Toggles.SpeedCFrameToggle:OnChanged(function()
-    SpeedCFrameEnabled = Toggles.SpeedCFrameToggle.Value
-end)
-
-MovementEnhancementBox:AddSlider("SpeedCFrameSlider", { Text = "Multiplier", Default = 2, Min = 1, Max = 100, Rounding = 2 })
-Options.SpeedCFrameSlider:OnChanged(function()
-    SpeedCFrameValue = Options.SpeedCFrameSlider.Value
 end)
 
 CharacterModifierBox:AddToggle("VoidToggle", { Text = "Enable Void", Default = false })
@@ -2277,23 +2234,6 @@ Options.AtmosDensitySlider:OnChanged(function()
     UpdateAtmosphere()
 end)
 
--- Camera & Display UI (Third Person & Custom FOV)
-CameraDisplayBox:AddToggle("ThirdPersonToggle", { Text = "Enable Third Person", Default = false })
-    :AddKeyPicker("ThirdPersonKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Third Person Bind" })
-
-Toggles.ThirdPersonToggle:OnChanged(function()
-    ThirdPersonEnabled = Toggles.ThirdPersonToggle.Value
-    if not ThirdPersonEnabled and LocalPlayer.Character then
-        LocalPlayer.CameraMinZoomDistance = 0.5
-        LocalPlayer.CameraMaxZoomDistance = 400
-    end
-end)
-
-CameraDisplayBox:AddSlider("ThirdPersonDistSlider", { Text = "Third Person Distance", Default = 12, Min = 5, Max = 30, Rounding = 0 })
-Options.ThirdPersonDistSlider:OnChanged(function()
-    ThirdPersonDistance = Options.ThirdPersonDistSlider.Value
-end)
-
 CameraDisplayBox:AddSlider("CustomFovSlider", { Text = "Custom FOV", Default = 70, Min = 70, Max = 120, Rounding = 0 })
 Options.CustomFovSlider:OnChanged(function()
     CustomFOVValue = Options.CustomFovSlider.Value
@@ -2383,6 +2323,7 @@ BlacklistPlayersGroup:AddButton({ Text = "Primordial visual gui", Func = functio
         Library:Notify("Error loading script: " .. tostring(err))
     end
 end })
+
 
 local function StopViewingPlayer()
     if ViewPlayerConnection then
@@ -2557,3 +2498,44 @@ SaveManager:SetFolder("Resolution/configs")
 SaveManager:BuildConfigSection(Tabs.UI)
 ThemeManager:ApplyToTab(Tabs.UI)
 SaveManager:LoadAutoloadConfig()
+
+
+
+
+
+task.spawn(function()
+    while true do task.wait()
+        if _G.BhopEnabled and LocalPlayer.Character then
+            local Humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid") local Root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if Humanoid and Root then
+                local MoveDirection = Humanoid.MoveDirection
+                if MoveDirection.Magnitude > 0 then
+                    if Humanoid.FloorMaterial ~= Enum.Material.Air then Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end
+                    Root.Velocity = Vector3.new(MoveDirection.X * (Humanoid.WalkSpeed * _G.BhopSpeedMultiplier), Root.Velocity.Y, MoveDirection.Z * (Humanoid.WalkSpeed * _G.BhopSpeedMultiplier))
+                end
+            end
+        end
+    end
+end)
+
+
+task.spawn(function()
+    if getrawmetatable and setreadonly then
+        local mt = getrawmetatable(game)
+        local oldNewIndex = mt.__newindex
+        setreadonly(mt, false)
+        mt.__newindex = newcclosure(function(self, key, value)
+            if self == LP and W.thirdPerson then
+                if key == "CameraMode" then
+                    return oldNewIndex(self, key, Enum.CameraMode.Classic)
+                elseif key == "CameraMaxZoomDistance" then
+                    return oldNewIndex(self, key, W.thirdPersonDist or 10)
+                elseif key == "CameraMinZoomDistance" then
+                    return oldNewIndex(self, key, W.thirdPersonDist or 10)
+                end
+            end
+            return oldNewIndex(self, key, value)
+        end)
+        setreadonly(mt, true)
+    end
+end)
