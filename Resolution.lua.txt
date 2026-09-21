@@ -1,6 +1,3 @@
--- waiting game loaded
-repeat task.wait() until game:IsLoaded()
-
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/Bypass.lua", true))()
