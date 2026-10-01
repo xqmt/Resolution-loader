@@ -1,6 +1,6 @@
 -- =========================================================
 -- Neverlose x BloxStrike (Obsidian UI Version)
--- v1.7.6 — Hit Notify + Auto Priority on Damage + Ragebot No Miss
+-- v1.7.9 — Memesense Ragebot + Hit Notify + Auto Priority + No Miss + Ignore Invincible + Unity Tab
 -- =========================================================
 
 local Players          = game:GetService("Players")
@@ -33,7 +33,7 @@ Library.NotifySide                = "Right"
 
 local Window = Library:CreateWindow({
     Title           = '<font color="#ffffff"><b>Never</b></font><font color="#00BFFF"><b>lose</b></font>',
-    Footer          = "BloxStrike | v1.7.6",
+    Footer          = "BloxStrike | v1.7.9",
     Icon            = 9736039840,
     Center          = true,
     AutoShow        = true,
@@ -98,6 +98,19 @@ local WeaponMaterialConfig = {
     MetalReflectance  = 1.0
 }
 
+-- ★ Unity Tab Config
+local UnityConfig = {
+    NoSmoke = false,
+    NoFlash = false,
+    ArmMaterialEnabled = false,
+    ArmMaterialMode    = "Glass",
+    ArmColor           = Color3.fromRGB(0, 150, 255),
+    ArmGlassTransparency = 0.4,
+    ArmMetalReflectance  = 1.0,
+    NoGlove = false,
+}
+
+-- ★ RagebotConfig
 local RagebotConfig = {
     Enabled         = false,
     Delay           = 0.01,
@@ -109,8 +122,6 @@ local RagebotConfig = {
     MaxPen          = 7,
     PriorityEnabled = false,
     PriorityName    = nil,
-    HeightCheck     = true,
-    MaxHeightDiff   = 35,
     FOV             = 180,
     ShowFOV         = true,
     TargetRefresh   = 0.05,
@@ -120,12 +131,23 @@ local RagebotConfig = {
     MaxShotsPerFrame= 4,
     MaxShotsPerSec  = 100,
     HitChance       = 100,
-
-    -- ★ Auto Priority on Damage
     AutoPriorityOnDamage = true,
+    IgnoreInvincible = true,
 }
 
 local rageCache = { part = nil, player = nil, time = 0 }
+
+-- =========================================================
+-- ★ RAGEBOT: HELPER
+-- =========================================================
+local function isRageTargetValid(char)
+    if not char or not char.Parent then return false end
+    if char:GetAttribute("Dead") == true then return false end
+    if RagebotConfig.IgnoreInvincible and char:GetAttribute("Invincible") == true then return false end
+    local hp = char:GetAttribute("Health")
+    if hp ~= nil and hp <= 0 then return false end
+    return true
+end
 
 -- =========================================================
 -- THIRD PERSON CONFIG
@@ -136,7 +158,7 @@ local ThirdPersonConfig = {
 }
 
 -- =========================================================
--- ⭐ BHOP CONFIG (Memesense Style, Mobile + PC)
+-- ⭐ BHOP CONFIG
 -- =========================================================
 local BhopConfig = {
     Enabled = false,
@@ -1368,6 +1390,7 @@ local function getTarget(origin)
         if player == LocalPlayer then continue end
         local character = getCharacter(player)
         if not isAlive(character) then continue end
+        if character:GetAttribute("Invincible") == true then continue end
         if SilentAim.TeamCheck and player:GetAttribute("Team") == localTeam then continue end
 
         local part
@@ -1681,62 +1704,87 @@ local function canWallbangRage(targetPart)
 end
 
 -- =========================================================
--- RAGEBOT TARGET SELECTION — STRICT FOV
+-- ★ MEMESENSE: hasVestDetails / isEnemyByVest
+-- =========================================================
+local function hasVestDetails(character)
+    if not character then return false end
+    local armor = character:FindFirstChild("CharacterArmor")
+    if armor and armor:FindFirstChild("VestDetails") then
+        return true
+    end
+    return false
+end
+
+local function isEnemyByVest(targetChar)
+    if not targetChar then return false end
+    local myChar = LocalPlayer.Character
+    if not myChar then return false end
+    local myHasVest     = hasVestDetails(myChar)
+    local targetHasVest = hasVestDetails(targetChar)
+    if myHasVest then
+        return not targetHasVest
+    else
+        return targetHasVest
+    end
+end
+
+local function collectCharactersFromFolder()
+    local list = {}
+    local folder = Workspace:FindFirstChild("Characters")
+    if not folder then return list end
+    local localChar = LocalPlayer.Character
+    for _, obj in ipairs(folder:GetDescendants()) do
+        if obj:IsA("Model") then
+            local hasHead = obj:FindFirstChild("Head")
+            local hasRoot = obj:FindFirstChild("HumanoidRootPart")
+            if (hasHead or hasRoot) and obj ~= localChar then
+                table.insert(list, obj)
+            end
+        end
+    end
+    return list
+end
+
+-- =========================================================
+-- ★ RAGEBOT TARGET SELECTION — MEMESENSE STYLE
 -- =========================================================
 local function findRageTarget()
-    local localTeam = LocalPlayer:GetAttribute("Team")
-    local camCF   = Camera.CFrame
-    local camPos  = camCF.Position
-    local lookX, lookY, lookZ = camCF.LookVector.X, camCF.LookVector.Y, camCF.LookVector.Z
-    local cosMax  = math.cos(math.rad((RagebotConfig.FOV or 180) / 2))
-
-    local localChar = LocalPlayer.Character
-    local localY = camPos.Y
-    if localChar then
-        local lhrp = localChar:FindFirstChild("HumanoidRootPart") or localChar:FindFirstChild("Head")
-        if lhrp then localY = lhrp.Position.Y end
-    end
-
-    local hitName    = RagebotConfig.HitPart
-    local teamCheck  = RagebotConfig.TeamCheck
-    local heightCheck= RagebotConfig.HeightCheck
-    local maxHeight  = RagebotConfig.MaxHeightDiff
-    local visibleChk = RagebotConfig.VisibleCheck
-    local wallChk    = RagebotConfig.WallCheck
-    local priorityNm = RagebotConfig.PriorityEnabled and RagebotConfig.PriorityName or nil
+    local camPos      = Camera.CFrame.Position
+    local priorityNm  = RagebotConfig.PriorityEnabled and RagebotConfig.PriorityName or nil
+    local hitName     = RagebotConfig.HitPart
+    local teamCheck   = RagebotConfig.TeamCheck
+    local visibleChk  = RagebotConfig.VisibleCheck
+    local wallChk     = RagebotConfig.WallCheck
+    local localTeam   = LocalPlayer:GetAttribute("Team")
 
     local best, bestPlr, bestDist = nil, nil, math.huge
+    local priorityPart, priorityPlr = nil, nil
 
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player == LocalPlayer then continue end
-        local char = player.Character
-        if not char then continue end
-        if char:GetAttribute("Dead") then continue end
+    local allChars = collectCharactersFromFolder()
+
+    for _, char in ipairs(allChars) do
+        if char:GetAttribute("Dead") == true then continue end
+        if RagebotConfig.IgnoreInvincible and char:GetAttribute("Invincible") == true then continue end
         local hp = char:GetAttribute("Health")
         if hp ~= nil and hp <= 0 then continue end
-        if teamCheck and player:GetAttribute("Team") == localTeam then continue end
+
+        local plr = Players:GetPlayerFromCharacter(char)
+
+        if teamCheck then
+            if plr and localTeam and plr:GetAttribute("Team") == localTeam then continue end
+            if not isEnemyByVest(char) then continue end
+        end
 
         local part = char:FindFirstChild(hitName)
             or char:FindFirstChild("Head")
             or char:FindFirstChild("HumanoidRootPart")
         if not part then continue end
 
-        local p = part.Position
-        local dx, dy, dz = p.X - camPos.X, p.Y - camPos.Y, p.Z - camPos.Z
-        local distSq = dx*dx + dy*dy + dz*dz
-        if distSq < 1 then continue end
-
-        if heightCheck and (p.Y - localY) > maxHeight then continue end
-
-        local dist = math.sqrt(distSq)
-        local dot = (lookX*dx + lookY*dy + lookZ*dz) / dist
-        if dot < cosMax then continue end
-
-        local isPriority = priorityNm and player.Name == priorityNm
-        if not isPriority and dist >= bestDist then continue end
+        local dist = (part.Position - camPos).Magnitude
+        if dist < 1 then continue end
 
         if visibleChk then
-            local _, onScreen = Camera:WorldToViewportPoint(p)
+            local _, onScreen = Camera:WorldToViewportPoint(part.Position)
             if not onScreen then continue end
         end
 
@@ -1746,11 +1794,20 @@ local function findRageTarget()
             end
         end
 
-        if isPriority then
-            return part, player
+        if priorityNm and plr and plr.Name == priorityNm then
+            priorityPart = part
+            priorityPlr  = plr
+            break
         end
-        bestDist, best, bestPlr = dist, part, player
+
+        if dist < bestDist then
+            bestDist = dist
+            best     = part
+            bestPlr  = plr
+        end
     end
+
+    if priorityPart then return priorityPart, priorityPlr end
     return best, bestPlr
 end
 
@@ -1775,18 +1832,13 @@ task.spawn(function()
         if lastTargetPart and lastTargetPart.Parent and not RagebotConfig.WallCheck then
             local char = lastTargetPart.Parent
             local hp = char:GetAttribute("Health")
-            local alive = not char:GetAttribute("Dead") and (hp == nil or hp > 0)
+            local alive = not char:GetAttribute("Dead")
+                and not (RagebotConfig.IgnoreInvincible and char:GetAttribute("Invincible") == true)
+                and (hp == nil or hp > 0)
             if alive then
-                local camLook = Camera.CFrame.LookVector
-                local dir = (lastTargetPart.Position - Camera.CFrame.Position)
-                local dist = dir.Magnitude
-                if dist > 0.001 then
-                    local dot = camLook:Dot(dir.Unit)
-                    local cosMax = math.cos(math.rad((RagebotConfig.FOV or 180) / 2))
-                    if dot >= cosMax then
-                        local _, onScreen = Camera:WorldToViewportPoint(lastTargetPart.Position)
-                        if onScreen then keepOld = true end
-                    end
+                if (not RagebotConfig.TeamCheck) or isEnemyByVest(char) then
+                    local _, onScreen = Camera:WorldToViewportPoint(lastTargetPart.Position)
+                    if onScreen then keepOld = true end
                 end
             end
         end
@@ -2230,6 +2282,170 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- =========================================================
+-- ★ UNITY: NO SMOKE / NO FLASH HOOKS
+-- =========================================================
+task.spawn(function()
+    if typeof(hookfunction) ~= "function" then return end
+    task.wait(1)
+    pcall(function()
+        for _, obj in next, getgc(true) do
+            if type(obj) == "function" then
+                local info = debug.getinfo(obj)
+                if info and info.name == "Flash" then
+                    local oldflash
+                    oldflash = hookfunction(obj, function(...)
+                        if UnityConfig.NoFlash then return end
+                        return oldflash(...)
+                    end)
+                elseif info and info.name == "CreateVoxel" then
+                    local up = debug.getupvalue(obj, 1)
+                    if up and tostring(up) == "Smoke" then
+                        local oldsmoke
+                        oldsmoke = hookfunction(obj, function(...)
+                            if UnityConfig.NoSmoke then return end
+                            return oldsmoke(...)
+                        end)
+                    end
+                end
+            end
+        end
+    end)
+end)
+
+-- =========================================================
+-- ★ UNITY: ARM MATERIAL + NO GLOVE
+-- =========================================================
+local lastArmUpdate = 0
+local ARM_UPDATE_RATE = 0.1
+local activeArmHighlights = {}
+local armOriginalData = {}
+
+local function getViewModelRoot()
+    for _, child in ipairs(Camera:GetChildren()) do
+        if child:IsA("Model") and not child.Name:lower():find("light") then
+            return child
+        end
+    end
+    return nil
+end
+
+local function isArmPart(part)
+    local n = part.Name:lower()
+    return n:find("arm") or n:find("hand") or n:find("sleeve")
+        or n:find("left") or n:find("right")
+end
+
+local function isGlovePart(part)
+    local n = part.Name:lower()
+    return n:find("glove") or n:find("handwrap") or n:find("wrap")
+end
+
+RunService.Heartbeat:Connect(function()
+    if os.clock() - lastArmUpdate < ARM_UPDATE_RATE then return end
+    lastArmUpdate = os.clock()
+
+    pcall(function()
+        local vm = getViewModelRoot()
+        if not vm then
+            for _, h in pairs(activeArmHighlights) do
+                if h and h.Parent then h:Destroy() end
+            end
+            activeArmHighlights = {}
+            return
+        end
+
+        -- NO GLOVE
+        for _, part in ipairs(vm:GetDescendants()) do
+            if part:IsA("BasePart") and isGlovePart(part) then
+                if UnityConfig.NoGlove then
+                    part.Transparency = 1
+                    part.CanCollide = false
+                end
+            end
+        end
+
+        -- ARM MATERIAL
+        if not UnityConfig.ArmMaterialEnabled then
+            for _, h in pairs(activeArmHighlights) do
+                if h and h.Parent then h:Destroy() end
+            end
+            activeArmHighlights = {}
+            return
+        end
+
+        local mode  = UnityConfig.ArmMaterialMode
+        local color = UnityConfig.ArmColor
+        local currentParts = {}
+
+        for _, part in ipairs(vm:GetDescendants()) do
+            if part:IsA("BasePart") and isArmPart(part) then
+                if part.Name == "ViewmodelLight" or part:FindFirstAncestor("ViewmodelLight") then
+                    continue
+                end
+                pcall(function()
+                    if not armOriginalData[part] then
+                        armOriginalData[part] = {
+                            Material = part.Material,
+                            Color = part.Color,
+                            Transparency = part.Transparency,
+                            Reflectance = part.Reflectance
+                        }
+                    end
+
+                    if mode == "Highlight" then
+                        currentParts[part] = true
+                        local h = part:FindFirstChild("ArmMaterialHighlight")
+                        if not h then
+                            h = Instance.new("Highlight")
+                            h.Name = "ArmMaterialHighlight"
+                            h.Adornee = part
+                            h.Parent = part
+                            h.FillTransparency = 0
+                            h.OutlineTransparency = 1
+                            h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                            table.insert(activeArmHighlights, h)
+                        end
+                        h.FillColor = color
+                    else
+                        local h = part:FindFirstChild("ArmMaterialHighlight")
+                        if h then h:Destroy() end
+
+                        if mode == "Glass" then
+                            part.Material = Enum.Material.Glass
+                            part.Color = color
+                            part.Transparency = UnityConfig.ArmGlassTransparency
+                        elseif mode == "ForceField" then
+                            part.Material = Enum.Material.ForceField
+                            part.Color = color
+                            part.Transparency = 0
+                        elseif mode == "Metal" then
+                            part.Material = Enum.Material.Metal
+                            part.Color = color
+                            part.Reflectance = UnityConfig.ArmMetalReflectance
+                            part.Transparency = 0
+                        elseif mode == "Neon" then
+                            part.Material = Enum.Material.Neon
+                            part.Color = color
+                            part.Transparency = 0
+                        end
+                    end
+                end)
+            end
+        end
+
+        if mode == "Highlight" then
+            for i = #activeArmHighlights, 1, -1 do
+                local h = activeArmHighlights[i]
+                if not h or not h.Parent or not currentParts[h.Adornee] then
+                    if h then h:Destroy() end
+                    table.remove(activeArmHighlights, i)
+                end
+            end
+        end
+    end)
+end)
+
+-- =========================================================
 -- RAGEBOT AUTO RELOAD HELPERS
 -- =========================================================
 local reloadCooldownUntil = 0
@@ -2317,6 +2533,18 @@ task.spawn(function()
             continue
         end
 
+        local targetChar = target.Parent
+        if targetChar:GetAttribute("Dead") == true
+            or (RagebotConfig.IgnoreInvincible and targetChar:GetAttribute("Invincible") == true)
+            or (targetChar:GetAttribute("Health") or 100) <= 0 then
+            currentRageTargetPart = nil
+            rageCache.part, rageCache.player = nil, nil
+            lastTargetPart = nil
+            nextShotTime = 0
+            lastWallVisible = false
+            continue
+        end
+
         local weapon = getCachedShootWeapon()
         if not weapon then continue end
         if weapon.IsReloading then continue end
@@ -2394,7 +2622,7 @@ local function buildHit(origin, part)
 end
 
 -- =========================================================
--- ★ HIT NOTIFY (Library:Notify)
+-- ★ HIT NOTIFY
 -- =========================================================
 local hitWatchActive = {}
 
@@ -2515,13 +2743,12 @@ end
 LocalPlayer.CharacterAdded:Connect(setupLocalDamageListener)
 
 -- =========================================================
--- REMOTE HOOK — RAGEBOT ห้ามพลาด
+-- REMOTE HOOK — RAGEBOT ห้ามพลาด + IGNORE INVINCIBLE
 -- =========================================================
 local ok, Remotes = pcall(require, ReplicatedStorage:WaitForChild("Database", 5):WaitForChild("Security", 5):WaitForChild("Remotes", 5))
 local shootRemote = ok and Remotes and Remotes.Inventory and Remotes.Inventory.ShootWeapon
 
 local function rollHitChance()
-    -- ★ Ragebot ห้ามพลาด — ถ้าเปิดอยู่ ถือว่า Hit Chance = 100%
     if RagebotConfig.Enabled then return true end
     local chance = RagebotConfig.HitChance or 100
     if chance >= 100 then return true end
@@ -2545,8 +2772,19 @@ if shootRemote and shootRemote.Send then
             for _, bullet in ipairs(packet.Bullets) do
                 local origin = bullet.Origin
                 if origin then
-                    -- ★ เลือก target (มี fallback สดถ้า Ragebot เปิดแต่ cache ว่าง)
                     local targetToHit = currentRageTargetPart
+                    if targetToHit and targetToHit.Parent then
+                        local tChar = targetToHit.Parent
+                        if tChar:GetAttribute("Dead") == true
+                            or (RagebotConfig.IgnoreInvincible and tChar:GetAttribute("Invincible") == true)
+                            or (tChar:GetAttribute("Health") or 100) <= 0 then
+                            targetToHit = nil
+                            currentRageTargetPart = nil
+                            rageCache.part, rageCache.player = nil, nil
+                            lastTargetPart = nil
+                        end
+                    end
+
                     if not targetToHit and RagebotConfig.Enabled then
                         local p = findRageTarget()
                         if p then
@@ -2567,7 +2805,7 @@ if shootRemote and shootRemote.Send then
                         triggerHitEffect(targetToHit.Position)
                         triggerHitChams(targetToHit.Parent)
                         if BulletTracer.Enabled then drawBulletTracer(origin, targetToHit.Position) end
-                        notifyHit(targetToHit)   -- ★ Hit Notify
+                        notifyHit(targetToHit)
                     else
                         local dir         = bullet.Direction or Camera.CFrame.LookVector
                         local maxDistance = 1000
@@ -2607,6 +2845,7 @@ local Tabs = {
     Visual    = Window:AddTab("Visual",    "eye"),
     ESP       = Window:AddTab("ESP",       "scan-eye"),
     World     = Window:AddTab("World",     "moon"),
+    Unity     = Window:AddTab("Unity",     "layers"),
     Setting   = Window:AddTab("Settings",  "settings"),
 }
 
@@ -2675,12 +2914,25 @@ RageMainBox:AddToggle("rage_autoreload",{ Text = "Auto Reload", Default = Ragebo
 RageMainBox:AddSlider("rage_autoreload_delay", { Text = "Auto Reload Cooldown", Default = RagebotConfig.ReloadDelay, Min = 0.05, Max = 1.0, Rounding = 2, Suffix = "s", Callback = function(v) RagebotConfig.ReloadDelay = v end })
 RageMainBox:AddSlider("rage_hitchance", { Text = "Hit Chance (Ragebot = 100%)", Default = RagebotConfig.HitChance, Min = 0, Max = 100, Rounding = 0, Suffix = "%", Callback = function(v) RagebotConfig.HitChance = v end })
 
+RageMainBox:AddSlider("rage_target_refresh", {
+    Text = "Target Refresh Rate",
+    Default = RagebotConfig.TargetRefresh,
+    Min = 0.01, Max = 0.5, Rounding = 2, Suffix = "s",
+    Callback = function(v) RagebotConfig.TargetRefresh = v end
+})
+
 local RageCheckBox = Tabs.Ragebot:AddRightGroupbox("Rage Checks", "shield-check")
 RageCheckBox:AddToggle("rage_teamcheck",    { Text = "Team Check",                    Default = RagebotConfig.TeamCheck,    Callback = function(v) RagebotConfig.TeamCheck = v end })
 RageCheckBox:AddToggle("rage_visiblecheck", { Text = "Visible Check",                 Default = RagebotConfig.VisibleCheck, Callback = function(v) RagebotConfig.VisibleCheck = v end })
 RageCheckBox:AddToggle("rage_wallcheck",    { Text = "Wall Check",                    Default = RagebotConfig.WallCheck,    Callback = function(v) RagebotConfig.WallCheck = v end })
 RageCheckBox:AddToggle("rage_autowall",     { Text = "Auto Wall (Penetration)",       Default = RagebotConfig.AutoWall,     Callback = function(v) RagebotConfig.AutoWall = v end })
 RageCheckBox:AddSlider("rage_maxpen",       { Text = "Max Penetration",               Default = RagebotConfig.MaxPen,       Min = 0.1, Max = 20, Rounding = 1, Suffix = " studs", Callback = function(v) RagebotConfig.MaxPen = v end })
+
+RageCheckBox:AddToggle("rage_ignore_invincible", {
+    Text = "Ignore Invincible Players",
+    Default = RagebotConfig.IgnoreInvincible,
+    Callback = function(v) RagebotConfig.IgnoreInvincible = v end,
+})
 
 RageCheckBox:AddDivider()
 RageCheckBox:AddToggle("rage_priority_enabled", {
@@ -2722,11 +2974,6 @@ RageCheckBox:AddButton({
         end
     end,
 })
-
-local RageHeightBox = Tabs.Ragebot:AddLeftGroupbox("Height Filter", "arrow-down-up")
-RageHeightBox:AddToggle("rage_height_enabled", { Text = "Enable Height Filter", Default = RagebotConfig.HeightCheck, Callback = function(v) RagebotConfig.HeightCheck = v end })
-RageHeightBox:AddSlider("rage_height_diff",    { Text = "Max Height Above (studs)", Default = RagebotConfig.MaxHeightDiff, Min = 0, Max = 100, Rounding = 0, Suffix = " studs", Callback = function(v) RagebotConfig.MaxHeightDiff = v end })
-RageHeightBox:AddSlider("rage_target_refresh", { Text = "Target Refresh Rate", Default = RagebotConfig.TargetRefresh, Min = 0.01, Max = 0.5, Rounding = 2, Suffix = "s", Callback = function(v) RagebotConfig.TargetRefresh = v end })
 
 -- =========================================================
 -- TAB: HIT EFFECT
@@ -2966,6 +3213,61 @@ WeatherBox:AddSlider("weather_size",      { Text = "Size",      Default = 1.0, M
 WeatherBox:AddLabel("Weather Color"):AddColorPicker("weather_color", { Default = WorldConfig.WeatherColor, Title = "Weather Color", Callback = function(v) WorldConfig.WeatherColor = v; createWeather(WorldConfig.WeatherType) end })
 
 -- =========================================================
+-- TAB: UNITY
+-- =========================================================
+local UnityGrenadeBox = Tabs.Unity:AddLeftGroupbox("Grenade Effects", "bomb")
+UnityGrenadeBox:AddToggle("unity_nosmoke", {
+    Text = "No Smoke",
+    Default = UnityConfig.NoSmoke,
+    Disabled = typeof(hookfunction) ~= "function",
+    DisabledTooltip = "Hookfunction not available on this executor",
+    Callback = function(v) UnityConfig.NoSmoke = v end,
+})
+UnityGrenadeBox:AddToggle("unity_noflash", {
+    Text = "No Flash",
+    Default = UnityConfig.NoFlash,
+    Disabled = typeof(hookfunction) ~= "function",
+    DisabledTooltip = "Hookfunction not available on this executor",
+    Callback = function(v) UnityConfig.NoFlash = v end,
+})
+
+local UnityArmBox = Tabs.Unity:AddRightGroupbox("Arm Material", "hand")
+UnityArmBox:AddToggle("unity_armmat_enabled", {
+    Text = "Enable Arm Material",
+    Default = UnityConfig.ArmMaterialEnabled,
+    Callback = function(v) UnityConfig.ArmMaterialEnabled = v end,
+})
+UnityArmBox:AddDropdown("unity_armmat_mode", {
+    Text = "Material / Type",
+    Values = { "Glass", "ForceField", "Metal", "Highlight", "Neon" },
+    Default = "Glass",
+    Callback = function(v) UnityConfig.ArmMaterialMode = v end,
+})
+UnityArmBox:AddLabel("Arm Color"):AddColorPicker("unity_arm_color", {
+    Default = UnityConfig.ArmColor,
+    Title = "Arm Color",
+    Callback = function(v) UnityConfig.ArmColor = v end,
+})
+UnityArmBox:AddSlider("unity_arm_glass_transparency", {
+    Text = "Glass Transparency",
+    Default = UnityConfig.ArmGlassTransparency,
+    Min = 0, Max = 1, Rounding = 2,
+    Callback = function(v) UnityConfig.ArmGlassTransparency = v end,
+})
+UnityArmBox:AddSlider("unity_arm_metal_reflectance", {
+    Text = "Metal Reflectance",
+    Default = UnityConfig.ArmMetalReflectance,
+    Min = 0, Max = 1, Rounding = 1,
+    Callback = function(v) UnityConfig.ArmMetalReflectance = v end,
+})
+UnityArmBox:AddDivider()
+UnityArmBox:AddToggle("unity_noglove", {
+    Text = "No Glove",
+    Default = UnityConfig.NoGlove,
+    Callback = function(v) UnityConfig.NoGlove = v end,
+})
+
+-- =========================================================
 -- TAB: SETTINGS
 -- =========================================================
 local MenuBox = Tabs.Setting:AddLeftGroupbox("Menu", "wrench")
@@ -3017,4 +3319,4 @@ Players.PlayerRemoving:Connect(function(p)
     end
 end)
 
-Library:Notify("Neverlose v1.7.6 — Hit Notify + Auto Priority + Ragebot No Miss", 5)
+Library:Notify("Neverlose v1.7.9 — Unity Tab Added (No Smoke / No Flash / Arm Material / No Glove)", 5)
