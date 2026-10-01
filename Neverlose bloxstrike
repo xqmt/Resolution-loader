@@ -1,6 +1,6 @@
 -- =========================================================
 -- Neverlose x BloxStrike (Obsidian UI Version)
--- v1.6 — Reorganized Tabs + Custom Ambient + Third Person
+-- v1.7.2 — Strict FOV + 100% Hit Chance + Ragebot FOV + Atmosphere Fix
 -- =========================================================
 
 local Players          = game:GetService("Players")
@@ -33,7 +33,7 @@ Library.NotifySide                = "Right"
 
 local Window = Library:CreateWindow({
     Title           = "Neverlose",
-    Footer          = "BloxStrike | v1.6",
+    Footer          = "BloxStrike | v1.7.2",
     Icon            = 9736039840,
     Center          = true,
     AutoShow        = true,
@@ -99,16 +99,19 @@ local RagebotConfig = {
     WallCheck       = false,
     AutoWall        = false,
     MaxPen          = 7,
+    PriorityEnabled = false,
     PriorityName    = nil,
     HeightCheck     = true,
     MaxHeightDiff   = 35,
     FOV             = 180,
+    ShowFOV         = true,   -- ⭐ NEW
     TargetRefresh   = 0.05,
     AutoReload      = true,
     ReloadDelay     = 0.15,
     FastMode        = true,
     MaxShotsPerFrame= 4,
     MaxShotsPerSec  = 100,
+    HitChance       = 100,
 }
 
 local rageCache = { part = nil, player = nil, time = 0 }
@@ -124,8 +127,6 @@ local ThirdPersonConfig = {
 -- =========================================================
 -- THIRD PERSON METATABLE HOOK
 -- =========================================================
--- Hook __newindex ของเกม เพื่อดักการเซ็ตค่า CameraMode / ZoomDistance
--- ให้คงค่า Third Person ไว้แม้เกมจะพยายามรีเซ็ตกลับ First Person
 task.spawn(function()
     if typeof(getrawmetatable) ~= "function" or typeof(setreadonly) ~= "function" then return end
     local mt = getrawmetatable(game)
@@ -147,7 +148,6 @@ task.spawn(function()
     setreadonly(mt, true)
 end)
 
--- ฟังก์ชันช่วย apply ค่าทันที
 local function applyThirdPerson(enabled)
     ThirdPersonConfig.Enabled = enabled
     pcall(function()
@@ -753,6 +753,7 @@ end
 
 -- =========================================================
 -- ATMOSPHERE + COLOR CORRECTION + WEATHER
+-- ⭐ FIX: suppress Atmosphere/CC ของเกม
 -- =========================================================
 local AtmosphereObj = Lighting:FindFirstChild("NL_Atmosphere")
 if not AtmosphereObj then
@@ -761,9 +762,28 @@ if not AtmosphereObj then
     AtmosphereObj.Parent = Lighting
 end
 
+local otherAtmospheres = {}
+local function scanOtherAtmospheres()
+    otherAtmospheres = {}
+    for _, obj in ipairs(Lighting:GetChildren()) do
+        if obj:IsA("Atmosphere") and obj ~= AtmosphereObj then
+            table.insert(otherAtmospheres, obj)
+        end
+    end
+end
+scanOtherAtmospheres()
+
 local function updateAtmosphere()
     if not AtmosphereObj then return end
     if WorldConfig.AtmosphereEnabled then
+        scanOtherAtmospheres()
+        for _, other in ipairs(otherAtmospheres) do
+            pcall(function()
+                other.Density = 0
+                other.Haze    = 0
+                other.Glare   = 0
+            end)
+        end
         AtmosphereObj.Density = WorldConfig.AtmosphereDensity
         AtmosphereObj.Offset  = WorldConfig.AtmosphereOffset
         AtmosphereObj.Color   = WorldConfig.AtmosphereColor
@@ -772,6 +792,7 @@ local function updateAtmosphere()
         AtmosphereObj.Haze    = WorldConfig.AtmosphereHaze
     else
         AtmosphereObj.Density = 0
+        AtmosphereObj.Offset  = 0
         AtmosphereObj.Haze    = 0
         AtmosphereObj.Glare   = 0
     end
@@ -784,15 +805,37 @@ if not CCObj then
     CCObj.Parent = Lighting
 end
 
+local otherCCs = {}
+local function scanOtherCCs()
+    otherCCs = {}
+    for _, obj in ipairs(Lighting:GetChildren()) do
+        if obj:IsA("ColorCorrectionEffect") and obj ~= CCObj then
+            table.insert(otherCCs, obj)
+        end
+    end
+end
+scanOtherCCs()
+
 local function updateCC()
     if not CCObj then return end
-    CCObj.Enabled    = WorldConfig.ColorCorrectionEnabled
-    CCObj.Brightness = WorldConfig.CC_Brightness
-    CCObj.Contrast   = WorldConfig.CC_Contrast
-    CCObj.Saturation = WorldConfig.CC_Saturation
-    CCObj.TintColor  = WorldConfig.CC_TintColor
+    if WorldConfig.ColorCorrectionEnabled then
+        scanOtherCCs()
+        for _, other in ipairs(otherCCs) do
+            pcall(function() other.Enabled = false end)
+        end
+        CCObj.Enabled    = true
+        CCObj.Brightness = WorldConfig.CC_Brightness
+        CCObj.Contrast   = WorldConfig.CC_Contrast
+        CCObj.Saturation = WorldConfig.CC_Saturation
+        CCObj.TintColor  = WorldConfig.CC_TintColor
+    else
+        CCObj.Enabled = false
+    end
 end
 
+-- =========================================================
+-- WEATHER SYSTEM
+-- =========================================================
 local WeatherSky, WeatherGround
 local WeatherSkyEmitter
 
@@ -883,69 +926,54 @@ end)
 -- =========================================================
 -- LIGHTING UPDATE
 -- =========================================================
-local lightingDirty = true
-local function markLightingDirty() lightingDirty = true end
-local lastApplied = {}
-
-local function updateWorldLighting(force)
-    if Camera and Camera.FieldOfView ~= WorldConfig.CameraFOV then
+local function updateWorldLighting()
+    if not Camera then return end
+    if Camera.FieldOfView ~= WorldConfig.CameraFOV then
         Camera.FieldOfView = WorldConfig.CameraFOV
     end
 
-    if not force and not lightingDirty then return end
-    lightingDirty = false
-
-    if lastApplied.blurEnabled ~= WorldConfig.WorldBlur then
-        BlurObj.Enabled = WorldConfig.WorldBlur
-        lastApplied.blurEnabled = WorldConfig.WorldBlur
-    end
-    if lastApplied.blurSize ~= WorldConfig.BlurSize then
-        BlurObj.Size = WorldConfig.BlurSize
-        lastApplied.blurSize = WorldConfig.BlurSize
+    if BlurObj then
+        if BlurObj.Enabled ~= WorldConfig.WorldBlur then
+            BlurObj.Enabled = WorldConfig.WorldBlur
+        end
+        if BlurObj.Size ~= WorldConfig.BlurSize then
+            BlurObj.Size = WorldConfig.BlurSize
+        end
     end
 
     local targetClock = WorldConfig.NightMode and 0 or WorldConfig.ClockTime
-    if lastApplied.clock ~= targetClock then
+    if Lighting.ClockTime ~= targetClock then
         Lighting.ClockTime = targetClock
-        lastApplied.clock = targetClock
     end
-    if lastApplied.brightness ~= WorldConfig.Brightness then
+    if Lighting.Brightness ~= WorldConfig.Brightness then
         Lighting.Brightness = WorldConfig.Brightness
-        lastApplied.brightness = WorldConfig.Brightness
     end
-    if lastApplied.outdoorAmbient ~= WorldConfig.OutdoorAmbient then
+    if Lighting.OutdoorAmbient ~= WorldConfig.OutdoorAmbient then
         Lighting.OutdoorAmbient = WorldConfig.OutdoorAmbient
-        lastApplied.outdoorAmbient = WorldConfig.OutdoorAmbient
     end
-    if lastApplied.ambient ~= WorldConfig.Ambient then
+    if Lighting.Ambient ~= WorldConfig.Ambient then
         Lighting.Ambient = WorldConfig.Ambient
-        lastApplied.ambient = WorldConfig.Ambient
     end
-    if lastApplied.shadows ~= WorldConfig.GlobalShadows then
+    if Lighting.GlobalShadows ~= WorldConfig.GlobalShadows then
         Lighting.GlobalShadows = WorldConfig.GlobalShadows
-        lastApplied.shadows = WorldConfig.GlobalShadows
     end
-    if lastApplied.exposure ~= WorldConfig.ExposureCompensation then
+    if Lighting.ExposureCompensation ~= WorldConfig.ExposureCompensation then
         Lighting.ExposureCompensation = WorldConfig.ExposureCompensation
-        lastApplied.exposure = WorldConfig.ExposureCompensation
     end
+
     if WorldConfig.FogEnabled then
-        if lastApplied.fogColor ~= WorldConfig.FogColor then
+        if Lighting.FogColor ~= WorldConfig.FogColor then
             Lighting.FogColor = WorldConfig.FogColor
-            lastApplied.fogColor = WorldConfig.FogColor
         end
-        if lastApplied.fogStart ~= WorldConfig.FogStart then
+        if Lighting.FogStart ~= WorldConfig.FogStart then
             Lighting.FogStart = WorldConfig.FogStart
-            lastApplied.fogStart = WorldConfig.FogStart
         end
-        if lastApplied.fogEnd ~= WorldConfig.FogEnd then
+        if Lighting.FogEnd ~= WorldConfig.FogEnd then
             Lighting.FogEnd = WorldConfig.FogEnd
-            lastApplied.fogEnd = WorldConfig.FogEnd
         end
     else
-        if lastApplied.fogEnd ~= 100000 then
+        if Lighting.FogEnd ~= 100000 then
             Lighting.FogEnd = 100000
-            lastApplied.fogEnd = 100000
         end
     end
 end
@@ -1029,7 +1057,7 @@ local function drawBulletTracer(startPos, targetPos)
     beam.Texture        = "rbxassetid://12781800668"
     beam.TextureMode    = Enum.TextureMode.Stretch
     beam.TextureLength  = 0.2
-    beam.TextureSpeed   = 0.5
+    beam.TextureSpeed   = 0.3
     beam.Transparency   = NumberSequence.new(BulletTracer.Transparency)
     beam.Parent         = Workspace.Terrain
 
@@ -1071,7 +1099,7 @@ local function drawBulletTracer(startPos, targetPos)
 end
 
 -- =========================================================
--- FOV & TARGET DRAWINGS
+-- FOV & TARGET DRAWINGS (Silent Aim)
 -- =========================================================
 local fovOutlineOuter = Drawing.new("Circle")
 fovOutlineOuter.Thickness    = 1.25
@@ -1096,6 +1124,31 @@ fovOutlineInner.Filled       = false
 fovOutlineInner.Transparency = 0.65
 fovOutlineInner.Visible      = false
 fovOutlineInner.NumSides     = 144
+
+-- ⭐ Ragebot FOV Drawings
+local rageFovOutlineOuter = Drawing.new("Circle")
+rageFovOutlineOuter.Thickness    = 1.25
+rageFovOutlineOuter.Color        = Color3.fromRGB(0, 0, 0)
+rageFovOutlineOuter.Filled       = false
+rageFovOutlineOuter.Transparency = 0.65
+rageFovOutlineOuter.Visible      = false
+rageFovOutlineOuter.NumSides     = 144
+
+local rageFovCircle = Drawing.new("Circle")
+rageFovCircle.Thickness    = 1.5
+rageFovCircle.Color        = Color3.fromRGB(255, 60, 60)
+rageFovCircle.Filled       = false
+rageFovCircle.Transparency = 0.85
+rageFovCircle.Visible      = false
+rageFovCircle.NumSides     = 144
+
+local rageFovOutlineInner = Drawing.new("Circle")
+rageFovOutlineInner.Thickness    = 1.25
+rageFovOutlineInner.Color        = Color3.fromRGB(0, 0, 0)
+rageFovOutlineInner.Filled       = false
+rageFovOutlineInner.Transparency = 0.65
+rageFovOutlineInner.Visible      = false
+rageFovOutlineInner.NumSides     = 144
 
 local snapLine = Drawing.new("Line")
 snapLine.Thickness    = TargetVisuals.SnapLineThickness
@@ -1178,10 +1231,13 @@ local function isObstructed(origin, target, character)
     return ray ~= nil and ray.Instance ~= nil and not ray.Instance:IsDescendantOf(character)
 end
 
+-- =========================================================
+-- SILENT AIM — STRICT FOV
+-- =========================================================
 local function getTarget(origin)
     local localTeam = LocalPlayer:GetAttribute("Team")
     local look      = Camera.CFrame.LookVector
-    local best, bestAngle = nil, math.rad(SilentAim.FOV)
+    local best, bestAngle = nil, math.rad(SilentAim.FOV / 2)
 
     for _, player in ipairs(Players:GetPlayers()) do
         if player == LocalPlayer then continue end
@@ -1454,14 +1510,14 @@ local function canWallbangRage(targetPart)
 end
 
 -- =========================================================
--- RAGEBOT TARGET SELECTION
+-- RAGEBOT TARGET SELECTION — STRICT FOV
 -- =========================================================
 local function findRageTarget()
     local localTeam = LocalPlayer:GetAttribute("Team")
     local camCF   = Camera.CFrame
     local camPos  = camCF.Position
     local lookX, lookY, lookZ = camCF.LookVector.X, camCF.LookVector.Y, camCF.LookVector.Z
-    local cosMax  = math.cos(math.rad(RagebotConfig.FOV or 180))
+    local cosMax  = math.cos(math.rad((RagebotConfig.FOV or 180) / 2))
 
     local localChar = LocalPlayer.Character
     local localY = camPos.Y
@@ -1476,7 +1532,7 @@ local function findRageTarget()
     local maxHeight  = RagebotConfig.MaxHeightDiff
     local visibleChk = RagebotConfig.VisibleCheck
     local wallChk    = RagebotConfig.WallCheck
-    local priorityNm = RagebotConfig.PriorityName
+    local priorityNm = RagebotConfig.PriorityEnabled and RagebotConfig.PriorityName or nil
 
     local best, bestPlr, bestDist = nil, nil, math.huge
 
@@ -1550,8 +1606,17 @@ task.spawn(function()
             local hp = char:GetAttribute("Health")
             local alive = not char:GetAttribute("Dead") and (hp == nil or hp > 0)
             if alive then
-                local _, onScreen = Camera:WorldToViewportPoint(lastTargetPart.Position)
-                if onScreen then keepOld = true end
+                local camLook = Camera.CFrame.LookVector
+                local dir = (lastTargetPart.Position - Camera.CFrame.Position)
+                local dist = dir.Magnitude
+                if dist > 0.001 then
+                    local dot = camLook:Dot(dir.Unit)
+                    local cosMax = math.cos(math.rad((RagebotConfig.FOV or 180) / 2))
+                    if dot >= cosMax then
+                        local _, onScreen = Camera:WorldToViewportPoint(lastTargetPart.Position)
+                        if onScreen then keepOld = true end
+                    end
+                end
             end
         end
 
@@ -1582,12 +1647,14 @@ local lastWeaponChamsUpdate = 0
 local WEAPON_CHAMS_RATE = 0.1
 
 RunService.RenderStepped:Connect(function()
-    updateWorldLighting(false)
+    updateWorldLighting()
+    updateAtmosphere()   -- ⭐ NEW
+    updateCC()           -- ⭐ NEW
 
     local viewportSize = Camera.ViewportSize
     local center = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
 
-    -- FOV circle
+    -- SilentAim FOV
     if SilentAim.ShowFOV and SilentAim.Enabled then
         local radFOV = math.rad(SilentAim.FOV)
         local radCameraFOV = math.rad(Camera.FieldOfView)
@@ -1610,6 +1677,34 @@ RunService.RenderStepped:Connect(function()
         fovCircle.Visible        = false
         fovOutlineOuter.Visible  = false
         fovOutlineInner.Visible  = false
+    end
+
+    -- ⭐ Ragebot FOV
+    if RagebotConfig.ShowFOV then
+        local radFOV = math.rad(RagebotConfig.FOV or 180)
+        local radCameraFOV = math.rad(Camera.FieldOfView)
+        local radius = (math.tan(radFOV / 2) / math.tan(radCameraFOV / 2)) * (viewportSize.Y / 2)
+
+        local color = RagebotConfig.Enabled
+            and Color3.fromRGB(255, 60, 60)
+            or Color3.fromRGB(255, 180, 0)
+
+        rageFovCircle.Position = center
+        rageFovCircle.Radius   = radius
+        rageFovCircle.Color    = color
+        rageFovCircle.Visible  = true
+
+        rageFovOutlineOuter.Position = center
+        rageFovOutlineOuter.Radius   = radius + 1.25
+        rageFovOutlineOuter.Visible  = true
+
+        rageFovOutlineInner.Position = center
+        rageFovOutlineInner.Radius   = radius - 1.25
+        rageFovOutlineInner.Visible  = true
+    else
+        rageFovCircle.Visible        = false
+        rageFovOutlineOuter.Visible  = false
+        rageFovOutlineInner.Visible  = false
     end
 
     -- ESP
@@ -2083,7 +2178,7 @@ task.spawn(function()
 end)
 
 -- =========================================================
--- HIT BUILDER + REMOTE HOOK
+-- HIT BUILDER + REMOTE HOOK — HIT CHANCE 100%
 -- =========================================================
 local function buildHit(origin, part)
     local targetPos = part.Position
@@ -2100,6 +2195,13 @@ end
 
 local ok, Remotes = pcall(require, ReplicatedStorage:WaitForChild("Database", 5):WaitForChild("Security", 5):WaitForChild("Remotes", 5))
 local shootRemote = ok and Remotes and Remotes.Inventory and Remotes.Inventory.ShootWeapon
+
+local function rollHitChance()
+    local chance = RagebotConfig.HitChance or 100
+    if chance >= 100 then return true end
+    if chance <= 0 then return false end
+    return math.random() * 100 <= chance
+end
 
 if shootRemote and shootRemote.Send then
     local oldSend
@@ -2121,7 +2223,7 @@ if shootRemote and shootRemote.Send then
                     if not targetToHit and SilentAim.Enabled then
                         targetToHit = getTarget(origin)
                     end
-                    if targetToHit then
+                    if targetToHit and rollHitChance() then
                         bullet.Direction = (targetToHit.Position - origin).Unit
                         bullet.Hits      = { buildHit(origin, targetToHit) }
                         playHitSound()
@@ -2157,17 +2259,7 @@ if shootRemote and shootRemote.Send then
 end
 
 -- =========================================================
--- =========================================================
--- UI — REORGANIZED TABS
--- =========================================================
---   Tabs:
---     Blatant     → Silent Aim / Hitbox Extender / Gun Mods / Shoot Sound
---     Ragebot     → Ragebot Main / Rage Checks / Height Filter
---     Hit Effect  → Hit Chams / Hit Overlay / Hit Particles / Hit Sound
---     Visual      → Weapon Material / Bullet Tracers / FOV / Target Visuals
---     ESP         → ESP (boxes / bars / skeleton) / Player Chams
---     World       → Camera & Effects (+ Third Person) / Lighting / Ambient / Atmosphere / CC / Weather
---     Settings    → Menu / Keybind / Config
+-- UI — TABS
 -- =========================================================
 
 local Tabs = {
@@ -2216,11 +2308,16 @@ RageMainBox:AddToggle("rage_enabled",  { Text = "Enable Ragebot", Default = Rage
 RageMainBox:AddSlider("rage_delay",    { Text = "Shoot Delay", Default = RagebotConfig.Delay, Min = 0.001, Max = 1, Rounding = 3, Suffix = "s", Callback = function(v) RagebotConfig.Delay = v end })
 RageMainBox:AddDropdown("rage_hitpart",{ Text = "Hit Part", Values = { "Head", "HumanoidRootPart", "UpperTorso", "LowerTorso" }, Default = "Head", Callback = function(v) RagebotConfig.HitPart = v end })
 RageMainBox:AddSlider("rage_fov",      { Text = "Ragebot FOV", Default = RagebotConfig.FOV, Min = 10, Max = 180, Rounding = 0, Suffix = "°", Callback = function(v) RagebotConfig.FOV = v end })
+
+-- ⭐ Toggle Show Ragebot FOV
+RageMainBox:AddToggle("rage_show_fov", { Text = "Show Ragebot FOV", Default = RagebotConfig.ShowFOV, Callback = function(v) RagebotConfig.ShowFOV = v end })
+
 RageMainBox:AddToggle("rage_fastmode", { Text = "Fast Mode (Burst)", Default = RagebotConfig.FastMode, Callback = function(v) RagebotConfig.FastMode = v end })
 RageMainBox:AddSlider("rage_maxshots", { Text = "Max Shots / Frame", Default = RagebotConfig.MaxShotsPerFrame, Min = 1, Max = 10, Rounding = 0, Callback = function(v) RagebotConfig.MaxShotsPerFrame = v end })
 RageMainBox:AddSlider("rage_maxsps",   { Text = "Max Shots / Second", Default = RagebotConfig.MaxShotsPerSec, Min = 10, Max = 300, Rounding = 0, Callback = function(v) RagebotConfig.MaxShotsPerSec = v end })
 RageMainBox:AddToggle("rage_autoreload",{ Text = "Auto Reload", Default = RagebotConfig.AutoReload, Callback = function(v) RagebotConfig.AutoReload = v end })
 RageMainBox:AddSlider("rage_autoreload_delay", { Text = "Auto Reload Cooldown", Default = RagebotConfig.ReloadDelay, Min = 0.05, Max = 1.0, Rounding = 2, Suffix = "s", Callback = function(v) RagebotConfig.ReloadDelay = v end })
+RageMainBox:AddSlider("rage_hitchance", { Text = "Hit Chance", Default = RagebotConfig.HitChance, Min = 0, Max = 100, Rounding = 0, Suffix = "%", Callback = function(v) RagebotConfig.HitChance = v end })
 
 local RageCheckBox = Tabs.Ragebot:AddRightGroupbox("Rage Checks", "shield-check")
 RageCheckBox:AddToggle("rage_teamcheck",    { Text = "Team Check",                    Default = RagebotConfig.TeamCheck,    Callback = function(v) RagebotConfig.TeamCheck = v end })
@@ -2229,10 +2326,14 @@ RageCheckBox:AddToggle("rage_wallcheck",    { Text = "Wall Check",              
 RageCheckBox:AddToggle("rage_autowall",     { Text = "Auto Wall (Penetration)",       Default = RagebotConfig.AutoWall,     Callback = function(v) RagebotConfig.AutoWall = v end })
 RageCheckBox:AddSlider("rage_maxpen",       { Text = "Max Penetration",               Default = RagebotConfig.MaxPen,       Min = 0.1, Max = 20, Rounding = 1, Suffix = " studs", Callback = function(v) RagebotConfig.MaxPen = v end })
 
-local RageHeightBox = Tabs.Ragebot:AddLeftGroupbox("Height Filter", "arrow-down-up")
-RageHeightBox:AddToggle("rage_height_enabled", { Text = "Enable Height Filter", Default = RagebotConfig.HeightCheck, Callback = function(v) RagebotConfig.HeightCheck = v end })
-RageHeightBox:AddSlider("rage_height_diff",    { Text = "Max Height Above (studs)", Default = RagebotConfig.MaxHeightDiff, Min = 0, Max = 100, Rounding = 0, Suffix = " studs", Callback = function(v) RagebotConfig.MaxHeightDiff = v end })
-RageHeightBox:AddSlider("rage_target_refresh", { Text = "Target Refresh Rate", Default = RagebotConfig.TargetRefresh, Min = 0.01, Max = 0.5, Rounding = 2, Suffix = "s", Callback = function(v) RagebotConfig.TargetRefresh = v end })
+RageCheckBox:AddDivider()
+RageCheckBox:AddToggle("rage_priority_enabled", {
+    Text = "Enable Priority Target",
+    Default = RagebotConfig.PriorityEnabled,
+    Callback = function(v)
+        RagebotConfig.PriorityEnabled = v
+    end
+})
 
 local function refreshPriorityList()
     local names = {"[ AUTO ]"}
@@ -2243,11 +2344,13 @@ local function refreshPriorityList()
 end
 
 RageCheckBox:AddDropdown("rage_priority", {
-    Text = "Priority Target",
+    Text = "Priority Target Player",
     Values = refreshPriorityList(),
     Default = "[ AUTO ]",
     Searchable = true,
-    Callback = function(v) RagebotConfig.PriorityName = (v == "[ AUTO ]") and nil or v end,
+    Callback = function(v)
+        RagebotConfig.PriorityName = (v == "[ AUTO ]") and nil or v
+    end,
 })
 RageCheckBox:AddButton({
     Text = "Refresh Priority List",
@@ -2257,6 +2360,11 @@ RageCheckBox:AddButton({
         end
     end,
 })
+
+local RageHeightBox = Tabs.Ragebot:AddLeftGroupbox("Height Filter", "arrow-down-up")
+RageHeightBox:AddToggle("rage_height_enabled", { Text = "Enable Height Filter", Default = RagebotConfig.HeightCheck, Callback = function(v) RagebotConfig.HeightCheck = v end })
+RageHeightBox:AddSlider("rage_height_diff",    { Text = "Max Height Above (studs)", Default = RagebotConfig.MaxHeightDiff, Min = 0, Max = 100, Rounding = 0, Suffix = " studs", Callback = function(v) RagebotConfig.MaxHeightDiff = v end })
+RageHeightBox:AddSlider("rage_target_refresh", { Text = "Target Refresh Rate", Default = RagebotConfig.TargetRefresh, Min = 0.01, Max = 0.5, Rounding = 2, Suffix = "s", Callback = function(v) RagebotConfig.TargetRefresh = v end })
 
 -- =========================================================
 -- TAB: HIT EFFECT
@@ -2297,8 +2405,8 @@ WeaponMatBox:AddSlider("weapon_mat_glass_transparency", { Text = "Glass Transpar
 WeaponMatBox:AddSlider("weapon_mat_metal_reflectance",  { Text = "Metal Reflectance",  Default = WeaponMaterialConfig.MetalReflectance,  Min = 0, Max = 1, Rounding = 1, Callback = function(v) WeaponMaterialConfig.MetalReflectance = v end })
 
 local FOVBox = Tabs.Visual:AddLeftGroupbox("FOV Settings", "circle-dot")
-FOVBox:AddToggle("draw_fov",    { Text = "Draw FOV", Default = SilentAim.ShowFOV,     Callback = function(v) SilentAim.ShowFOV = v end })
-FOVBox:AddToggle("fov_outline", { Text = "Outline",  Default = SilentAim.ShowOutline, Callback = function(v) SilentAim.ShowOutline = v end })
+FOVBox:AddToggle("draw_fov",    { Text = "Draw Silent Aim FOV", Default = SilentAim.ShowFOV,     Callback = function(v) SilentAim.ShowFOV = v end })
+FOVBox:AddToggle("fov_outline", { Text = "Outline",             Default = SilentAim.ShowOutline, Callback = function(v) SilentAim.ShowOutline = v end })
 
 local TargetBox = Tabs.Visual:AddLeftGroupbox("Target Visuals", "target")
 TargetBox:AddToggle("target_snapline", { Text = "Target SnapLine", Default = TargetVisuals.SnapLine, Callback = function(v) TargetVisuals.SnapLine = v end })
@@ -2380,11 +2488,10 @@ ChamsBox:AddSlider("chams_outline_transparency", { Text = "Outline Transparency"
 -- TAB: WORLD
 -- =========================================================
 local CameraBox = Tabs.World:AddLeftGroupbox("Camera & Effects", "camera")
-CameraBox:AddSlider("world_camera_fov", { Text = "Camera FOV", Default = WorldConfig.CameraFOV, Min = 30, Max = 160, Rounding = 0, Suffix = "°", Callback = function(v) WorldConfig.CameraFOV = v; if Camera then Camera.FieldOfView = v end; markLightingDirty() end })
-CameraBox:AddToggle("world_blur_enabled", { Text = "World Blur", Default = WorldConfig.WorldBlur, Callback = function(v) WorldConfig.WorldBlur = v; markLightingDirty() end })
-CameraBox:AddSlider("world_blur_size", { Text = "Blur", Default = WorldConfig.BlurSize, Min = 0, Max = 50, Rounding = 0, Suffix = "px", Callback = function(v) WorldConfig.BlurSize = v; markLightingDirty() end })
+CameraBox:AddSlider("world_camera_fov", { Text = "Camera FOV", Default = WorldConfig.CameraFOV, Min = 30, Max = 160, Rounding = 0, Suffix = "°", Callback = function(v) WorldConfig.CameraFOV = v; if Camera then Camera.FieldOfView = v end end })
+CameraBox:AddToggle("world_blur_enabled", { Text = "World Blur", Default = WorldConfig.WorldBlur, Callback = function(v) WorldConfig.WorldBlur = v end })
+CameraBox:AddSlider("world_blur_size", { Text = "Blur", Default = WorldConfig.BlurSize, Min = 0, Max = 50, Rounding = 0, Suffix = "px", Callback = function(v) WorldConfig.BlurSize = v end })
 
--- ==== THIRD PERSON (NEW) ====
 CameraBox:AddDivider()
 CameraBox:AddToggle("third_person_enabled", {
     Text = "Enable Third Person",
@@ -2408,54 +2515,50 @@ CameraBox:AddButton({
 })
 
 local NightBox = Tabs.World:AddLeftGroupbox("Lighting & Night Mode", "sun-moon")
-NightBox:AddToggle("world_nightmode", { Text = "Enable Night Mode", Default = WorldConfig.NightMode, Callback = function(v) WorldConfig.NightMode = v; markLightingDirty() end })
-NightBox:AddSlider("world_clocktime", { Text = "Time of Day", Default = WorldConfig.ClockTime, Min = 0, Max = 24, Rounding = 1, Suffix = "h", Callback = function(v) WorldConfig.ClockTime = v; markLightingDirty() end })
-NightBox:AddSlider("world_brightness", { Text = "Brightness", Default = WorldConfig.Brightness, Min = 0, Max = 10, Rounding = 1, Callback = function(v) WorldConfig.Brightness = v; markLightingDirty() end })
-NightBox:AddSlider("world_exposure", { Text = "Exposure", Default = WorldConfig.ExposureCompensation, Min = -3, Max = 3, Rounding = 2, Callback = function(v) WorldConfig.ExposureCompensation = v; markLightingDirty() end })
-NightBox:AddToggle("world_shadows", { Text = "Global Shadows", Default = WorldConfig.GlobalShadows, Callback = function(v) WorldConfig.GlobalShadows = v; markLightingDirty() end })
+NightBox:AddToggle("world_nightmode", { Text = "Enable Night Mode", Default = WorldConfig.NightMode, Callback = function(v) WorldConfig.NightMode = v end })
+NightBox:AddSlider("world_clocktime", { Text = "Time of Day", Default = WorldConfig.ClockTime, Min = 0, Max = 24, Rounding = 1, Suffix = "h", Callback = function(v) WorldConfig.ClockTime = v end })
+NightBox:AddSlider("world_brightness", { Text = "Brightness", Default = WorldConfig.Brightness, Min = 0, Max = 10, Rounding = 1, Callback = function(v) WorldConfig.Brightness = v end })
+NightBox:AddSlider("world_exposure", { Text = "Exposure", Default = WorldConfig.ExposureCompensation, Min = -3, Max = 3, Rounding = 2, Callback = function(v) WorldConfig.ExposureCompensation = v end })
+NightBox:AddToggle("world_shadows", { Text = "Global Shadows", Default = WorldConfig.GlobalShadows, Callback = function(v) WorldConfig.GlobalShadows = v end })
 NightBox:AddDropdown("world_skybox", { Text = "Skybox Preset", Values = { 'Default', 'Night', 'Cyberpunk', 'Sunset', 'Purple Nebula', 'Clear Daylight', 'Red Moon' }, Default = "Night", Callback = function(v) WorldConfig.SelectedSky = v; applySky(v) end })
 
--- Custom Ambient
 local AmbientBox = Tabs.World:AddLeftGroupbox("Custom Ambient", "sun")
 AmbientBox:AddLabel("Ambient Color"):AddColorPicker("world_ambient_color", {
     Default = WorldConfig.Ambient,
     Title = "Ambient Color",
-    Callback = function(v) WorldConfig.Ambient = v; markLightingDirty() end
+    Callback = function(v) WorldConfig.Ambient = v end
 })
 AmbientBox:AddLabel("Outdoor Ambient Color"):AddColorPicker("world_outdoor_ambient_color", {
     Default = WorldConfig.OutdoorAmbient,
     Title = "Outdoor Ambient Color",
-    Callback = function(v) WorldConfig.OutdoorAmbient = v; markLightingDirty() end
+    Callback = function(v) WorldConfig.OutdoorAmbient = v end
 })
 AmbientBox:AddDivider()
-AmbientBox:AddToggle("world_fog_enabled", { Text = "Enable Fog", Default = WorldConfig.FogEnabled, Callback = function(v) WorldConfig.FogEnabled = v; markLightingDirty() end })
+AmbientBox:AddToggle("world_fog_enabled", { Text = "Enable Fog", Default = WorldConfig.FogEnabled, Callback = function(v) WorldConfig.FogEnabled = v end })
 AmbientBox:AddLabel("Fog Color"):AddColorPicker("world_fog_color", {
     Default = WorldConfig.FogColor,
     Title = "Fog Color",
-    Callback = function(v) WorldConfig.FogColor = v; markLightingDirty() end
+    Callback = function(v) WorldConfig.FogColor = v end
 })
-AmbientBox:AddSlider("world_fog_start", { Text = "Fog Start", Default = WorldConfig.FogStart, Min = 0, Max = 500, Rounding = 0, Suffix = " studs", Callback = function(v) WorldConfig.FogStart = v; markLightingDirty() end })
-AmbientBox:AddSlider("world_fog_end",   { Text = "Fog End",   Default = WorldConfig.FogEnd,   Min = 100, Max = 5000, Rounding = 0, Suffix = " studs", Callback = function(v) WorldConfig.FogEnd = v; markLightingDirty() end })
+AmbientBox:AddSlider("world_fog_start", { Text = "Fog Start", Default = WorldConfig.FogStart, Min = 0, Max = 500, Rounding = 0, Suffix = " studs", Callback = function(v) WorldConfig.FogStart = v end })
+AmbientBox:AddSlider("world_fog_end",   { Text = "Fog End",   Default = WorldConfig.FogEnd,   Min = 100, Max = 5000, Rounding = 0, Suffix = " studs", Callback = function(v) WorldConfig.FogEnd = v end })
 
--- Atmosphere
 local AtmoBox = Tabs.World:AddRightGroupbox("Atmosphere", "cloud")
-AtmoBox:AddToggle("atmo_enabled", { Text = "Enable Atmosphere", Default = false, Callback = function(v) WorldConfig.AtmosphereEnabled = v; updateAtmosphere() end })
-AtmoBox:AddSlider("atmo_density", { Text = "Density", Default = 0.35, Min = 0, Max = 1, Rounding = 3, Callback = function(v) WorldConfig.AtmosphereDensity = v; updateAtmosphere() end })
-AtmoBox:AddSlider("atmo_offset",  { Text = "Offset",  Default = 0,    Min = -1, Max = 1, Rounding = 3, Callback = function(v) WorldConfig.AtmosphereOffset = v; updateAtmosphere() end })
-AtmoBox:AddSlider("atmo_glare",   { Text = "Glare",   Default = 0,    Min = 0, Max = 5, Rounding = 2, Callback = function(v) WorldConfig.AtmosphereGlare = v; updateAtmosphere() end })
-AtmoBox:AddSlider("atmo_haze",    { Text = "Haze",    Default = 1.5,  Min = 0, Max = 10, Rounding = 2, Callback = function(v) WorldConfig.AtmosphereHaze = v; updateAtmosphere() end })
-AtmoBox:AddLabel("Atmosphere Color"):AddColorPicker("atmo_color", { Default = Color3.fromRGB(199,199,199), Title = "Atmosphere Color", Callback = function(v) WorldConfig.AtmosphereColor = v; updateAtmosphere() end })
-AtmoBox:AddLabel("Atmosphere Decay"):AddColorPicker("atmo_decay", { Default = Color3.fromRGB(106,112,125), Title = "Atmosphere Decay", Callback = function(v) WorldConfig.AtmosphereDecay = v; updateAtmosphere() end })
+AtmoBox:AddToggle("atmo_enabled", { Text = "Enable Atmosphere", Default = WorldConfig.AtmosphereEnabled, Callback = function(v) WorldConfig.AtmosphereEnabled = v; updateAtmosphere() end })
+AtmoBox:AddSlider("atmo_density", { Text = "Density", Default = WorldConfig.AtmosphereDensity, Min = 0, Max = 1, Rounding = 3, Callback = function(v) WorldConfig.AtmosphereDensity = v; updateAtmosphere() end })
+AtmoBox:AddSlider("atmo_offset",  { Text = "Offset",  Default = WorldConfig.AtmosphereOffset,    Min = -1, Max = 1, Rounding = 3, Callback = function(v) WorldConfig.AtmosphereOffset = v; updateAtmosphere() end })
+AtmoBox:AddSlider("atmo_glare",   { Text = "Glare",   Default = WorldConfig.AtmosphereGlare,    Min = 0, Max = 5, Rounding = 2, Callback = function(v) WorldConfig.AtmosphereGlare = v; updateAtmosphere() end })
+AtmoBox:AddSlider("atmo_haze",    { Text = "Haze",    Default = WorldConfig.AtmosphereHaze,  Min = 0, Max = 10, Rounding = 2, Callback = function(v) WorldConfig.AtmosphereHaze = v; updateAtmosphere() end })
+AtmoBox:AddLabel("Atmosphere Color"):AddColorPicker("atmo_color", { Default = WorldConfig.AtmosphereColor, Title = "Atmosphere Color", Callback = function(v) WorldConfig.AtmosphereColor = v; updateAtmosphere() end })
+AtmoBox:AddLabel("Atmosphere Decay"):AddColorPicker("atmo_decay", { Default = WorldConfig.AtmosphereDecay, Title = "Atmosphere Decay", Callback = function(v) WorldConfig.AtmosphereDecay = v; updateAtmosphere() end })
 
--- Color Correction
 local CCBox = Tabs.World:AddRightGroupbox("Color Correction", "palette")
-CCBox:AddToggle("cc_enabled", { Text = "Enable Color Correction", Default = false, Callback = function(v) WorldConfig.ColorCorrectionEnabled = v; updateCC() end })
-CCBox:AddSlider("cc_brightness", { Text = "Brightness", Default = 0, Min = -1, Max = 1, Rounding = 2, Callback = function(v) WorldConfig.CC_Brightness = v; updateCC() end })
-CCBox:AddSlider("cc_contrast",   { Text = "Contrast",   Default = 0, Min = -1, Max = 1, Rounding = 2, Callback = function(v) WorldConfig.CC_Contrast = v; updateCC() end })
-CCBox:AddSlider("cc_saturation", { Text = "Saturation", Default = 0, Min = -1, Max = 1, Rounding = 2, Callback = function(v) WorldConfig.CC_Saturation = v; updateCC() end })
-CCBox:AddLabel("Tint Color"):AddColorPicker("cc_tint", { Default = Color3.fromRGB(255,255,255), Title = "Tint Color", Callback = function(v) WorldConfig.CC_TintColor = v; updateCC() end })
+CCBox:AddToggle("cc_enabled", { Text = "Enable Color Correction", Default = WorldConfig.ColorCorrectionEnabled, Callback = function(v) WorldConfig.ColorCorrectionEnabled = v; updateCC() end })
+CCBox:AddSlider("cc_brightness", { Text = "Brightness", Default = WorldConfig.CC_Brightness, Min = -1, Max = 1, Rounding = 2, Callback = function(v) WorldConfig.CC_Brightness = v; updateCC() end })
+CCBox:AddSlider("cc_contrast",   { Text = "Contrast",   Default = WorldConfig.CC_Contrast,   Min = -1, Max = 1, Rounding = 2, Callback = function(v) WorldConfig.CC_Contrast = v; updateCC() end })
+CCBox:AddSlider("cc_saturation", { Text = "Saturation", Default = WorldConfig.CC_Saturation, Min = -1, Max = 1, Rounding = 2, Callback = function(v) WorldConfig.CC_Saturation = v; updateCC() end })
+CCBox:AddLabel("Tint Color"):AddColorPicker("cc_tint", { Default = WorldConfig.CC_TintColor, Title = "Tint Color", Callback = function(v) WorldConfig.CC_TintColor = v; updateCC() end })
 
--- Weather
 local WeatherBox = Tabs.World:AddRightGroupbox("Weather", "cloud-rain")
 WeatherBox:AddDropdown("weather_type", {
     Text = "Weather Type",
@@ -2469,7 +2572,7 @@ WeatherBox:AddDropdown("weather_type", {
 WeatherBox:AddSlider("weather_intensity", { Text = "Intensity", Default = 1.0, Min = 0.1, Max = 5.0, Rounding = 1, Callback = function(v) WorldConfig.WeatherIntensity = v; createWeather(WorldConfig.WeatherType) end })
 WeatherBox:AddSlider("weather_speed",     { Text = "Speed",     Default = 1.0, Min = 0.1, Max = 3.0, Rounding = 2, Callback = function(v) WorldConfig.WeatherSpeed = v; createWeather(WorldConfig.WeatherType) end })
 WeatherBox:AddSlider("weather_size",      { Text = "Size",      Default = 1.0, Min = 0.3, Max = 3.0, Rounding = 2, Callback = function(v) WorldConfig.WeatherSize = v; createWeather(WorldConfig.WeatherType) end })
-WeatherBox:AddLabel("Weather Color"):AddColorPicker("weather_color", { Default = Color3.fromRGB(255,255,255), Title = "Weather Color", Callback = function(v) WorldConfig.WeatherColor = v; createWeather(WorldConfig.WeatherType) end })
+WeatherBox:AddLabel("Weather Color"):AddColorPicker("weather_color", { Default = WorldConfig.WeatherColor, Title = "Weather Color", Callback = function(v) WorldConfig.WeatherColor = v; createWeather(WorldConfig.WeatherType) end })
 
 -- =========================================================
 -- TAB: SETTINGS
@@ -2507,13 +2610,11 @@ SaveManager:LoadAutoloadConfig()
 WeaponModsModule.InitHooks()
 WeaponModsModule.StartFirerateLoop()
 
-markLightingDirty()
-updateWorldLighting(true)
+updateWorldLighting()
 updateAtmosphere()
 updateCC()
 createWeather(WorldConfig.WeatherType)
 
--- apply Third Person ถ้าตอน load config แล้วมีค่าเปิดไว้
 applyThirdPerson(ThirdPersonConfig.Enabled)
 
 Players.PlayerRemoving:Connect(function(p)
@@ -2525,4 +2626,4 @@ Players.PlayerRemoving:Connect(function(p)
     end
 end)
 
-Library:Notify("Neverlose v1.6 loaded — Third Person + Custom Ambient ready!", 5)
+Library:Notify("Neverlose v1.7.2 loaded — Ragebot FOV + Atmosphere Fix", 5)
