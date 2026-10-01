@@ -1,301 +1,224 @@
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-local RunService = game:GetService("RunService")
+-- =========================================================
+-- Neverlose x BloxStrike (Obsidian UI Version)
+-- v1.6 — Reorganized Tabs + Custom Ambient + Third Person
+-- =========================================================
+
+local Players          = game:GetService("Players")
+local Workspace        = game:GetService("Workspace")
+local RunService       = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local SoundService = game:GetService("SoundService")
-local TweenService = game:GetService("TweenService")
-local Lighting = game:GetService("Lighting")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SoundService     = game:GetService("SoundService")
+local TweenService     = game:GetService("TweenService")
+local Lighting         = game:GetService("Lighting")
+local ReplicatedStorage= game:GetService("ReplicatedStorage")
 
 local LocalPlayer = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
+local Camera      = Workspace.CurrentCamera
 
--- NeverLose UI Library
-local NeverLose = loadstring(game:HttpGet("https://raw.githubusercontent.com/4lpaca-pin/NeverLose/refs/heads/main/source.luau"))()
+-- =========================================================
+-- OBSIDIAN UI LIBRARY
+-- =========================================================
+local Repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+local Library      = loadstring(game:HttpGet(Repo .. "Library.lua"))()
+local ThemeManager = loadstring(game:HttpGet(Repo .. "addons/ThemeManager.lua"))()
+local SaveManager  = loadstring(game:HttpGet(Repo .. "addons/SaveManager.lua"))()
 
--- Sound Lists Engine for Hit Sound
+local Options = Library.Options
+local Toggles = Library.Toggles
+
+Library.ForceCheckbox             = false
+Library.ShowToggleFrameInKeybinds = true
+Library.ShowCustomCursor          = true
+Library.NotifySide                = "Right"
+
+local Window = Library:CreateWindow({
+    Title           = "Neverlose",
+    Footer          = "BloxStrike | v1.6",
+    Icon            = 9736039840,
+    Center          = true,
+    AutoShow        = true,
+    Resizable       = true,
+    ShowCustomCursor= true,
+    NotifySide      = "Right",
+    TabPadding      = 8,
+    MenuFadeTime    = 0
+})
+
+-- =========================================================
+-- SOUND LISTS
+-- =========================================================
 local SoundIDs = {
-    ["None"] = "None",
-    ["Spark"] = "rbxassetid://110241936966089",
-    ["Neverlose"] = "rbxassetid://18391691942",
-    ["Rust"] = "rbxassetid://138750331387064",
-    ["Break"] = "rbxassetid://103059835203534",
-    ["Fatality"] = "rbxassetid://17802817724",
-    ["Primordial"] = "rbxassetid://97511223764004",
-    ["Minecraft xp"] = "rbxassetid://17148249625",
-    ["Minecraft Bow"] = "rbxassetid://135478009117226",
-    ["Crack"] = "rbxassetid://126409451844008",
-    ["Pop"] = "rbxassetid://140323850218372",
-    ["Headshot"] = "rbxassetid://5764885315",
-    ["Manbo"] = "rbxassetid://102257186883445",
-    ["Skeet"] = "rbxassetid://80461265049096"
+    ["None"]             = "None",
+    ["Spark"]            = "rbxassetid://110241936966089",
+    ["Neverlose"]        = "rbxassetid://18391691942",
+    ["Rust"]             = "rbxassetid://138750331387064",
+    ["Break"]            = "rbxassetid://103059835203534",
+    ["Fatality"]         = "rbxassetid://17802817724",
+    ["Primordial"]       = "rbxassetid://97511223764004",
+    ["Minecraft xp"]     = "rbxassetid://17148249625",
+    ["Minecraft Bow"]    = "rbxassetid://135478009117226",
+    ["Crack"]            = "rbxassetid://126409451844008",
+    ["Pop"]              = "rbxassetid://140323850218372",
+    ["Headshot"]         = "rbxassetid://5764885315",
+    ["Manbo"]            = "rbxassetid://102257186883445",
+    ["Skeet"]            = "rbxassetid://80461265049096"
 }
+local ShootSoundIDs = { ["SGG 08"] = "rbxassetid://110661851940409" }
 
--- Exclusive Shoot Sound List
-local ShootSoundIDs = {
-    ["SGG 08"] = "rbxassetid://110661851940409"
-}
-
--- Independent Configurations
+-- =========================================================
+-- CONFIGS
+-- =========================================================
 local ShootSoundConfig = { Enabled = true, Mode = "SGG 08", Volume = 2 }
-local HitSoundConfig = { Enabled = true, Mode = "Skeet", Volume = 2 }
+local HitSoundConfig   = { Enabled = true, Mode = "Skeet",  Volume = 2 }
 local HitOverlayConfig = { Enabled = true, Color = Color3.fromRGB(255, 0, 50), Duration = 0.25, MaxTransparency = 0.6 }
-local HitEffectConfig = { Enabled = true, Style = "Sparks", Color = Color3.fromRGB(0, 255, 128) }
-local HitChamsConfig = { Enabled = true, Color = Color3.fromRGB(0, 255, 255), Duration = 1.0, Material = Enum.Material.Neon }
+local HitEffectConfig  = { Enabled = true, Style = "Sparks", Color = Color3.fromRGB(0, 255, 128) }
+local HitChamsConfig   = { Enabled = true, Color = Color3.fromRGB(0, 255, 255), Duration = 1.0, Material = Enum.Material.Neon }
 
--- GUN MODS CONFIGURATION
 local GunModsConfig = {
-    NoRecoil = false,
-    NoSpread = false,
+    NoRecoil        = false,
+    NoSpread        = false,
     FirerateEnabled = false,
-    FirerateValue = 0.01,
-    InstantReload = false
+    FirerateValue   = 0.01,
+    InstantReload   = false
 }
 
--- ADVANCED SKIN CHANGER & KNIFE CHANGER ENGINE
-local WeaponComponent = nil
-local SkinsLib = nil
-pcall(function()
-    WeaponComponent = require(ReplicatedStorage:WaitForChild("Classes", 5):WaitForChild("WeaponComponent", 5))
-    SkinsLib = require(ReplicatedStorage:WaitForChild("Database", 5):WaitForChild("Components", 5):WaitForChild("Libraries", 5):WaitForChild("Skins", 5))
+local WeaponMaterialConfig = {
+    Enabled = false,
+    Mode    = "Glass",
+    Color   = Color3.fromRGB(0, 150, 255),
+    GlassTransparency = 0.4,
+    MetalReflectance  = 1.0
+}
+
+local RagebotConfig = {
+    Enabled         = false,
+    Delay           = 0.01,
+    HitPart         = "Head",
+    VisibleCheck    = true,
+    TeamCheck       = true,
+    WallCheck       = false,
+    AutoWall        = false,
+    MaxPen          = 7,
+    PriorityName    = nil,
+    HeightCheck     = true,
+    MaxHeightDiff   = 35,
+    FOV             = 180,
+    TargetRefresh   = 0.05,
+    AutoReload      = true,
+    ReloadDelay     = 0.15,
+    FastMode        = true,
+    MaxShotsPerFrame= 4,
+    MaxShotsPerSec  = 100,
+}
+
+local rageCache = { part = nil, player = nil, time = 0 }
+
+-- =========================================================
+-- THIRD PERSON CONFIG
+-- =========================================================
+local ThirdPersonConfig = {
+    Enabled  = false,
+    Distance = 10,
+}
+
+-- =========================================================
+-- THIRD PERSON METATABLE HOOK
+-- =========================================================
+-- Hook __newindex ของเกม เพื่อดักการเซ็ตค่า CameraMode / ZoomDistance
+-- ให้คงค่า Third Person ไว้แม้เกมจะพยายามรีเซ็ตกลับ First Person
+task.spawn(function()
+    if typeof(getrawmetatable) ~= "function" or typeof(setreadonly) ~= "function" then return end
+    local mt = getrawmetatable(game)
+    if not mt then return end
+    local oldNewIndex = mt.__newindex
+    setreadonly(mt, false)
+    mt.__newindex = newcclosure(function(self, key, value)
+        if self == LocalPlayer and ThirdPersonConfig.Enabled then
+            if key == "CameraMode" then
+                return oldNewIndex(self, key, Enum.CameraMode.Classic)
+            elseif key == "CameraMaxZoomDistance" then
+                return oldNewIndex(self, key, ThirdPersonConfig.Distance)
+            elseif key == "CameraMinZoomDistance" then
+                return oldNewIndex(self, key, ThirdPersonConfig.Distance)
+            end
+        end
+        return oldNewIndex(self, key, value)
+    end)
+    setreadonly(mt, true)
 end)
 
-local SkinsFolder = ReplicatedStorage:FindFirstChild("Assets") and ReplicatedStorage.Assets:FindFirstChild("Skins")
-
-local SkinChangerConfig = {
-    SKINS_ENABLED = true,
-    KNIFE_ENABLED = true,
-    KNIFE_MODEL = "Butterfly Knife",
-    KNIFE_SKIN = "Vanilla",
-    SELECTED_SKINS = {}
-}
-
-local SkinChanger = {
-    Connections = {},
-    Initialized = false
-}
-
-local function isLocalPlayerAlive()
-    local charsFolder = Workspace:FindFirstChild("Characters")
-    local myChar = LocalPlayer.Character
-    if not myChar or (charsFolder and myChar.Parent ~= charsFolder) then
-        return false
-    end
-    if myChar:GetAttribute("Dead") == true then
-        return false
-    end
-    return true
-end
-
-local function isViewingLocalPlayer()
-    if not isLocalPlayerAlive() then return false end
-    local myChar = LocalPlayer.Character
-    local subject = Camera.CameraSubject
-    if not subject then return true end
-    return subject == myChar or subject:IsDescendantOf(myChar)
-end
-
-local function isKnife(weaponName)
-    if typeof(weaponName) ~= "string" then return false end
-    if weaponName:find("Zeus") or weaponName:find("Taser") then return false end
-    return weaponName == "CT Knife" or weaponName == "T Knife" or weaponName:find("Knife") or weaponName:find("Bayonet") or weaponName:find("Karambit") or weaponName == "LightSaber"
-end
-
-local function isExemptUtility(weaponName)
-    if typeof(weaponName) ~= "string" then return false end
-    return weaponName:find("Zeus") or weaponName:find("Grenade") or weaponName == "Molotov" or weaponName == "Flashbang" or weaponName == "C4"
-end
-
-function SkinChanger.getKnifeSelection()
-    if not SkinChangerConfig.KNIFE_ENABLED then return nil, nil end
-    local targetKnife = SkinChangerConfig.KNIFE_MODEL or "Butterfly Knife"
-    local skinName = SkinChangerConfig.KNIFE_SKIN or "Vanilla"
-    return targetKnife, skinName
-end
-
-function SkinChanger.getValidSkin(weaponName)
-    if not SkinsFolder or not weaponName or isExemptUtility(weaponName) then return nil end
-    local folder = SkinsFolder:FindFirstChild(weaponName)
-    if not folder then return nil end
-
-    local custom = SkinChangerConfig.SELECTED_SKINS[weaponName]
-    if custom and custom ~= "None" and folder:FindFirstChild(custom) then
-        return custom, "Factory New"
-    end
-    return nil
-end
-
-function SkinChanger.applySkinToViewModel(viewmodel, weaponName, skinName, wear)
-    if not SkinsFolder or not viewmodel or not weaponName or not skinName or isExemptUtility(weaponName) then return false end
-    local weaponFolder = SkinsFolder:FindFirstChild(weaponName)
-    if not weaponFolder then return false end
-
-    local skin = weaponFolder:FindFirstChild(skinName)
-    if not skin then return false end
-
-    local camFolder = skin:FindFirstChild("Camera") or skin
-    local wearFolder = camFolder:FindFirstChild(wear or "Factory New") or camFolder:GetChildren()[1]
-
-    if not wearFolder then return false end
-
+-- ฟังก์ชันช่วย apply ค่าทันที
+local function applyThirdPerson(enabled)
+    ThirdPersonConfig.Enabled = enabled
     pcall(function()
-        for _, sa in ipairs(wearFolder:GetChildren()) do
-            if sa:IsA("SurfaceAppearance") then
-                local targetPart = viewmodel:FindFirstChild(sa.Name, true)
-                if targetPart and (targetPart:IsA("MeshPart") or targetPart:IsA("BasePart")) then
-                    local old = targetPart:FindFirstChildOfClass("SurfaceAppearance")
-                    if old then pcall(function() old:Destroy() end) end
-
-                    local clone = sa:Clone()
-                    clone.Parent = targetPart
-                end
-            end
-        end
-    end)
-    return true
-end
-
-function SkinChanger.forceRefreshCurrentKnife()
-    if not isViewingLocalPlayer() then return end
-    for _, child in ipairs(Camera:GetChildren()) do
-        if child:IsA("Model") and (isKnife(child.Name) or child:FindFirstChild("Knife") or child:FindFirstChild("Weapon")) then
-            local targetKnife, knifeSkin = SkinChanger.getKnifeSelection()
-            if targetKnife then
-                SkinChanger.applySkinToViewModel(child, targetKnife, knifeSkin, "Factory New")
-            end
-        end
-    end
-end
-
-function SkinChanger.applyToCurrentViewModel(targetGunName)
-    if not SkinChangerConfig.SKINS_ENABLED or not isViewingLocalPlayer() then return end
-    for _, child in ipairs(Camera:GetChildren()) do
-        if child:IsA("Model") and (child:FindFirstChild("Weapon") or child:FindFirstChild("WeaponL") or child:FindFirstChild("WeaponR")) then
-            local weaponName = child.Name
-            if (not targetGunName or weaponName == targetGunName) and not isExemptUtility(weaponName) and not isKnife(weaponName) then
-                local skinName, wear = SkinChanger.getValidSkin(weaponName)
-                if skinName then
-                    SkinChanger.applySkinToViewModel(child, weaponName, skinName, wear)
-                end
-            end
-        end
-    end
-end
-
-function SkinChanger.init()
-    if SkinChanger.Initialized or not WeaponComponent or not SkinsLib then return end
-    SkinChanger.Initialized = true
-
-    local originalWeaponNew = WeaponComponent.new
-    local originalGetCameraModel = SkinsLib.GetCameraModel
-    local originalGetCharacterModel = SkinsLib.GetCharacterModel
-
-    WeaponComponent.new = function(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, ...)
-        if not SkinChangerConfig.SKINS_ENABLED or p1 ~= LocalPlayer or not isLocalPlayerAlive() then
-            return originalWeaponNew(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, ...)
-        end
-
-        if isKnife(p5) and SkinChangerConfig.KNIFE_ENABLED then
-            local targetKnife, skinName = SkinChanger.getKnifeSelection()
-            if targetKnife then
-                return originalWeaponNew(p1, p2, p3, p4, targetKnife, skinName, 0.001, p8, p9, p10, p11, p12, ...)
-            end
-        end
-
-        return originalWeaponNew(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, ...)
-    end
-
-    SkinsLib.GetCameraModel = function(weaponName, skinName, float, statTrack, nameTag, charm, stickers, team)
-        if not SkinChangerConfig.SKINS_ENABLED or not isViewingLocalPlayer() then
-            return originalGetCameraModel(weaponName, skinName, float, statTrack, nameTag, charm, stickers, team)
-        end
-
-        if isKnife(weaponName) and SkinChangerConfig.KNIFE_ENABLED then
-            local targetKnife, knifeSkin = SkinChanger.getKnifeSelection()
-            if targetKnife then
-                local model = originalGetCameraModel(targetKnife, knifeSkin, 0.001, statTrack, nameTag, charm, stickers, team)
-                if model then model.Name = targetKnife end
-                return model
-            end
-        end
-
-        return originalGetCameraModel(weaponName, skinName, float, statTrack, nameTag, charm, stickers, team)
-    end
-
-    SkinsLib.GetCharacterModel = function(weaponName, skinName, float, statTrack, nameTag, charm, stickers, team)
-        if SkinChangerConfig.SKINS_ENABLED and isKnife(weaponName) and SkinChangerConfig.KNIFE_ENABLED then
-            local targetKnife, knifeSkin = SkinChanger.getKnifeSelection()
-            if targetKnife then
-                return originalGetCharacterModel(targetKnife, knifeSkin, 0.001, statTrack, nameTag, charm, stickers, team)
-            end
-        end
-        return originalGetCharacterModel(weaponName, skinName, float, statTrack, nameTag, charm, stickers, team)
-    end
-
-    Camera.ChildAdded:Connect(function(child)
-        if not SkinChangerConfig.SKINS_ENABLED or not isViewingLocalPlayer() then return end
-
-        if child:IsA("Model") then
-            local weaponName = child.Name
-            if isKnife(weaponName) and SkinChangerConfig.KNIFE_ENABLED then
-                task.defer(function()
-                    task.wait(0.01)
-                    local targetKnife, knifeSkin = SkinChanger.getKnifeSelection()
-                    if targetKnife then
-                        SkinChanger.applySkinToViewModel(child, targetKnife, knifeSkin, "Factory New")
-                    end
-                end)
-            elseif not isExemptUtility(weaponName) then
-                task.defer(function()
-                    task.wait(0.02)
-                    if SkinChangerConfig.SKINS_ENABLED and isViewingLocalPlayer() then
-                        local skinName, wear = SkinChanger.getValidSkin(weaponName)
-                        if skinName then
-                            SkinChanger.applySkinToViewModel(child, weaponName, skinName, wear)
-                        end
-                    end
-                end)
-            end
+        LocalPlayer.CameraMode = Enum.CameraMode.Classic
+        if enabled then
+            LocalPlayer.CameraMaxZoomDistance = ThirdPersonConfig.Distance
+            LocalPlayer.CameraMinZoomDistance = ThirdPersonConfig.Distance
+        else
+            LocalPlayer.CameraMaxZoomDistance = 128
+            LocalPlayer.CameraMinZoomDistance = 0.5
         end
     end)
 end
 
-SkinChanger.init()
+local function setThirdPersonDistance(dist)
+    ThirdPersonConfig.Distance = dist
+    if ThirdPersonConfig.Enabled then
+        pcall(function()
+            LocalPlayer.CameraMaxZoomDistance = dist
+            LocalPlayer.CameraMinZoomDistance = dist
+        end)
+    end
+end
 
--- INSTANT RELOAD LOGIC ENGINE
-local RELOAD_ANIMS = {
-    ["Reload"]       = true,
-    ["ReloadStart"]  = true,
-    ["ReloadAction"] = true,
-    ["ReloadEnd"]    = true,
-}
+-- =========================================================
+-- INVENTORY CONTROLLER CACHE
+-- =========================================================
+local InventoryController
+task.spawn(function()
+    pcall(function()
+        InventoryController = require(
+            ReplicatedStorage:WaitForChild("Controllers", 5)
+                :WaitForChild("InventoryController", 5)
+        )
+    end)
+end)
 
+local function getWeaponObjectSafe()
+    if not InventoryController then return nil end
+    local fn = InventoryController.peekCurrentEquippedForMovement
+    if not fn then return nil end
+    local ok, weapon = pcall(fn)
+    return ok and weapon or nil
+end
+
+-- =========================================================
+-- INSTANT RELOAD
+-- =========================================================
+local RELOAD_ANIMS = { ["Reload"]=true, ["ReloadStart"]=true, ["ReloadAction"]=true, ["ReloadEnd"]=true }
 local RELOAD_SPEED = 199
 local reloadHooked = {}
 
-local function getWeaponObjectSafe()
-    local ok, IC = pcall(function()
-        return require(ReplicatedStorage:WaitForChild("Controllers", 2):WaitForChild("InventoryController", 2))
-    end)
-    if not ok or not IC then return nil end
-    return IC.peekCurrentEquippedForMovement and IC.peekCurrentEquippedForMovement() or nil
+local function isShootAnimName(name)
+    if not name or type(name) ~= "string" then return false end
+    local lower = name:lower()
+    return lower:find("fire") or lower:find("shoot") or lower:find("recoil") or lower:find("muzzle")
 end
 
 local function hookAnimationReload(animModule)
     if not animModule or reloadHooked[animModule] then return end
     reloadHooked[animModule] = true
-
     pcall(function()
         local origPlay = animModule.play
         animModule.play = function(self_anim, animName, ...)
+            if RagebotConfig.Enabled and isShootAnimName(animName) then return nil end
             local track = origPlay(self_anim, animName, ...)
             if track and RELOAD_ANIMS[animName] then
                 task.defer(function()
                     pcall(function()
-                        if GunModsConfig.InstantReload then
-                            if track.IsPlaying then
-                                track:AdjustSpeed(RELOAD_SPEED)
-                            end
+                        if GunModsConfig.InstantReload and track.IsPlaying then
+                            track:AdjustSpeed(RELOAD_SPEED)
                         end
                     end)
                 end)
@@ -306,39 +229,27 @@ local function hookAnimationReload(animModule)
 end
 
 local lastReloadWeapon = nil
-
 task.spawn(function()
     while task.wait(0.1) do
         pcall(function()
             local weapon = getWeaponObjectSafe()
             if not weapon then return end
-
             if weapon ~= lastReloadWeapon then
                 lastReloadWeapon = weapon
-                if weapon.Viewmodel and weapon.Viewmodel.Animation then
-                    hookAnimationReload(weapon.Viewmodel.Animation)
-                end
-                if weapon.CharacterAnimator then
-                    hookAnimationReload(weapon.CharacterAnimator)
-                end
+                if weapon.Viewmodel and weapon.Viewmodel.Animation then hookAnimationReload(weapon.Viewmodel.Animation) end
+                if weapon.CharacterAnimator then hookAnimationReload(weapon.CharacterAnimator) end
             end
-
             if not GunModsConfig.InstantReload then return end
-
             if weapon.IsReloading then
                 pcall(function()
                     if weapon.Viewmodel and weapon.Viewmodel.Animation and weapon.Viewmodel.Animation.Animations then
                         for name, track in pairs(weapon.Viewmodel.Animation.Animations) do
-                            if RELOAD_ANIMS[name] and track.IsPlaying then
-                                track:AdjustSpeed(RELOAD_SPEED)
-                            end
+                            if RELOAD_ANIMS[name] and track.IsPlaying then track:AdjustSpeed(RELOAD_SPEED) end
                         end
                     end
                     if weapon.CharacterAnimator and weapon.CharacterAnimator.Animations then
                         for name, track in pairs(weapon.CharacterAnimator.Animations) do
-                            if RELOAD_ANIMS[name] and track.IsPlaying then
-                                track:AdjustSpeed(RELOAD_SPEED)
-                            end
+                            if RELOAD_ANIMS[name] and track.IsPlaying then track:AdjustSpeed(RELOAD_SPEED) end
                         end
                     end
                 end)
@@ -347,174 +258,203 @@ task.spawn(function()
     end
 end)
 
+task.spawn(function()
+    while task.wait(0.05) do
+        if not RagebotConfig.Enabled then continue end
+        pcall(function()
+            local weapon = getWeaponObjectSafe()
+            if not weapon then return end
+            local function killShootAnims(container)
+                if not container or not container.Animations then return end
+                for name, track in pairs(container.Animations) do
+                    if isShootAnimName(name) and track.IsPlaying then
+                        pcall(function() track:Stop(0) end)
+                    end
+                end
+            end
+            if weapon.Viewmodel and weapon.Viewmodel.Animation then killShootAnims(weapon.Viewmodel.Animation) end
+            if weapon.CharacterAnimator then killShootAnims(weapon.CharacterAnimator) end
+        end)
+    end
+end)
+
 pcall(function()
-    local IC = require(ReplicatedStorage:WaitForChild("Controllers", 2):WaitForChild("InventoryController", 2))
+    local IC = require(ReplicatedStorage:WaitForChild("Controllers", 5):WaitForChild("InventoryController", 5))
     if IC and IC.OnInventoryItemEquipped then
         IC.OnInventoryItemEquipped:Connect(function(_, weapon)
             if not weapon then return end
             task.defer(function()
-                if weapon.Viewmodel and weapon.Viewmodel.Animation then
-                    hookAnimationReload(weapon.Viewmodel.Animation)
-                end
-                if weapon.CharacterAnimator then
-                    hookAnimationReload(weapon.CharacterAnimator)
-                end
+                if weapon.Viewmodel and weapon.Viewmodel.Animation then hookAnimationReload(weapon.Viewmodel.Animation) end
+                if weapon.CharacterAnimator then hookAnimationReload(weapon.CharacterAnimator) end
             end)
         end)
     end
 end)
 
--- Function to Spawn Hit Chams Ghost
+-- =========================================================
+-- HIT CHAMS
+-- =========================================================
+local lastChamsTime = 0
+local CHAMS_COOLDOWN = 0.05
+
 local function triggerHitChams(targetCharacter)
     if not HitChamsConfig.Enabled or not targetCharacter then return end
-    
+    local now = os.clock()
+    if now - lastChamsTime < CHAMS_COOLDOWN then return end
+    lastChamsTime = now
+
     local cloneModel = Instance.new("Model")
-    cloneModel.Name = "HitChamsGhost"
-    
+    cloneModel.Name  = "HitChamsGhost"
     for _, part in ipairs(targetCharacter:GetChildren()) do
         if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
             local ghostPart = part:Clone()
             ghostPart:ClearAllChildren()
-            ghostPart.CanCollide = false
-            ghostPart.Anchored = true
-            ghostPart.Material = HitChamsConfig.Material
-            ghostPart.Color = HitChamsConfig.Color
+            ghostPart.CanCollide   = false
+            ghostPart.Anchored     = true
+            ghostPart.Material     = HitChamsConfig.Material
+            ghostPart.Color        = HitChamsConfig.Color
             ghostPart.Transparency = 0
-            ghostPart.Parent = cloneModel
-            
-            TweenService:Create(
-                ghostPart,
+            ghostPart.Parent       = cloneModel
+            TweenService:Create(ghostPart,
                 TweenInfo.new(HitChamsConfig.Duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                { Transparency = 1 }
-            ):Play()
+                { Transparency = 1 }):Play()
         end
     end
-    
     cloneModel.Parent = Workspace
-    
     task.delay(HitChamsConfig.Duration + 0.1, function()
         if cloneModel then pcall(function() cloneModel:Destroy() end) end
     end)
 end
 
--- Create Hit Particle Container Part
+-- =========================================================
+-- HIT PARTICLES
+-- =========================================================
 local hit_particle_part = Instance.new("Part")
-hit_particle_part.Name = "HitEffectParticleContainer"
-hit_particle_part.Size = Vector3.new(0.1, 0.1, 0.1)
+hit_particle_part.Name         = "HitEffectParticleContainer"
+hit_particle_part.Size         = Vector3.new(0.1, 0.1, 0.1)
 hit_particle_part.Transparency = 1
-hit_particle_part.Anchored = true
-hit_particle_part.CanCollide = false
-hit_particle_part.Parent = Workspace
+hit_particle_part.Anchored     = true
+hit_particle_part.CanCollide   = false
+hit_particle_part.Parent       = Workspace
 
--- Initialize Particle Emitters
 local hit_particles = {
-    ["Sparks"] = {
-        {
-            (function()
-                local pe = Instance.new("ParticleEmitter")
-                pe.Acceleration = Vector3.new(0, -50, 0)
-                pe.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)), ColorSequenceKeypoint.new(0.25, Color3.new(0.33, 1, 0)), ColorSequenceKeypoint.new(1, Color3.new(0.33, 1, 0.5))}
-                pe.Lifetime = NumberRange.new(0.5, 1)
-                pe.LightEmission = 1
-                pe.Enabled = false
-                pe.Orientation = Enum.ParticleOrientation.VelocityParallel
-                pe.Rate = 0
-                pe.Size = NumberSequence.new{NumberSequenceKeypoint.new(0, 0.6, 0), NumberSequenceKeypoint.new(0.5, 0.6, 0), NumberSequenceKeypoint.new(1, 0, 0)}
-                pe.Speed = NumberRange.new(15, 15)
-                pe.SpreadAngle = Vector2.new(50, -50)
-                pe.Texture = "http://www.roblox.com/asset/?id=18540695516"
-                pe.Transparency = NumberSequence.new{NumberSequenceKeypoint.new(0, 0, 0), NumberSequenceKeypoint.new(0.5, 0, 0), NumberSequenceKeypoint.new(1, 1, 0)}
-                pe.Parent = hit_particle_part
-                return pe
-            end)(),
-            30
+    ["Sparks"] = {{
+        (function()
+            local pe = Instance.new("ParticleEmitter")
+            pe.Acceleration = Vector3.new(0, -50, 0)
+            pe.Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0, Color3.new(1,1,1)),
+                ColorSequenceKeypoint.new(0.25, Color3.new(0.33,1,0)),
+                ColorSequenceKeypoint.new(1, Color3.new(0.33,1,0.5))
+            }
+            pe.Lifetime      = NumberRange.new(0.5, 1)
+            pe.LightEmission = 1
+            pe.Enabled       = false
+            pe.Orientation   = Enum.ParticleOrientation.VelocityParallel
+            pe.Rate          = 0
+            pe.Size = NumberSequence.new{
+                NumberSequenceKeypoint.new(0, 0.6, 0),
+                NumberSequenceKeypoint.new(0.5, 0.6, 0),
+                NumberSequenceKeypoint.new(1, 0, 0)
+            }
+            pe.Speed      = NumberRange.new(15, 15)
+            pe.SpreadAngle= Vector2.new(50, -50)
+            pe.Texture    = "http://www.roblox.com/asset/?id=18540695516"
+            pe.Transparency = NumberSequence.new{
+                NumberSequenceKeypoint.new(0, 0, 0),
+                NumberSequenceKeypoint.new(0.5, 0, 0),
+                NumberSequenceKeypoint.new(1, 1, 0)
+            }
+            pe.Parent = hit_particle_part
+            return pe
+        end)(),
+        30
+    }},
+    ["Bubble"] = {{ (function()
+        local pe = Instance.new("ParticleEmitter")
+        pe.FlipbookMode = Enum.ParticleFlipbookMode.OneShot
+        pe.Color        = ColorSequence.new(Color3.fromRGB(85,255,255))
+        pe.LockedToPart = true
+        pe.Rate         = 1.5
+        pe.Rotation     = NumberRange.new(-5, 5)
+        pe.Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 1),
+            NumberSequenceKeypoint.new(0.464, 0.77),
+            NumberSequenceKeypoint.new(1, 1)
         }
-    },
-    ["Bubble"] = {
-        {
-            (function()
-                local pe = Instance.new("ParticleEmitter")
-                pe.FlipbookMode = Enum.ParticleFlipbookMode.OneShot
-                pe.Color = ColorSequence.new(Color3.fromRGB(85, 255, 255))
-                pe.LockedToPart = true
-                pe.Rate = 1.5
-                pe.Rotation = NumberRange.new(-5, 5)
-                pe.Transparency = NumberSequence.new{NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.464, 0.77), NumberSequenceKeypoint.new(1, 1)}
-                pe.Texture = "rbxassetid://17086075673"
-                pe.Lifetime = NumberRange.new(0.45, 0.45)
-                pe.LightEmission = 1
-                pe.Brightness = 5
-                pe.Speed = NumberRange.new(0, 0)
-                pe.Size = NumberSequence.new{NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 6)}
-                pe.Enabled = false
-                pe.Parent = hit_particle_part
-                return pe
-            end)(),
-            1
+        pe.Texture      = "rbxassetid://17086075673"
+        pe.Lifetime     = NumberRange.new(0.45, 0.45)
+        pe.LightEmission= 1
+        pe.Brightness   = 5
+        pe.Speed        = NumberRange.new(0, 0)
+        pe.Size         = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 0.1),
+            NumberSequenceKeypoint.new(1, 6)
         }
-    },
-    ["Orbs"] = {
-        {
-            (function()
-                local pe = Instance.new("ParticleEmitter")
-                pe.FlipbookMode = Enum.ParticleFlipbookMode.OneShot
-                pe.RotSpeed = NumberRange.new(-10, 10)
-                pe.FlipbookFramerate = NumberRange.new(40, 40)
-                pe.Drag = 1
-                pe.Rate = 1
-                pe.Texture = "rbxassetid://15011464541"
-                pe.Rotation = NumberRange.new(-1000, 1000)
-                pe.Transparency = NumberSequence.new{NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)}
-                pe.SpreadAngle = Vector2.new(-1000, 1000)
-                pe.Lifetime = NumberRange.new(0.45, 0.45)
-                pe.LightEmission = 1
-                pe.Brightness = 10
-                pe.FlipbookLayout = Enum.ParticleFlipbookLayout.Grid8x8
-                pe.Size = NumberSequence.new{NumberSequenceKeypoint.new(0, 5.5), NumberSequenceKeypoint.new(1, 5.5)}
-                pe.Enabled = false
-                pe.Parent = hit_particle_part
-                return pe
-            end)(),
-            3
+        pe.Enabled = false
+        pe.Parent  = hit_particle_part
+        return pe
+    end)(), 1 }},
+    ["Orbs"] = {{ (function()
+        local pe = Instance.new("ParticleEmitter")
+        pe.FlipbookMode      = Enum.ParticleFlipbookMode.OneShot
+        pe.RotSpeed          = NumberRange.new(-10, 10)
+        pe.FlipbookFramerate = NumberRange.new(40, 40)
+        pe.Drag              = 1
+        pe.Rate              = 1
+        pe.Texture           = "rbxassetid://15011464541"
+        pe.Rotation          = NumberRange.new(-1000, 1000)
+        pe.Transparency = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 0),
+            NumberSequenceKeypoint.new(1, 1)
         }
-    },
-    ["Air"] = {
-        {
-            (function()
-                local pe = Instance.new("ParticleEmitter")
-                pe.FlipbookMode = Enum.ParticleFlipbookMode.PingPong
-                pe.VelocityInheritance = 0.15
-                pe.Texture = "rbxassetid://10536350143"
-                pe.FlipbookFramerate = NumberRange.new(30, 30)
-                pe.Drag = 4.5
-                pe.Rate = 1
-                pe.Speed = NumberRange.new(0, 0)
-                pe.LightInfluence = 1
-                pe.Acceleration = Vector3.new(1, 0, 1)
-                pe.LockedToPart = true
-                pe.Lifetime = NumberRange.new(1, 1)
-                pe.LightEmission = 1
-                pe.Brightness = 10
-                pe.FlipbookLayout = Enum.ParticleFlipbookLayout.Grid8x8
-                pe.Size = NumberSequence.new{NumberSequenceKeypoint.new(0, 3), NumberSequenceKeypoint.new(1, 3)}
-                pe.Enabled = false
-                pe.Parent = hit_particle_part
-                return pe
-            end)(),
-            1
+        pe.SpreadAngle   = Vector2.new(-1000, 1000)
+        pe.Lifetime      = NumberRange.new(0.45, 0.45)
+        pe.LightEmission = 1
+        pe.Brightness    = 10
+        pe.FlipbookLayout= Enum.ParticleFlipbookLayout.Grid8x8
+        pe.Size = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 5.5),
+            NumberSequenceKeypoint.new(1, 5.5)
         }
-    }
+        pe.Enabled = false
+        pe.Parent  = hit_particle_part
+        return pe
+    end)(), 3 }},
+    ["Air"] = {{ (function()
+        local pe = Instance.new("ParticleEmitter")
+        pe.FlipbookMode      = Enum.ParticleFlipbookMode.PingPong
+        pe.VelocityInheritance = 0.15
+        pe.Texture           = "rbxassetid://10536350143"
+        pe.FlipbookFramerate = NumberRange.new(30, 30)
+        pe.Drag              = 4.5
+        pe.Rate              = 1
+        pe.Speed             = NumberRange.new(0, 0)
+        pe.LightInfluence    = 1
+        pe.Acceleration      = Vector3.new(1, 0, 1)
+        pe.LockedToPart      = true
+        pe.Lifetime          = NumberRange.new(1, 1)
+        pe.LightEmission     = 1
+        pe.Brightness        = 10
+        pe.FlipbookLayout    = Enum.ParticleFlipbookLayout.Grid8x8
+        pe.Size = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 3),
+            NumberSequenceKeypoint.new(1, 3)
+        }
+        pe.Enabled = false
+        pe.Parent  = hit_particle_part
+        return pe
+    end)(), 1 }}
 }
 
 local function triggerHitEffect(position)
     if not HitEffectConfig.Enabled then return end
     local selectedParticles = hit_particles[HitEffectConfig.Style]
     if not selectedParticles then return end
-
     hit_particle_part.Position = position
     for _, item in ipairs(selectedParticles) do
         local emitter = item[1]
-        local amount = item[2]
+        local amount  = item[2]
         if emitter then
             emitter.Color = ColorSequence.new(HitEffectConfig.Color)
             emitter:Emit(amount)
@@ -522,32 +462,31 @@ local function triggerHitEffect(position)
     end
 end
 
--- Hit Overlay Core Engine Setup
+-- =========================================================
+-- HIT OVERLAY
+-- =========================================================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "HitOverlayGui"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.DisplayOrder = 99999
+ScreenGui.Name           = "HitOverlayGui"
+ScreenGui.ResetOnSpawn   = false
+ScreenGui.DisplayOrder   = 99999
 ScreenGui.IgnoreGuiInset = true
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Parent         = LocalPlayer:WaitForChild("PlayerGui")
 
 local HitOverlayFrame = Instance.new("Frame")
-HitOverlayFrame.Name = "Overlay"
-HitOverlayFrame.Size = UDim2.fromScale(1, 1)
-HitOverlayFrame.Position = UDim2.fromScale(0, 0)
-HitOverlayFrame.BackgroundColor3 = HitOverlayConfig.Color
+HitOverlayFrame.Name                = "Overlay"
+HitOverlayFrame.Size                = UDim2.fromScale(1, 1)
+HitOverlayFrame.Position            = UDim2.fromScale(0, 0)
+HitOverlayFrame.BackgroundColor3    = HitOverlayConfig.Color
 HitOverlayFrame.BackgroundTransparency = 1
-HitOverlayFrame.BorderSizePixel = 0
-HitOverlayFrame.Parent = ScreenGui
+HitOverlayFrame.BorderSizePixel     = 0
+HitOverlayFrame.Parent              = ScreenGui
 
 local activeTween = nil
 local function triggerHitOverlay()
     if not HitOverlayConfig.Enabled then return end
-    
-    HitOverlayFrame.BackgroundColor3 = HitOverlayConfig.Color
+    HitOverlayFrame.BackgroundColor3       = HitOverlayConfig.Color
     HitOverlayFrame.BackgroundTransparency = 1 - HitOverlayConfig.MaxTransparency
-
     if activeTween then activeTween:Cancel() end
-    
     activeTween = TweenService:Create(
         HitOverlayFrame,
         TweenInfo.new(HitOverlayConfig.Duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
@@ -556,28 +495,22 @@ local function triggerHitOverlay()
     activeTween:Play()
 end
 
--- Fixed Sound Engine
+-- =========================================================
+-- SOUND ENGINE
+-- =========================================================
 local function playCustomSound(soundId, volume)
     if not soundId or soundId == "None" or soundId == "" then return end
-    
     task.spawn(function()
         local sound = Instance.new("Sound")
-        sound.Name = "CustomSoundEffect"
-        sound.SoundId = soundId
-        sound.Volume = volume or 2
-        sound.PlayOnRemove = false
-        sound.Parent = SoundService
-        
+        sound.Name        = "CustomSoundEffect"
+        sound.SoundId     = soundId
+        sound.Volume      = volume or 2
+        sound.PlayOnRemove= false
+        sound.Parent      = SoundService
         SoundService:PlayLocalSound(sound)
-        
-        sound.Ended:Once(function()
-            pcall(function() sound:Destroy() end)
-        end)
-        
+        sound.Ended:Once(function() pcall(function() sound:Destroy() end) end)
         task.delay(3, function()
-            if sound and sound.Parent then
-                pcall(function() sound:Destroy() end)
-            end
+            if sound and sound.Parent then pcall(function() sound:Destroy() end) end
         end)
     end)
 end
@@ -585,26 +518,22 @@ end
 local function playShootSound()
     if not ShootSoundConfig.Enabled then return end
     local soundId = ShootSoundIDs[ShootSoundConfig.Mode]
-    if soundId then
-        playCustomSound(soundId, ShootSoundConfig.Volume)
-    end
+    if soundId then playCustomSound(soundId, ShootSoundConfig.Volume) end
 end
 
 local function playHitSound()
     if not HitSoundConfig.Enabled then return end
     local soundId = SoundIDs[HitSoundConfig.Mode]
-    if soundId then
-        playCustomSound(soundId, HitSoundConfig.Volume)
-    end
+    if soundId then playCustomSound(soundId, HitSoundConfig.Volume) end
 end
 
--- Mute Original Weapon Sounds Engine
 local function isGameGunSound(sound)
     if not sound or not sound:IsA("Sound") then return false end
     if sound.Name == "CustomSoundEffect" then return false end
-    
     local name = sound.Name:lower()
-    if name:find("shoot") or name:find("fire") or name:find("shot") or name:find("gun") or name:find("weapon") or name:find("bang") or sound:IsDescendantOf(Camera) then
+    if name:find("shoot") or name:find("fire") or name:find("shot")
+        or name:find("gun") or name:find("weapon") or name:find("bang")
+        or sound:IsDescendantOf(Camera) then
         return true
     end
     return false
@@ -626,14 +555,10 @@ end
 local function setupSoundMuter(parent)
     if not parent then return end
     for _, descendant in ipairs(parent:GetDescendants()) do
-        if descendant:IsA("Sound") then
-            muteSound(descendant)
-        end
+        if descendant:IsA("Sound") then muteSound(descendant) end
     end
     parent.DescendantAdded:Connect(function(descendant)
-        if descendant:IsA("Sound") then
-            muteSound(descendant)
-        end
+        if descendant:IsA("Sound") then muteSound(descendant) end
     end)
 end
 
@@ -643,120 +568,85 @@ setupSoundMuter(Camera)
 if LocalPlayer.Character then setupSoundMuter(LocalPlayer.Character) end
 LocalPlayer.CharacterAdded:Connect(setupSoundMuter)
 
--- Hitbox Configuration
+-- =========================================================
+-- CONFIGS (Visuals / World)
+-- =========================================================
 local HitboxConfig = {
-    Enabled = false,
-    Size = 1,
-    Transparency = 0.7,
-    Color = Color3.fromRGB(255, 0, 0),
-    TeamCheck = true
+    Enabled = false, Size = 1, Transparency = 0.7,
+    Color = Color3.fromRGB(255, 0, 0), TeamCheck = true
 }
 
--- Movement Configuration
-local MovementConfig = {
-    BhopEnabled = false,
-    SpeedEnabled = false,
-    SpeedMultiplier = 1.0,
-    BaseSpeed = 16,
-    JumpBoost = 12,
-    SpeedCap = 180,
-    DecelRate = 30,
-    LowFriction = 0.01
-}
-
-local currSpeed = MovementConfig.BaseSpeed
-
--- Bullet Tracer Configuration
 local BulletTracer = {
-    Enabled = true,
-    Type = "Corner",
-    FadeMode = "Smooth",
-    AnimEasing = "Sine",
-    ColorMode = "Gradient 2 Colors",
+    Enabled = true, Type = "Corner", FadeMode = "Smooth",
+    AnimEasing = "Sine", ColorMode = "Gradient 2 Colors",
     GradientColor1 = Color3.fromRGB(0, 255, 255),
     GradientColor2 = Color3.fromRGB(255, 0, 150),
     GradientColor3 = Color3.fromRGB(150, 0, 255),
-    Color = Color3.fromRGB(0, 170, 255),
-    Transparency = 0,
-    Material = "Neon",
-    Thickness = 0.12,
-    LifeTime = 0.5,
-    FadeTime = 0.3,
-    TravelTime = 0.08,
-    BloomEffect = true,
-    GlowLight = true,
-    GlowBrightness = 2
+    Color = Color3.fromRGB(0, 170, 255), Transparency = 0,
+    Material = "Neon", Thickness = 0.12, LifeTime = 0.5,
+    FadeTime = 0.3, TravelTime = 0.08,
+    BloomEffect = true, GlowLight = true, GlowBrightness = 2
 }
 
--- Config
 local SilentAim = {
-    Enabled = true,
-    TeamCheck = true,
-    WallCheck = true,
-    FOV = 35,
-    AimPart = "Head",
-    ShowFOV = true,
-    ShowOutline = true
+    Enabled = true, TeamCheck = true, WallCheck = true,
+    FOV = 35, AimPart = "Head", ShowFOV = true, ShowOutline = true
 }
 
 local TargetVisuals = {
-    SnapLine = true,
-    SnapLineColor = Color3.fromRGB(255, 0, 0),
-    SnapLineThickness = 1.5,
-    
-    HeadDot = true,
-    HeadDotColor = Color3.fromRGB(255, 0, 0),
-    HeadDotRadius = 4,
-    
-    Highlight = true,
-    HighlightColor = Color3.fromRGB(0, 255, 0)
+    SnapLine = true, SnapLineColor = Color3.fromRGB(255, 0, 0), SnapLineThickness = 1.5,
+    HeadDot = true, HeadDotColor = Color3.fromRGB(255, 0, 0), HeadDotRadius = 4,
+    Highlight = true, HighlightColor = Color3.fromRGB(0, 255, 0)
 }
 
 local Chams = {
-    Enabled = true,
-    TeamCheck = true,
+    Enabled = true, TeamCheck = true,
     FillColor = Color3.fromRGB(255, 0, 0),
     OutlineColor = Color3.fromRGB(255, 100, 100),
-    FillTransparency = 0.5,
-    OutlineTransparency = 0
+    FillTransparency = 0.5, OutlineTransparency = 0
 }
 
--- ESP Configuration
 local ESPConfig = {
-    Enabled = true,
-    TeamCheck = true,
-    Boxes = true,
+    Enabled = true, TeamCheck = true, Boxes = true,
     BoxColor = Color3.fromRGB(255, 255, 255),
-    HealthBar = true,
-    Skeletons = true,
+    HealthBar = true, Skeletons = true,
     SkeletonColor = Color3.fromRGB(255, 255, 255),
-    Outline = true,
-    OutlineColor = Color3.fromRGB(0, 0, 0)
+    Outline = true, OutlineColor = Color3.fromRGB(0, 0, 0)
 }
 
--- World Configuration
 local WorldConfig = {
-    CameraFOV = 70,
-    WorldBlur = false,
-    BlurSize = 10,
-    
-    NightMode = true,
-    ClockTime = 0,
-    Brightness = 1.2,
+    CameraFOV = 70, WorldBlur = false, BlurSize = 10,
+    NightMode = true, ClockTime = 0, Brightness = 1.2,
     OutdoorAmbient = Color3.fromRGB(10, 20, 35),
     Ambient = Color3.fromRGB(15, 25, 40),
-    GlobalShadows = true,
-    ExposureCompensation = -0.2,
-    
-    FogEnabled = true,
-    FogColor = Color3.fromRGB(5, 18, 32),
-    FogStart = 10,
-    FogEnd = 1200,
-    
-    SelectedSky = "Night"
+    GlobalShadows = true, ExposureCompensation = -0.2,
+    FogEnabled = true, FogColor = Color3.fromRGB(5, 18, 32),
+    FogStart = 10, FogEnd = 1200, SelectedSky = "Night",
+
+    AtmosphereEnabled = false,
+    AtmosphereDensity = 0.35,
+    AtmosphereOffset  = 0.0,
+    AtmosphereColor   = Color3.fromRGB(199, 199, 199),
+    AtmosphereDecay   = Color3.fromRGB(106, 112, 125),
+    AtmosphereGlare   = 0.0,
+    AtmosphereHaze    = 1.5,
+
+    ColorCorrectionEnabled = false,
+    CC_Brightness = 0,
+    CC_Contrast   = 0,
+    CC_Saturation = 0,
+    CC_TintColor  = Color3.fromRGB(255, 255, 255),
+
+    WeatherType      = "None",
+    WeatherIntensity = 1.0,
+    WeatherSpeed     = 1.0,
+    WeatherColor     = Color3.fromRGB(255, 255, 255),
+    WeatherSize      = 1.0,
 }
 
--- World System Core Engine
+-- =========================================================
+-- WORLD SYSTEM
+-- =========================================================
 local DefaultSky = Lighting:FindFirstChildOfClass("Sky") and Lighting:FindFirstChildOfClass("Sky"):Clone() or nil
 local CurrentSkyObj = Lighting:FindFirstChildOfClass("Sky")
 
@@ -769,59 +659,16 @@ end
 
 local SkyPresets = {
     ["Default"] = nil,
-    ["Night"] = {
-        SkyboxBk = "rbxassetid://12064107",
-        SkyboxDn = "rbxassetid://12064152",
-        SkyboxFt = "rbxassetid://12064121",
-        SkyboxLf = "rbxassetid://12064131",
-        SkyboxRt = "rbxassetid://12064115",
-        SkyboxUp = "rbxassetid://12064143"
-    },
-    ["Cyberpunk"] = {
-        SkyboxBk = "rbxassetid://159454299",
-        SkyboxDn = "rbxassetid://159454296",
-        SkyboxFt = "rbxassetid://159454293",
-        SkyboxLf = "rbxassetid://159454298",
-        SkyboxRt = "rbxassetid://159454300",
-        SkyboxUp = "rbxassetid://159454302"
-    },
-    ["Sunset"] = {
-        SkyboxBk = "rbxassetid://323493360",
-        SkyboxDn = "rbxassetid://323494032",
-        SkyboxFt = "rbxassetid://323494252",
-        SkyboxLf = "rbxassetid://323494796",
-        SkyboxRt = "rbxassetid://323495049",
-        SkyboxUp = "rbxassetid://323495287"
-    },
-    ["Purple Nebula"] = {
-        SkyboxBk = "rbxassetid://159512398",
-        SkyboxDn = "rbxassetid://159512392",
-        SkyboxFt = "rbxassetid://159512389",
-        SkyboxLf = "rbxassetid://159512396",
-        SkyboxRt = "rbxassetid://159512400",
-        SkyboxUp = "rbxassetid://159512404"
-    },
-    ["Clear Daylight"] = {
-        SkyboxBk = "rbxassetid://610834159",
-        SkyboxDn = "rbxassetid://610834327",
-        SkyboxFt = "rbxassetid://610834570",
-        SkyboxLf = "rbxassetid://610834781",
-        SkyboxRt = "rbxassetid://610835010",
-        SkyboxUp = "rbxassetid://610835174"
-    },
-    ["Red Moon"] = {
-        SkyboxBk = "rbxassetid://121113000",
-        SkyboxDn = "rbxassetid://121113031",
-        SkyboxFt = "rbxassetid://121113056",
-        SkyboxLf = "rbxassetid://121113083",
-        SkyboxRt = "rbxassetid://121113110",
-        SkyboxUp = "rbxassetid://121113141"
-    }
+    ["Night"] = { SkyboxBk="rbxassetid://12064107", SkyboxDn="rbxassetid://12064152", SkyboxFt="rbxassetid://12064121", SkyboxLf="rbxassetid://12064131", SkyboxRt="rbxassetid://12064115", SkyboxUp="rbxassetid://12064143" },
+    ["Cyberpunk"] = { SkyboxBk="rbxassetid://159454299", SkyboxDn="rbxassetid://159454296", SkyboxFt="rbxassetid://159454293", SkyboxLf="rbxassetid://159454298", SkyboxRt="rbxassetid://159454300", SkyboxUp="rbxassetid://159454302" },
+    ["Sunset"] = { SkyboxBk="rbxassetid://323493360", SkyboxDn="rbxassetid://323494032", SkyboxFt="rbxassetid://323494252", SkyboxLf="rbxassetid://323494796", SkyboxRt="rbxassetid://323495049", SkyboxUp="rbxassetid://323495287" },
+    ["Purple Nebula"] = { SkyboxBk="rbxassetid://159512398", SkyboxDn="rbxassetid://159512392", SkyboxFt="rbxassetid://159512389", SkyboxLf="rbxassetid://159512396", SkyboxRt="rbxassetid://159512400", SkyboxUp="rbxassetid://159512404" },
+    ["Clear Daylight"] = { SkyboxBk="rbxassetid://610834159", SkyboxDn="rbxassetid://610834327", SkyboxFt="rbxassetid://610834570", SkyboxLf="rbxassetid://610834781", SkyboxRt="rbxassetid://610835010", SkyboxUp="rbxassetid://610835174" },
+    ["Red Moon"] = { SkyboxBk="rbxassetid://121113000", SkyboxDn="rbxassetid://121113031", SkyboxFt="rbxassetid://121113056", SkyboxLf="rbxassetid://121113083", SkyboxRt="rbxassetid://121113110", SkyboxUp="rbxassetid://121113141" }
 }
 
 local function applySky(presetName)
     if CurrentSkyObj then CurrentSkyObj:Destroy() end
-    
     if presetName == "Default" and DefaultSky then
         CurrentSkyObj = DefaultSky:Clone()
         CurrentSkyObj.Parent = Lighting
@@ -839,7 +686,6 @@ local function applySky(presetName)
     end
 end
 
--- Tracer Color Sequence
 local function getTracerColorSequence()
     local mode = BulletTracer.ColorMode
     if mode == "Gradient 2 Colors" then
@@ -847,13 +693,12 @@ local function getTracerColorSequence()
             ColorSequenceKeypoint.new(0, BulletTracer.GradientColor1),
             ColorSequenceKeypoint.new(1, BulletTracer.GradientColor2)
         }
-
     elseif mode == "cool" then
-    return ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(135, 133, 255)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(133, 156, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(135, 133, 255))
-       }
+        return ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(135,133,255)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(133,156,255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(135,133,255))
+        }
     elseif mode == "Gradient 3 Colors" then
         return ColorSequence.new{
             ColorSequenceKeypoint.new(0, BulletTracer.GradientColor1),
@@ -862,90 +707,273 @@ local function getTracerColorSequence()
         }
     elseif mode == "Cyber Neon" then
         return ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 240)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 180)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 0, 255))
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(0,255,240)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,0,180)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(140,0,255))
         }
     elseif mode == "Sunset Glow" then
         return ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 0)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 100)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 0, 200))
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255,120,0)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,0,100)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(120,0,200))
         }
     elseif mode == "Cotton Candy" then
         return ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 150, 220)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 200, 255))
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255,150,220)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255,255,255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(100,200,255))
         }
     elseif mode == "Fire" then
         return ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 240, 0)),
-            ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 90, 0)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 0))
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255,240,0)),
+            ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255,90,0)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(180,0,0))
         }
     elseif mode == "Rainbow" then
         return ColorSequence.new{
-            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 105, 120)),
-            ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 170, 90)),
-            ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 230, 110)),
-            ColorSequenceKeypoint.new(0.50, Color3.fromRGB(110, 230, 150)),
-            ColorSequenceKeypoint.new(0.67, Color3.fromRGB(100, 200, 255)),
-            ColorSequenceKeypoint.new(0.83, Color3.fromRGB(160, 140, 255)),
-            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 105, 120))
+            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255,105,120)),
+            ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255,170,90)),
+            ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255,230,110)),
+            ColorSequenceKeypoint.new(0.50, Color3.fromRGB(110,230,150)),
+            ColorSequenceKeypoint.new(0.67, Color3.fromRGB(100,200,255)),
+            ColorSequenceKeypoint.new(0.83, Color3.fromRGB(160,140,255)),
+            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255,105,120))
         }
     end
-   
     local singleColor = BulletTracer.Color
-    if mode == "Electric Blue" then singleColor = Color3.fromRGB(0, 170, 255)
-    elseif mode == "Hot Pink" then singleColor = Color3.fromRGB(255, 20, 147)
-    elseif mode == "White" then singleColor = Color3.fromRGB(255, 255, 255)
-    elseif mode == "Crimson Red" then singleColor = Color3.fromRGB(255, 30, 30)
-    elseif mode == "Lime Green" then singleColor = Color3.fromRGB(50, 255, 50)
-    elseif mode == "Neon Purple" then singleColor = Color3.fromRGB(180, 0, 255)
+    if mode == "Electric Blue" then singleColor = Color3.fromRGB(0,170,255)
+    elseif mode == "Hot Pink" then singleColor = Color3.fromRGB(255,20,147)
+    elseif mode == "White" then singleColor = Color3.fromRGB(255,255,255)
+    elseif mode == "Crimson Red" then singleColor = Color3.fromRGB(255,30,30)
+    elseif mode == "Lime Green" then singleColor = Color3.fromRGB(50,255,50)
+    elseif mode == "Neon Purple" then singleColor = Color3.fromRGB(180,0,255)
     end
     return ColorSequence.new(singleColor)
 end
 
-local function updateWorldLighting()
-    Camera.FieldOfView = WorldConfig.CameraFOV
-    BlurObj.Enabled = WorldConfig.WorldBlur
-    BlurObj.Size = WorldConfig.BlurSize
+-- =========================================================
+-- ATMOSPHERE + COLOR CORRECTION + WEATHER
+-- =========================================================
+local AtmosphereObj = Lighting:FindFirstChild("NL_Atmosphere")
+if not AtmosphereObj then
+    AtmosphereObj = Instance.new("Atmosphere")
+    AtmosphereObj.Name = "NL_Atmosphere"
+    AtmosphereObj.Parent = Lighting
+end
 
-    if WorldConfig.NightMode then
-        Lighting.ClockTime = 0
+local function updateAtmosphere()
+    if not AtmosphereObj then return end
+    if WorldConfig.AtmosphereEnabled then
+        AtmosphereObj.Density = WorldConfig.AtmosphereDensity
+        AtmosphereObj.Offset  = WorldConfig.AtmosphereOffset
+        AtmosphereObj.Color   = WorldConfig.AtmosphereColor
+        AtmosphereObj.Decay   = WorldConfig.AtmosphereDecay
+        AtmosphereObj.Glare   = WorldConfig.AtmosphereGlare
+        AtmosphereObj.Haze    = WorldConfig.AtmosphereHaze
     else
-        Lighting.ClockTime = WorldConfig.ClockTime
-    end
-
-    Lighting.Brightness = WorldConfig.Brightness
-    Lighting.OutdoorAmbient = WorldConfig.OutdoorAmbient
-    Lighting.Ambient = WorldConfig.Ambient
-    Lighting.GlobalShadows = WorldConfig.GlobalShadows
-    Lighting.ExposureCompensation = WorldConfig.ExposureCompensation
-    
-    if WorldConfig.FogEnabled then
-        Lighting.FogColor = WorldConfig.FogColor
-        Lighting.FogStart = WorldConfig.FogStart
-        Lighting.FogEnd = WorldConfig.FogEnd
-    else
-        Lighting.FogEnd = 100000
+        AtmosphereObj.Density = 0
+        AtmosphereObj.Haze    = 0
+        AtmosphereObj.Glare   = 0
     end
 end
 
+local CCObj = Lighting:FindFirstChild("NL_CC")
+if not CCObj then
+    CCObj = Instance.new("ColorCorrectionEffect")
+    CCObj.Name = "NL_CC"
+    CCObj.Parent = Lighting
+end
+
+local function updateCC()
+    if not CCObj then return end
+    CCObj.Enabled    = WorldConfig.ColorCorrectionEnabled
+    CCObj.Brightness = WorldConfig.CC_Brightness
+    CCObj.Contrast   = WorldConfig.CC_Contrast
+    CCObj.Saturation = WorldConfig.CC_Saturation
+    CCObj.TintColor  = WorldConfig.CC_TintColor
+end
+
+local WeatherSky, WeatherGround
+local WeatherSkyEmitter
+
+local function destroyWeather()
+    if WeatherSky then WeatherSky:Destroy() WeatherSky = nil end
+    if WeatherGround then WeatherGround:Destroy() WeatherGround = nil end
+    WeatherSkyEmitter = nil
+end
+
+local function createWeather(kind)
+    destroyWeather()
+    if kind == "None" then return end
+
+    WeatherSky = Instance.new("Part")
+    WeatherSky.Name = "NL_Weather_Sky"
+    WeatherSky.Size = Vector3.new(150, 1, 150)
+    WeatherSky.Transparency = 1
+    WeatherSky.Anchored = true
+    WeatherSky.CanCollide = false
+    WeatherSky.CanQuery = false
+    WeatherSky.CanTouch = false
+    WeatherSky.Parent = Camera
+
+    WeatherSkyEmitter = Instance.new("ParticleEmitter")
+    WeatherSkyEmitter.Parent = WeatherSky
+    WeatherSkyEmitter.EmissionDirection = Enum.NormalId.Bottom
+    WeatherSkyEmitter.Enabled = true
+    WeatherSkyEmitter.LightInfluence = 0
+
+    local intensity = WorldConfig.WeatherIntensity or 1
+    local speedMul  = WorldConfig.WeatherSpeed or 1
+    local sizeMul   = WorldConfig.WeatherSize or 1
+
+    if kind == "Rain" then
+        WeatherSkyEmitter.Texture     = "rbxassetid://241868005"
+        WeatherSkyEmitter.Rate        = 6000 * intensity
+        WeatherSkyEmitter.Color       = ColorSequence.new(WorldConfig.WeatherColor)
+        WeatherSkyEmitter.LightEmission = 0.2
+        WeatherSkyEmitter.Transparency = NumberSequence.new(0.4)
+        WeatherSkyEmitter.Size        = NumberSequence.new(2 * sizeMul, 5 * sizeMul)
+        WeatherSkyEmitter.Lifetime    = NumberRange.new(1.5, 2.2)
+        WeatherSkyEmitter.Speed       = NumberRange.new((90) * speedMul, (120) * speedMul)
+        WeatherSkyEmitter.SpreadAngle = Vector2.new(0, 0)
+        WeatherSkyEmitter.Acceleration= Vector3.new(0, -60, 0)
+        WeatherSkyEmitter.Orientation = Enum.ParticleOrientation.FacingCamera
+    elseif kind == "Snow" then
+        WeatherSkyEmitter.Texture     = "rbxassetid://99851851"
+        WeatherSkyEmitter.Rate        = 300 * intensity
+        WeatherSkyEmitter.Color       = ColorSequence.new(WorldConfig.WeatherColor)
+        WeatherSkyEmitter.Size        = NumberSequence.new(0.3 * sizeMul, 0.5 * sizeMul)
+        WeatherSkyEmitter.Speed       = NumberRange.new(25 * speedMul, 35 * speedMul)
+        WeatherSkyEmitter.Lifetime    = NumberRange.new(6, 10)
+        WeatherSkyEmitter.SpreadAngle = Vector2.new(50, 50)
+        WeatherSkyEmitter.LightEmission = 0.5
+        WeatherSkyEmitter.RotSpeed    = NumberRange.new(-30, 30)
+    elseif kind == "Stars" then
+        WeatherSkyEmitter.Texture     = "rbxassetid://92419380111795"
+        WeatherSkyEmitter.Rate        = 400 * intensity
+        WeatherSkyEmitter.Color       = ColorSequence.new(
+            Color3.fromRGB(200, 240, 255), WorldConfig.WeatherColor)
+        WeatherSkyEmitter.Size        = NumberSequence.new(0.4 * sizeMul, 0.9 * sizeMul)
+        WeatherSkyEmitter.Speed       = NumberRange.new(5 * speedMul, 12 * speedMul)
+        WeatherSkyEmitter.Lifetime    = NumberRange.new(5, 8)
+        WeatherSkyEmitter.Acceleration= Vector3.new(0, -2, 0)
+        WeatherSkyEmitter.RotSpeed    = NumberRange.new(10, 40)
+        WeatherSkyEmitter.LightEmission = 1
+    elseif kind == "Ember" then
+        WeatherSkyEmitter.Texture     = "rbxassetid://243660364"
+        WeatherSkyEmitter.Rate        = 400 * intensity
+        WeatherSkyEmitter.Color       = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, WorldConfig.WeatherColor),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 80, 0))
+        }
+        WeatherSkyEmitter.Size        = NumberSequence.new(0.4 * sizeMul, 0.9 * sizeMul)
+        WeatherSkyEmitter.Speed       = NumberRange.new(8 * speedMul, 15 * speedMul)
+        WeatherSkyEmitter.Lifetime    = NumberRange.new(3, 6)
+        WeatherSkyEmitter.Acceleration= Vector3.new(0, 6, 0)
+        WeatherSkyEmitter.LightEmission = 1
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    if WeatherSky then
+        WeatherSky.CFrame = Camera.CFrame * CFrame.new(0, 40, 0)
+    end
+end)
+
+-- =========================================================
+-- LIGHTING UPDATE
+-- =========================================================
+local lightingDirty = true
+local function markLightingDirty() lightingDirty = true end
+local lastApplied = {}
+
+local function updateWorldLighting(force)
+    if Camera and Camera.FieldOfView ~= WorldConfig.CameraFOV then
+        Camera.FieldOfView = WorldConfig.CameraFOV
+    end
+
+    if not force and not lightingDirty then return end
+    lightingDirty = false
+
+    if lastApplied.blurEnabled ~= WorldConfig.WorldBlur then
+        BlurObj.Enabled = WorldConfig.WorldBlur
+        lastApplied.blurEnabled = WorldConfig.WorldBlur
+    end
+    if lastApplied.blurSize ~= WorldConfig.BlurSize then
+        BlurObj.Size = WorldConfig.BlurSize
+        lastApplied.blurSize = WorldConfig.BlurSize
+    end
+
+    local targetClock = WorldConfig.NightMode and 0 or WorldConfig.ClockTime
+    if lastApplied.clock ~= targetClock then
+        Lighting.ClockTime = targetClock
+        lastApplied.clock = targetClock
+    end
+    if lastApplied.brightness ~= WorldConfig.Brightness then
+        Lighting.Brightness = WorldConfig.Brightness
+        lastApplied.brightness = WorldConfig.Brightness
+    end
+    if lastApplied.outdoorAmbient ~= WorldConfig.OutdoorAmbient then
+        Lighting.OutdoorAmbient = WorldConfig.OutdoorAmbient
+        lastApplied.outdoorAmbient = WorldConfig.OutdoorAmbient
+    end
+    if lastApplied.ambient ~= WorldConfig.Ambient then
+        Lighting.Ambient = WorldConfig.Ambient
+        lastApplied.ambient = WorldConfig.Ambient
+    end
+    if lastApplied.shadows ~= WorldConfig.GlobalShadows then
+        Lighting.GlobalShadows = WorldConfig.GlobalShadows
+        lastApplied.shadows = WorldConfig.GlobalShadows
+    end
+    if lastApplied.exposure ~= WorldConfig.ExposureCompensation then
+        Lighting.ExposureCompensation = WorldConfig.ExposureCompensation
+        lastApplied.exposure = WorldConfig.ExposureCompensation
+    end
+    if WorldConfig.FogEnabled then
+        if lastApplied.fogColor ~= WorldConfig.FogColor then
+            Lighting.FogColor = WorldConfig.FogColor
+            lastApplied.fogColor = WorldConfig.FogColor
+        end
+        if lastApplied.fogStart ~= WorldConfig.FogStart then
+            Lighting.FogStart = WorldConfig.FogStart
+            lastApplied.fogStart = WorldConfig.FogStart
+        end
+        if lastApplied.fogEnd ~= WorldConfig.FogEnd then
+            Lighting.FogEnd = WorldConfig.FogEnd
+            lastApplied.fogEnd = WorldConfig.FogEnd
+        end
+    else
+        if lastApplied.fogEnd ~= 100000 then
+            Lighting.FogEnd = 100000
+            lastApplied.fogEnd = 100000
+        end
+    end
+end
+
+-- =========================================================
+-- BULLET TRACER
+-- =========================================================
+local cachedMuzzle = nil
+local cachedMuzzleTime = 0
+
 local function getMuzzlePosition(defaultOrigin)
+    if cachedMuzzle and cachedMuzzle.Parent and (os.clock() - cachedMuzzleTime) < 0.5 then
+        return cachedMuzzle:IsA("Attachment") and cachedMuzzle.WorldPosition or cachedMuzzle.Position
+    end
     local vm = Camera:FindFirstChildOfClass("Model") or Camera:FindFirstChild("ViewModel") or Camera:FindFirstChild("Viewmodel")
     if vm then
-        local muzzle = vm:FindFirstChild("Muzzle", true) or vm:FindFirstChild("Flash", true) or vm:FindFirstChild("Barrel", true) or vm:FindFirstChild("MuzzleFlash", true)
+        local muzzle = vm:FindFirstChild("Muzzle", true) or vm:FindFirstChild("Flash", true)
+            or vm:FindFirstChild("Barrel", true) or vm:FindFirstChild("MuzzleFlash", true)
         if muzzle then
-            if muzzle:IsA("BasePart") or muzzle:IsA("MeshPart") then
-                return muzzle.Position
-            elseif muzzle:IsA("Attachment") then
-                return muzzle.WorldPosition
-            end
+            cachedMuzzle = muzzle
+            cachedMuzzleTime = os.clock()
+            if muzzle:IsA("BasePart") or muzzle:IsA("MeshPart") then return muzzle.Position
+            elseif muzzle:IsA("Attachment") then return muzzle.WorldPosition end
         end
         for _, v in ipairs(vm:GetDescendants()) do
             if v:IsA("BasePart") and (v.Name:lower():find("muzzle") or v.Name:lower():find("flash") or v.Name:lower():find("barrel")) then
+                cachedMuzzle = v
+                cachedMuzzleTime = os.clock()
                 return v.Position
             end
         end
@@ -953,10 +981,8 @@ local function getMuzzlePosition(defaultOrigin)
     return defaultOrigin
 end
 
--- Bullet Tracer Beam Engine
 local function drawBulletTracer(startPos, targetPos)
     local origin = getMuzzlePosition(startPos)
-    
     local raycastParams = RaycastParams.new()
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
     local filterList = {}
@@ -966,49 +992,46 @@ local function drawBulletTracer(startPos, targetPos)
 
     local direction = targetPos - origin
     local rayResult = Workspace:Raycast(origin, direction, raycastParams)
-    
     local finalTargetPos = rayResult and rayResult.Position or targetPos
-
     local distance = (finalTargetPos - origin).Magnitude
     if distance < 1 then return end
 
-    local colorSeq = getTracerColorSequence()
+    local colorSeq  = getTracerColorSequence()
     local leadColor = colorSeq.Keypoints[1].Value
 
     local att0 = Instance.new("Attachment")
     local att1 = Instance.new("Attachment")
     att0.WorldPosition = origin
     att1.WorldPosition = origin
-
     att0.Parent = Workspace.Terrain
     att1.Parent = Workspace.Terrain
 
     local light
     if BulletTracer.GlowLight then
         light = Instance.new("PointLight")
-        light.Color = leadColor
-        light.Brightness = BulletTracer.GlowBrightness * 2.5
-        light.Range = 15
-        light.Shadows = false
-        light.Parent = att1
+        light.Color     = leadColor
+        light.Brightness= BulletTracer.GlowBrightness * 2.5
+        light.Range     = 15
+        light.Shadows   = false
+        light.Parent    = att1
     end
 
     local beam = Instance.new("Beam")
-    beam.Name = "BulletTracerBeam"
-    beam.Attachment0 = att0
-    beam.Attachment1 = att1
-    beam.Color = colorSeq
-    beam.Width0 = BulletTracer.Thickness
-    beam.Width1 = BulletTracer.Thickness
-    beam.FaceCamera = true
-    beam.LightEmission = BulletTracer.BloomEffect and 1 or 0.5
+    beam.Name           = "BulletTracerBeam"
+    beam.Attachment0    = att0
+    beam.Attachment1    = att1
+    beam.Color          = colorSeq
+    beam.Width0         = BulletTracer.Thickness
+    beam.Width1         = BulletTracer.Thickness
+    beam.FaceCamera     = true
+    beam.LightEmission  = BulletTracer.BloomEffect and 1 or 0.5
     beam.LightInfluence = 0
-    beam.Texture = "rbxassetid://12781800668"
-    beam.TextureMode = Enum.TextureMode.Stretch
-    beam.TextureLength = 0.2 
-    beam.TextureSpeed = 0.5 
-    beam.Transparency = NumberSequence.new(BulletTracer.Transparency)
-    beam.Parent = Workspace.Terrain
+    beam.Texture        = "rbxassetid://12781800668"
+    beam.TextureMode    = Enum.TextureMode.Stretch
+    beam.TextureLength  = 0.2
+    beam.TextureSpeed   = 0.5
+    beam.Transparency   = NumberSequence.new(BulletTracer.Transparency)
+    beam.Parent         = Workspace.Terrain
 
     local cleaned = false
     local function forceCleanup()
@@ -1025,154 +1048,120 @@ local function drawBulletTracer(startPos, targetPos)
     elseif BulletTracer.AnimEasing == "Bounce" then easingStyle = Enum.EasingStyle.Bounce
     elseif BulletTracer.AnimEasing == "Back" then easingStyle = Enum.EasingStyle.Back end
 
-    local travelTween = TweenService:Create(
-        att1,
+    TweenService:Create(att1,
         TweenInfo.new(BulletTracer.TravelTime, easingStyle, Enum.EasingDirection.Out),
-        { WorldPosition = finalTargetPos }
-    )
-    travelTween:Play()
+        { WorldPosition = finalTargetPos }):Play()
 
     task.delay(BulletTracer.LifeTime, function()
-        if not beam or not beam.Parent then 
-            forceCleanup()
-            return 
-        end
-
+        if not beam or not beam.Parent then forceCleanup() return end
         if light then
             TweenService:Create(light, TweenInfo.new(BulletTracer.FadeTime), { Brightness = 0 }):Play()
         end
-
         if BulletTracer.FadeMode == "Instant" then
             forceCleanup()
-        elseif BulletTracer.FadeMode == "Shrink" then
-            local fadeTween = TweenService:Create(
-                beam,
-                TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-                { Width0 = 0, Width1 = 0 }
-            )
-            fadeTween:Play()
-            fadeTween.Completed:Once(forceCleanup)
         else
-            local fadeTween = TweenService:Create(
-                beam,
+            local fadeTween = TweenService:Create(beam,
                 TweenInfo.new(BulletTracer.FadeTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                { Width0 = 0, Width1 = 0 }
-            )
+                { Width0 = 0, Width1 = 0 })
             fadeTween:Play()
             fadeTween.Completed:Once(forceCleanup)
         end
-
         task.delay(BulletTracer.FadeTime + 0.1, forceCleanup)
     end)
 end
 
--- FOV Drawings Setup
+-- =========================================================
+-- FOV & TARGET DRAWINGS
+-- =========================================================
 local fovOutlineOuter = Drawing.new("Circle")
-fovOutlineOuter.Thickness = 1.25
-fovOutlineOuter.Color = Color3.fromRGB(0, 0, 0)
-fovOutlineOuter.Filled = false
+fovOutlineOuter.Thickness    = 1.25
+fovOutlineOuter.Color        = Color3.fromRGB(0, 0, 0)
+fovOutlineOuter.Filled       = false
 fovOutlineOuter.Transparency = 0.65
-fovOutlineOuter.Visible = false
-fovOutlineOuter.NumSides = 144
+fovOutlineOuter.Visible      = false
+fovOutlineOuter.NumSides     = 144
 
 local fovCircle = Drawing.new("Circle")
-fovCircle.Thickness = 1.5
-fovCircle.Color = Color3.fromRGB(255, 255, 255)
-fovCircle.Filled = false
+fovCircle.Thickness    = 1.5
+fovCircle.Color        = Color3.fromRGB(255, 255, 255)
+fovCircle.Filled       = false
 fovCircle.Transparency = 0.85
-fovCircle.Visible = false
-fovCircle.NumSides = 144
+fovCircle.Visible      = false
+fovCircle.NumSides     = 144
 
 local fovOutlineInner = Drawing.new("Circle")
-fovOutlineInner.Thickness = 1.25
-fovOutlineInner.Color = Color3.fromRGB(0, 0, 0)
-fovOutlineInner.Filled = false
+fovOutlineInner.Thickness    = 1.25
+fovOutlineInner.Color        = Color3.fromRGB(0, 0, 0)
+fovOutlineInner.Filled       = false
 fovOutlineInner.Transparency = 0.65
-fovOutlineInner.Visible = false
-fovOutlineInner.NumSides = 144
+fovOutlineInner.Visible      = false
+fovOutlineInner.NumSides     = 144
 
--- Target Drawings
 local snapLine = Drawing.new("Line")
-snapLine.Thickness = TargetVisuals.SnapLineThickness
-snapLine.Color = TargetVisuals.SnapLineColor
+snapLine.Thickness    = TargetVisuals.SnapLineThickness
+snapLine.Color        = TargetVisuals.SnapLineColor
 snapLine.Transparency = 1
-snapLine.Visible = false
+snapLine.Visible      = false
 
 local headDot = Drawing.new("Circle")
-headDot.Radius = TargetVisuals.HeadDotRadius
-headDot.Color = TargetVisuals.HeadDotColor
-headDot.Filled = true
+headDot.Radius       = TargetVisuals.HeadDotRadius
+headDot.Color        = TargetVisuals.HeadDotColor
+headDot.Filled       = true
 headDot.Transparency = 1
-headDot.Visible = false
+headDot.Visible      = false
 
 local targetHighlight = Instance.new("Highlight")
-targetHighlight.Name = "SilentAimTargetHighlight"
-targetHighlight.FillColor = TargetVisuals.HighlightColor
-targetHighlight.OutlineColor = Color3.fromRGB(0, 255, 100)
-targetHighlight.FillTransparency = 0.3
-targetHighlight.OutlineTransparency = 0
-targetHighlight.Enabled = false
+targetHighlight.Name               = "SilentAimTargetHighlight"
+targetHighlight.FillColor          = TargetVisuals.HighlightColor
+targetHighlight.OutlineColor       = Color3.fromRGB(0, 255, 100)
+targetHighlight.FillTransparency   = 0.3
+targetHighlight.OutlineTransparency= 0
+targetHighlight.Enabled            = false
 
 local currentTargetPart = nil
+local currentRageTargetPart = nil
 
 local function createDrawing(type, properties)
     local obj = Drawing.new(type)
-    for k, v in pairs(properties) do
-        obj[k] = v
-    end
+    for k, v in pairs(properties) do obj[k] = v end
     return obj
 end
 
+-- =========================================================
+-- ESP
+-- =========================================================
 local espObjects = {}
 
 local function createPlayerESP(player)
     if espObjects[player] then return end
-    
     local objects = {
-        BoxOutline = createDrawing("Square", {Thickness = 3.5, Color = ESPConfig.OutlineColor, Filled = false, Visible = false}),
-        Box = createDrawing("Square", {Thickness = 1.5, Color = ESPConfig.BoxColor, Filled = false, Visible = false}),
-        HealthBarOutline = createDrawing("Square", {Thickness = 1, Color = ESPConfig.OutlineColor, Filled = true, Visible = false}),
-        HealthBar = createDrawing("Square", {Thickness = 1, Color = Color3.fromRGB(0, 255, 100), Filled = true, Visible = false}),
-        Skeletons = {},
-        SkeletonOutlines = {}
+        BoxOutline      = createDrawing("Square", {Thickness=3.5, Color=ESPConfig.OutlineColor, Filled=false, Visible=false}),
+        Box             = createDrawing("Square", {Thickness=1.5, Color=ESPConfig.BoxColor, Filled=false, Visible=false}),
+        HealthBarOutline= createDrawing("Square", {Thickness=1, Color=ESPConfig.OutlineColor, Filled=true, Visible=false}),
+        HealthBar       = createDrawing("Square", {Thickness=1, Color=Color3.fromRGB(0,255,100), Filled=true, Visible=false}),
+        Skeletons       = {},
+        SkeletonOutlines= {}
     }
-
-    local skeletonConnections = {
-        {"Head", "UpperTorso"}, {"UpperTorso", "LowerTorso"},
-        {"UpperTorso", "LeftUpperArm"}, {"LeftUpperArm", "LeftLowerArm"}, {"LeftLowerArm", "LeftHand"},
-        {"UpperTorso", "RightUpperArm"}, {"RightUpperArm", "RightLowerArm"}, {"RightLowerArm", "RightHand"},
-        {"LowerTorso", "LeftUpperLeg"}, {"LeftUpperLeg", "LeftLowerLeg"}, {"LeftLowerLeg", "LeftFoot"},
-        {"LowerTorso", "RightUpperLeg"}, {"RightUpperLeg", "RightLowerLeg"}, {"RightLowerLeg", "RightFoot"},
-        {"Head", "Torso"}, {"Torso", "Left Arm"}, {"Torso", "Right Arm"},
-        {"Torso", "Left Leg"}, {"Torso", "Right Leg"}
-    }
-
-    for i = 1, #skeletonConnections do
-        objects.SkeletonOutlines[i] = createDrawing("Line", {Thickness = 3, Color = ESPConfig.OutlineColor, Visible = false})
-        objects.Skeletons[i] = createDrawing("Line", {Thickness = 1, Color = ESPConfig.SkeletonColor, Visible = false})
+    for i = 1, 19 do
+        objects.SkeletonOutlines[i] = createDrawing("Line", {Thickness=3, Color=ESPConfig.OutlineColor, Visible=false})
+        objects.Skeletons[i]        = createDrawing("Line", {Thickness=1, Color=ESPConfig.SkeletonColor, Visible=false})
     end
-
     espObjects[player] = objects
 end
 
 local function removePlayerESP(player)
     if not espObjects[player] then return end
     local objs = espObjects[player]
-    
     objs.BoxOutline:Remove()
     objs.Box:Remove()
     objs.HealthBarOutline:Remove()
     objs.HealthBar:Remove()
-    
     for _, line in ipairs(objs.SkeletonOutlines) do line:Remove() end
     for _, line in ipairs(objs.Skeletons) do line:Remove() end
-    
     espObjects[player] = nil
 end
 
-local function getCharacter(player)
-    return player and player.Character
-end
+local function getCharacter(player) return player and player.Character end
 
 local function isAlive(character)
     if not character then return false end
@@ -1185,30 +1174,27 @@ local function isObstructed(origin, target, character)
     local params = RaycastParams.new()
     params.FilterType = Enum.RaycastFilterType.Exclude
     params.FilterDescendantsInstances = { character, LocalPlayer.Character }
-
     local ray = Workspace:Raycast(origin, target - origin, params)
     return ray ~= nil and ray.Instance ~= nil and not ray.Instance:IsDescendantOf(character)
 end
 
 local function getTarget(origin)
     local localTeam = LocalPlayer:GetAttribute("Team")
-    local look = Camera.CFrame.LookVector
+    local look      = Camera.CFrame.LookVector
     local best, bestAngle = nil, math.rad(SilentAim.FOV)
 
     for _, player in ipairs(Players:GetPlayers()) do
         if player == LocalPlayer then continue end
-
         local character = getCharacter(player)
         if not isAlive(character) then continue end
         if SilentAim.TeamCheck and player:GetAttribute("Team") == localTeam then continue end
 
         local part
         if SilentAim.AimPart == "Closest" then
-            local head = character:FindFirstChild("Head")
+            local head  = character:FindFirstChild("Head")
             local torso = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
-            
             if head and torso then
-                local headAngle = math.acos(math.clamp(look:Dot((head.Position - origin).Unit), -1, 1))
+                local headAngle  = math.acos(math.clamp(look:Dot((head.Position - origin).Unit), -1, 1))
                 local torsoAngle = math.acos(math.clamp(look:Dot((torso.Position - origin).Unit), -1, 1))
                 part = headAngle < torsoAngle and head or torso
             else
@@ -1219,32 +1205,25 @@ local function getTarget(origin)
         end
 
         if not part then continue end
-
         local targetPos = part.Position
         local direction = (targetPos - origin).Unit
-        local angle = math.acos(math.clamp(look:Dot(direction), -1, 1))
-
+        local angle     = math.acos(math.clamp(look:Dot(direction), -1, 1))
         if angle < bestAngle then
             if SilentAim.WallCheck and isObstructed(origin, targetPos, character) then continue end
             best, bestAngle = part, angle
         end
     end
-
     return best
 end
 
+-- =========================================================
+-- WEAPON MODS
+-- =========================================================
 local activeEquippedWeapon = nil
-
--- WEAPON MODS MODULE IMPLEMENTATION
-local WeaponModsModule = {
-    OriginalData = {},
-    FireRateObjects = {},
-    SendFunc = nil
-}
+local WeaponModsModule = { OriginalData = {}, FireRateObjects = {}, SendFunc = nil }
 
 function WeaponModsModule.InitHooks()
     if typeof(hookfunction) ~= "function" then return end
-
     pcall(function()
         for _, obj in next, getgc(true) do
             if type(obj) == "table" then
@@ -1254,7 +1233,6 @@ function WeaponModsModule.InitHooks()
                         table.insert(WeaponModsModule.FireRateObjects, obj)
                     end)
                 end
-
                 if rawget(obj, "setWeaponRecoil") then
                     local oldSetRecoil
                     oldSetRecoil = hookfunction(obj.setWeaponRecoil, function(...)
@@ -1262,7 +1240,6 @@ function WeaponModsModule.InitHooks()
                         return oldSetRecoil(...)
                     end)
                 end
-
                 if rawget(obj, "weaponKick") then
                     local oldKick
                     oldKick = hookfunction(obj.weaponKick, function(p1, p2)
@@ -1270,7 +1247,6 @@ function WeaponModsModule.InitHooks()
                         return oldKick(p1, p2)
                     end)
                 end
-
                 if rawget(obj, "getTrueSpread") then
                     local oldSpread
                     oldSpread = hookfunction(obj.getTrueSpread, function(p1)
@@ -1278,7 +1254,6 @@ function WeaponModsModule.InitHooks()
                         return oldSpread(p1)
                     end)
                 end
-
                 if rawget(obj, "shoot") then
                     activeEquippedWeapon = obj
                     if typeof(obj.shoot) == "function" and #debug.getupvalues(obj.shoot) >= 14 then
@@ -1288,7 +1263,6 @@ function WeaponModsModule.InitHooks()
                     end
                 end
             end
-
             if type(obj) == "function" and debug.getinfo(obj).name == "calculateRecoilOffset" then
                 local oldCalc
                 oldCalc = hookfunction(obj, function(...)
@@ -1298,31 +1272,23 @@ function WeaponModsModule.InitHooks()
             end
         end
     end)
-
-    if WeaponModsModule.SendFunc then
-        local oldSend
-        oldSend = hookfunction(WeaponModsModule.SendFunc, function(...)
-            local args = {...}
-            if args[1] and args[1].Bullets and args[1].Bullets[1] and args[1].Bullets[1].Hits[1] then
-                if SilentAim.Enabled and currentTargetPart then
-                    args[1].Bullets[1].Hits[1].Instance = currentTargetPart
-                    args[1].Bullets[1].Hits[1].Position = currentTargetPart.Position
-                end
-            end
-            return oldSend(unpack(args))
-        end)
-    end
 end
 
 function WeaponModsModule.StartFirerateLoop()
     task.spawn(function()
         while task.wait(0.05) do
             pcall(function()
-                if GunModsConfig.FirerateEnabled then
+                local forcedRate = nil
+                if RagebotConfig.Enabled then
+                    forcedRate = 0.001
+                elseif GunModsConfig.FirerateEnabled then
+                    forcedRate = math.max(GunModsConfig.FirerateValue, 0.001)
+                end
+                if forcedRate then
                     for _, obj in next, WeaponModsModule.FireRateObjects do
                         pcall(function()
                             if typeof(setreadonly) == "function" then setreadonly(obj, false) end
-                            rawset(obj, "FireRate", math.max(GunModsConfig.FirerateValue, 0.01))
+                            rawset(obj, "FireRate", forcedRate)
                             if typeof(setreadonly) == "function" then setreadonly(obj, true) end
                         end)
                     end
@@ -1340,35 +1306,37 @@ function WeaponModsModule.StartFirerateLoop()
     end)
 end
 
--- Head Hitbox Extender Engine
-local originalHeadSizes = {}
+-- =========================================================
+-- HITBOX EXTENDER
+-- =========================================================
+local originalHeadSizes  = {}
 local originalHeadColors = {}
 
-RunService.RenderStepped:Connect(function()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            local char = getCharacter(player)
-            local localTeam = LocalPlayer:GetAttribute("Team")
-            local isEnemy = not HitboxConfig.TeamCheck or (player:GetAttribute("Team") ~= localTeam)
-
-            if char and isAlive(char) and isEnemy then
-                local head = char:FindFirstChild("Head")
-                if head then
-                    if not originalHeadSizes[head] then
-                        originalHeadSizes[head] = head.Size
-                        originalHeadColors[head] = head.Color
-                    end
-
-                    if HitboxConfig.Enabled then
-                        local baseSize = originalHeadSizes[head]
-                        head.Size = baseSize * HitboxConfig.Size
-                        head.Transparency = HitboxConfig.Transparency
-                        head.Color = HitboxConfig.Color
-                        head.CanCollide = false
-                    else
-                        head.Size = originalHeadSizes[head]
-                        head.Transparency = 0
-                        head.Color = originalHeadColors[head] or Color3.fromRGB(255, 255, 255)
+task.spawn(function()
+    while task.wait(0.1) do
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                local char = getCharacter(player)
+                local localTeam = LocalPlayer:GetAttribute("Team")
+                local isEnemy = not HitboxConfig.TeamCheck or (player:GetAttribute("Team") ~= localTeam)
+                if char and isAlive(char) and isEnemy then
+                    local head = char:FindFirstChild("Head")
+                    if head then
+                        if not originalHeadSizes[head] then
+                            originalHeadSizes[head]  = head.Size
+                            originalHeadColors[head] = head.Color
+                        end
+                        if HitboxConfig.Enabled then
+                            local baseSize = originalHeadSizes[head]
+                            head.Size         = baseSize * HitboxConfig.Size
+                            head.Transparency = HitboxConfig.Transparency
+                            head.Color        = HitboxConfig.Color
+                            head.CanCollide   = false
+                        else
+                            head.Size         = originalHeadSizes[head]
+                            head.Transparency = 0
+                            head.Color        = originalHeadColors[head] or Color3.fromRGB(255,255,255)
+                        end
                     end
                 end
             end
@@ -1376,401 +1344,761 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- RenderStepped Logic
+-- =========================================================
+-- RAGEBOT HELPERS
+-- =========================================================
+local MaterialLimits = {
+    [Enum.Material.Asphalt] = 0.25, [Enum.Material.Basalt] = 0.25,
+    [Enum.Material.Brick] = 0.25, [Enum.Material.Cobblestone] = 0.25,
+    [Enum.Material.Concrete] = 0.25, [Enum.Material.CrackedLava] = 0.25,
+    [Enum.Material.DiamondPlate] = 0.25, [Enum.Material.Foil] = 0.25,
+    [Enum.Material.Glacier] = 0.25, [Enum.Material.Granite] = 0.25,
+    [Enum.Material.Grass] = 0.25, [Enum.Material.Ground] = 0.25,
+    [Enum.Material.Ice] = 0.25, [Enum.Material.LeafyGrass] = 0.25,
+    [Enum.Material.Limestone] = 0.25, [Enum.Material.Marble] = 0.25,
+    [Enum.Material.Metal] = 0.25, [Enum.Material.Mud] = 0.25,
+    [Enum.Material.Pavement] = 0.25, [Enum.Material.Rock] = 0.25,
+    [Enum.Material.Salt] = 0.25, [Enum.Material.Sand] = 0.25,
+    [Enum.Material.Sandstone] = 0.25, [Enum.Material.Slate] = 0.25,
+    [Enum.Material.Snow] = 0.25, [Enum.Material.ForceField] = 0.25,
+    [Enum.Material.Neon] = 0.25, [Enum.Material.CorrodedMetal] = 0.25,
+    [Enum.Material.Pebble] = 0.25, [Enum.Material.CeramicTiles] = 0.25,
+    [Enum.Material.Plaster] = 0.25, [Enum.Material.Plastic] = 7,
+    [Enum.Material.SmoothPlastic] = 7, [Enum.Material.Wood] = 7,
+    [Enum.Material.WoodPlanks] = 7, [Enum.Material.Cardboard] = 7,
+    [Enum.Material.Glass] = 100, [Enum.Material.Fabric] = 100
+}
+
+local MAX_PEN_STEPS = 12
+
+local function GetPenetrationStats(origin, direction, maxPen, ignoreList, targetRoot)
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.CollisionGroup = "Bullet"
+    local filter = ignoreList or {LocalPlayer.Character, Camera}
+    params.FilterDescendantsInstances = filter
+    local currentOrigin = origin
+    local currentDir = direction
+    local accMat = {}
+    local totalThickness = 0
+
+    local backParams = RaycastParams.new()
+    backParams.FilterType = Enum.RaycastFilterType.Include
+    backParams.CollisionGroup = "Bullet"
+
+    for i = 1, MAX_PEN_STEPS do
+        local result = Workspace:Raycast(currentOrigin, currentDir * 1000, params)
+        if not result then
+            if not targetRoot then
+                return { Success = true, EndPos = currentOrigin + (currentDir * 1000), TotalThickness = totalThickness }
+            end
+            return { Success = false, FailReason = "Void (Missed)" }
+        end
+        if not result.Instance or not result.Instance.Parent then
+            return { Success = false, FailReason = "Destroyed Instance" }
+        end
+        if targetRoot and result.Instance:IsDescendantOf(targetRoot) then
+            return { Success = true, EndPos = result.Position, TotalThickness = totalThickness, FailReason = "Hit" }
+        end
+        table.insert(filter, result.Instance)
+        params.FilterDescendantsInstances = filter
+        local enterPos = result.Position
+        local fakeEnd = enterPos + (currentDir * 1000)
+        backParams.FilterDescendantsInstances = {result.Instance}
+        local backRes = Workspace:Raycast(fakeEnd, enterPos - fakeEnd, backParams)
+        local thickness = 0.5
+        if not backRes then
+            return { Success = false, FailReason = "Infinite/Block" }
+        end
+        thickness = (enterPos - backRes.Position).Magnitude
+        local mat = backRes.Material
+        local limit = MaterialLimits[mat] or 0.25
+        accMat[mat] = (accMat[mat] or 0) + thickness
+        if accMat[mat] > limit + maxPen then
+            return { Success = false, FailReason = string.format("%s (%.1f / %.1f)", mat.Name, accMat[mat], limit + maxPen) }
+        end
+        currentOrigin = backRes.Position
+        totalThickness = totalThickness + thickness
+
+        if totalThickness > (maxPen + 2) then
+            return { Success = false, FailReason = "Pen budget exceeded" }
+        end
+    end
+    return { Success = false, FailReason = "Max Steps" }
+end
+
+local function isVisibleRage(targetPart)
+    if not targetPart or not targetPart.Parent then return false end
+    local origin = Camera.CFrame.Position
+    local dir = targetPart.Position - origin
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = { LocalPlayer.Character, Camera, targetPart.Parent }
+    local result = Workspace:Raycast(origin, dir, params)
+    return not result
+end
+
+local function canWallbangRage(targetPart)
+    if not targetPart or not targetPart.Parent then return false end
+    local origin    = Camera.CFrame.Position
+    local direction = (targetPart.Position - origin)
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {LocalPlayer.Character, Camera}
+    local hit = Workspace:Raycast(origin, direction, params)
+    if not hit then return true end
+    if hit.Instance:IsDescendantOf(targetPart.Parent) then return true end
+    if not RagebotConfig.AutoWall then return false end
+    local stats = GetPenetrationStats(origin, direction.Unit, RagebotConfig.MaxPen, {LocalPlayer.Character, Camera}, targetPart.Parent)
+    return stats.Success
+end
+
+-- =========================================================
+-- RAGEBOT TARGET SELECTION
+-- =========================================================
+local function findRageTarget()
+    local localTeam = LocalPlayer:GetAttribute("Team")
+    local camCF   = Camera.CFrame
+    local camPos  = camCF.Position
+    local lookX, lookY, lookZ = camCF.LookVector.X, camCF.LookVector.Y, camCF.LookVector.Z
+    local cosMax  = math.cos(math.rad(RagebotConfig.FOV or 180))
+
+    local localChar = LocalPlayer.Character
+    local localY = camPos.Y
+    if localChar then
+        local lhrp = localChar:FindFirstChild("HumanoidRootPart") or localChar:FindFirstChild("Head")
+        if lhrp then localY = lhrp.Position.Y end
+    end
+
+    local hitName    = RagebotConfig.HitPart
+    local teamCheck  = RagebotConfig.TeamCheck
+    local heightCheck= RagebotConfig.HeightCheck
+    local maxHeight  = RagebotConfig.MaxHeightDiff
+    local visibleChk = RagebotConfig.VisibleCheck
+    local wallChk    = RagebotConfig.WallCheck
+    local priorityNm = RagebotConfig.PriorityName
+
+    local best, bestPlr, bestDist = nil, nil, math.huge
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player == LocalPlayer then continue end
+        local char = player.Character
+        if not char then continue end
+        if char:GetAttribute("Dead") then continue end
+        local hp = char:GetAttribute("Health")
+        if hp ~= nil and hp <= 0 then continue end
+        if teamCheck and player:GetAttribute("Team") == localTeam then continue end
+
+        local part = char:FindFirstChild(hitName)
+            or char:FindFirstChild("Head")
+            or char:FindFirstChild("HumanoidRootPart")
+        if not part then continue end
+
+        local p = part.Position
+        local dx, dy, dz = p.X - camPos.X, p.Y - camPos.Y, p.Z - camPos.Z
+        local distSq = dx*dx + dy*dy + dz*dz
+        if distSq < 1 then continue end
+
+        if heightCheck and (p.Y - localY) > maxHeight then continue end
+
+        local dist = math.sqrt(distSq)
+        local dot = (lookX*dx + lookY*dy + lookZ*dz) / dist
+        if dot < cosMax then continue end
+
+        local isPriority = priorityNm and player.Name == priorityNm
+        if not isPriority and dist >= bestDist then continue end
+
+        if visibleChk then
+            local _, onScreen = Camera:WorldToViewportPoint(p)
+            if not onScreen then continue end
+        end
+
+        if wallChk then
+            if not isVisibleRage(part) then
+                if not canWallbangRage(part) then continue end
+            end
+        end
+
+        if isPriority then
+            return part, player
+        end
+        bestDist, best, bestPlr = dist, part, player
+    end
+    return best, bestPlr
+end
+
+-- =========================================================
+-- ADAPTIVE TARGET REFRESH
+-- =========================================================
+local lastTargetPart = nil
+local targetLostTime = 0
+
+task.spawn(function()
+    while true do
+        if not RagebotConfig.Enabled then
+            currentRageTargetPart = nil
+            rageCache.part, rageCache.player = nil, nil
+            lastTargetPart = nil
+            targetLostTime = 0
+            task.wait(0.2)
+            continue
+        end
+
+        local keepOld = false
+        if lastTargetPart and lastTargetPart.Parent then
+            local char = lastTargetPart.Parent
+            local hp = char:GetAttribute("Health")
+            local alive = not char:GetAttribute("Dead") and (hp == nil or hp > 0)
+            if alive then
+                local _, onScreen = Camera:WorldToViewportPoint(lastTargetPart.Position)
+                if onScreen then keepOld = true end
+            end
+        end
+
+        if not keepOld then
+            local part, plr = findRageTarget()
+            currentRageTargetPart = part
+            rageCache.part, rageCache.player = part, plr
+            rageCache.time = os.clock()
+            lastTargetPart = part
+
+            if not part then
+                targetLostTime = targetLostTime + 1
+                task.wait(math.min(0.08 + targetLostTime * 0.02, 0.25))
+                continue
+            else
+                targetLostTime = 0
+            end
+        end
+
+        task.wait(RagebotConfig.TargetRefresh or 0.05)
+    end
+end)
+
+-- =========================================================
+-- MAIN RENDER LOOP
+-- =========================================================
+local lastWeaponChamsUpdate = 0
+local WEAPON_CHAMS_RATE = 0.1
+
 RunService.RenderStepped:Connect(function()
-    updateWorldLighting()
+    updateWorldLighting(false)
 
     local viewportSize = Camera.ViewportSize
     local center = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
 
+    -- FOV circle
     if SilentAim.ShowFOV and SilentAim.Enabled then
         local radFOV = math.rad(SilentAim.FOV)
         local radCameraFOV = math.rad(Camera.FieldOfView)
         local radius = (math.tan(radFOV / 2) / math.tan(radCameraFOV / 2)) * (viewportSize.Y / 2)
-
         fovCircle.Position = center
-        fovCircle.Radius = radius
-        fovCircle.Visible = true
-
+        fovCircle.Radius   = radius
+        fovCircle.Visible  = true
         if SilentAim.ShowOutline then
             fovOutlineOuter.Position = center
-            fovOutlineOuter.Radius = radius + 1.25
-            fovOutlineOuter.Visible = true
-
+            fovOutlineOuter.Radius   = radius + 1.25
+            fovOutlineOuter.Visible  = true
             fovOutlineInner.Position = center
-            fovOutlineInner.Radius = radius - 1.25
-            fovOutlineInner.Visible = true
+            fovOutlineInner.Radius   = radius - 1.25
+            fovOutlineInner.Visible  = true
         else
-            fovOutlineOuter.Visible = false
-            fovOutlineInner.Visible = false
+            fovOutlineOuter.Visible  = false
+            fovOutlineInner.Visible  = false
         end
     else
-        fovCircle.Visible = false
-        fovOutlineOuter.Visible = false
-        fovOutlineInner.Visible = false
+        fovCircle.Visible        = false
+        fovOutlineOuter.Visible  = false
+        fovOutlineInner.Visible  = false
     end
 
+    -- ESP
     for player, objs in pairs(espObjects) do
         local character = getCharacter(player)
         local isEnemy = not ESPConfig.TeamCheck or (player:GetAttribute("Team") ~= LocalPlayer:GetAttribute("Team"))
-        
         if ESPConfig.Enabled and character and isAlive(character) and isEnemy and player ~= LocalPlayer then
-            local hrp = character:FindFirstChild("HumanoidRootPart")
+            local hrp  = character:FindFirstChild("HumanoidRootPart")
             local head = character:FindFirstChild("Head")
-            
             if hrp and head then
                 local hrpPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-                
                 if onScreen then
                     local cframe, size = character:GetBoundingBox()
-                    local topWorld = cframe.Position + Vector3.new(0, size.Y / 2, 0)
+                    local topWorld    = cframe.Position + Vector3.new(0, size.Y / 2, 0)
                     local bottomWorld = cframe.Position - Vector3.new(0, size.Y / 2, 0)
-                    
-                    local topPos = Camera:WorldToViewportPoint(topWorld)
-                    local bottomPos = Camera:WorldToViewportPoint(bottomWorld)
-                    
-                    local boxHeight = math.abs(topPos.Y - bottomPos.Y)
-                    local boxWidth = boxHeight * (size.X / size.Y) * 1.1
+                    local topPos      = Camera:WorldToViewportPoint(topWorld)
+                    local bottomPos   = Camera:WorldToViewportPoint(bottomWorld)
+                    local boxHeight   = math.abs(topPos.Y - bottomPos.Y)
+                    local boxWidth    = boxHeight * (size.X / size.Y) * 1.1
                     if boxWidth < boxHeight * 0.4 then boxWidth = boxHeight * 0.5 end
-                    
                     local boxPos = Vector2.new(hrpPos.X - boxWidth / 2, topPos.Y)
 
                     if ESPConfig.Boxes then
                         if ESPConfig.Outline then
-                            objs.BoxOutline.Size = Vector2.new(boxWidth, boxHeight)
+                            objs.BoxOutline.Size     = Vector2.new(boxWidth, boxHeight)
                             objs.BoxOutline.Position = boxPos
-                            objs.BoxOutline.Visible = true
+                            objs.BoxOutline.Visible  = true
                         else
                             objs.BoxOutline.Visible = false
                         end
-
-                        objs.Box.Size = Vector2.new(boxWidth, boxHeight)
+                        objs.Box.Size     = Vector2.new(boxWidth, boxHeight)
                         objs.Box.Position = boxPos
-                        objs.Box.Color = ESPConfig.BoxColor
-                        objs.Box.Visible = true
+                        objs.Box.Color    = ESPConfig.BoxColor
+                        objs.Box.Visible  = true
                     else
                         objs.BoxOutline.Visible = false
-                        objs.Box.Visible = false
+                        objs.Box.Visible        = false
                     end
 
                     if ESPConfig.HealthBar then
-                        local health = character:GetAttribute("Health") or 100
-                        local maxHealth = character:GetAttribute("MaxHealth") or 100
-                        local healthPercent = math.clamp(health / maxHealth, 0, 1)
-                        local barHeight = boxHeight * healthPercent
-                        local barPos = Vector2.new(boxPos.X - 5, boxPos.Y + (boxHeight - barHeight))
-
+                        local health      = character:GetAttribute("Health")    or 100
+                        local maxHealth   = character:GetAttribute("MaxHealth") or 100
+                        local healthPct   = math.clamp(health / maxHealth, 0, 1)
+                        local barHeight   = boxHeight * healthPct
+                        local barPos      = Vector2.new(boxPos.X - 5, boxPos.Y + (boxHeight - barHeight))
                         if ESPConfig.Outline then
-                            objs.HealthBarOutline.Size = Vector2.new(3, boxHeight + 2)
+                            objs.HealthBarOutline.Size     = Vector2.new(3, boxHeight + 2)
                             objs.HealthBarOutline.Position = Vector2.new(boxPos.X - 6, boxPos.Y - 1)
-                            objs.HealthBarOutline.Visible = true
+                            objs.HealthBarOutline.Visible  = true
                         else
                             objs.HealthBarOutline.Visible = false
                         end
-
-                        objs.HealthBar.Size = Vector2.new(1, barHeight)
+                        objs.HealthBar.Size     = Vector2.new(1, barHeight)
                         objs.HealthBar.Position = barPos
-                        objs.HealthBar.Color = Color3.fromRGB(255, 0, 0):Lerp(Color3.fromRGB(0, 255, 0), healthPercent)
-                        objs.HealthBar.Visible = true
+                        objs.HealthBar.Color    = Color3.fromRGB(255,0,0):Lerp(Color3.fromRGB(0,255,0), healthPct)
+                        objs.HealthBar.Visible  = true
                     else
                         objs.HealthBarOutline.Visible = false
-                        objs.HealthBar.Visible = false
+                        objs.HealthBar.Visible        = false
                     end
 
                     if ESPConfig.Skeletons then
                         local skeletonPairs = {
-                            {"Head", "UpperTorso"}, {"UpperTorso", "LowerTorso"},
-                            {"UpperTorso", "LeftUpperArm"}, {"LeftUpperArm", "LeftLowerArm"}, {"LeftLowerArm", "LeftHand"},
-                            {"UpperTorso", "RightUpperArm"}, {"RightUpperArm", "RightLowerArm"}, {"RightLowerArm", "RightHand"},
-                            {"LowerTorso", "LeftUpperLeg"}, {"LeftUpperLeg", "LeftLowerLeg"}, {"LeftLowerLeg", "LeftFoot"},
-                            {"LowerTorso", "RightUpperLeg"}, {"RightUpperLeg", "RightLowerLeg"}, {"RightLowerLeg", "RightFoot"},
-                            {"Head", "Torso"}, {"Torso", "Left Arm"}, {"Torso", "Right Arm"}, {"Torso", "Left Leg"}, {"Torso", "Right Leg"}
+                            {"Head","UpperTorso"},{"UpperTorso","LowerTorso"},
+                            {"UpperTorso","LeftUpperArm"},{"LeftUpperArm","LeftLowerArm"},{"LeftLowerArm","LeftHand"},
+                            {"UpperTorso","RightUpperArm"},{"RightUpperArm","RightLowerArm"},{"RightLowerArm","RightHand"},
+                            {"LowerTorso","LeftUpperLeg"},{"LeftUpperLeg","LeftLowerLeg"},{"LeftLowerLeg","LeftFoot"},
+                            {"LowerTorso","RightUpperLeg"},{"RightUpperLeg","RightLowerLeg"},{"RightLowerLeg","RightFoot"},
+                            {"Head","Torso"},{"Torso","Left Arm"},{"Torso","Right Arm"},
+                            {"Torso","Left Leg"},{"Torso","Right Leg"}
                         }
-
                         for idx, pair in ipairs(skeletonPairs) do
                             local partA = character:FindFirstChild(pair[1])
                             local partB = character:FindFirstChild(pair[2])
-                            
                             if partA and partB and objs.Skeletons[idx] then
                                 local posA, visA = Camera:WorldToViewportPoint(partA.Position)
                                 local posB, visB = Camera:WorldToViewportPoint(partB.Position)
-
                                 if visA and visB then
                                     local vecA = Vector2.new(posA.X, posA.Y)
                                     local vecB = Vector2.new(posB.X, posB.Y)
-
                                     if ESPConfig.Outline then
-                                        objs.SkeletonOutlines[idx].From = vecA
-                                        objs.SkeletonOutlines[idx].To = vecB
+                                        objs.SkeletonOutlines[idx].From    = vecA
+                                        objs.SkeletonOutlines[idx].To      = vecB
                                         objs.SkeletonOutlines[idx].Visible = true
                                     else
                                         objs.SkeletonOutlines[idx].Visible = false
                                     end
-
-                                    objs.Skeletons[idx].From = vecA
-                                    objs.Skeletons[idx].To = vecB
-                                    objs.Skeletons[idx].Color = ESPConfig.SkeletonColor
+                                    objs.Skeletons[idx].From    = vecA
+                                    objs.Skeletons[idx].To      = vecB
+                                    objs.Skeletons[idx].Color   = ESPConfig.SkeletonColor
                                     objs.Skeletons[idx].Visible = true
                                 else
                                     objs.SkeletonOutlines[idx].Visible = false
-                                    objs.Skeletons[idx].Visible = false
+                                    objs.Skeletons[idx].Visible        = false
                                 end
                             end
                         end
                     else
                         for idx = 1, #objs.Skeletons do
                             objs.SkeletonOutlines[idx].Visible = false
-                            objs.Skeletons[idx].Visible = false
+                            objs.Skeletons[idx].Visible        = false
                         end
                     end
                 else
-                    objs.BoxOutline.Visible = false
-                    objs.Box.Visible = false
+                    objs.BoxOutline.Visible       = false
+                    objs.Box.Visible              = false
                     objs.HealthBarOutline.Visible = false
-                    objs.HealthBar.Visible = false
+                    objs.HealthBar.Visible        = false
                     for idx = 1, #objs.Skeletons do
                         objs.SkeletonOutlines[idx].Visible = false
-                        objs.Skeletons[idx].Visible = false
+                        objs.Skeletons[idx].Visible        = false
                     end
                 end
             end
         else
-            objs.BoxOutline.Visible = false
-            objs.Box.Visible = false
+            objs.BoxOutline.Visible       = false
+            objs.Box.Visible              = false
             objs.HealthBarOutline.Visible = false
-            objs.HealthBar.Visible = false
+            objs.HealthBar.Visible        = false
             for idx = 1, #objs.Skeletons do
                 objs.SkeletonOutlines[idx].Visible = false
-                objs.Skeletons[idx].Visible = false
+                objs.Skeletons[idx].Visible        = false
             end
         end
     end
 
+    -- SilentAim target
     if SilentAim.Enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
         currentTargetPart = getTarget(LocalPlayer.Character.Head.Position)
     else
         currentTargetPart = nil
     end
 
-    local activeTarget = currentTargetPart
-
+    -- Target visuals
+    local activeTarget = currentRageTargetPart or currentTargetPart
     if activeTarget and activeTarget.Parent then
-        local targetChar = activeTarget.Parent
-        local targetHead = targetChar:FindFirstChild("Head") or activeTarget
-        local screenPos, onScreen = Camera:WorldToViewportPoint(activeTarget.Position)
+        local targetChar     = activeTarget.Parent
+        local targetHead     = targetChar:FindFirstChild("Head") or activeTarget
+        local screenPos, onScreen         = Camera:WorldToViewportPoint(activeTarget.Position)
         local headScreenPos, headOnScreen = Camera:WorldToViewportPoint(targetHead.Position)
 
         if TargetVisuals.SnapLine and onScreen then
-            snapLine.From = center
-            snapLine.To = Vector2.new(screenPos.X, screenPos.Y)
-            snapLine.Color = TargetVisuals.SnapLineColor
+            snapLine.From      = center
+            snapLine.To        = Vector2.new(screenPos.X, screenPos.Y)
+            snapLine.Color     = TargetVisuals.SnapLineColor
             snapLine.Thickness = TargetVisuals.SnapLineThickness
-            snapLine.Visible = true
+            snapLine.Visible   = true
         else
             snapLine.Visible = false
         end
 
         if TargetVisuals.HeadDot and headOnScreen then
             headDot.Position = Vector2.new(headScreenPos.X, headScreenPos.Y)
-            headDot.Color = TargetVisuals.HeadDotColor
-            headDot.Radius = TargetVisuals.HeadDotRadius
-            headDot.Visible = true
+            headDot.Color    = TargetVisuals.HeadDotColor
+            headDot.Radius   = TargetVisuals.HeadDotRadius
+            headDot.Visible  = true
         else
             headDot.Visible = false
         end
 
         if TargetVisuals.Highlight then
-            targetHighlight.Parent = targetChar
+            targetHighlight.Parent    = targetChar
             targetHighlight.FillColor = TargetVisuals.HighlightColor
-            targetHighlight.Enabled = true
+            targetHighlight.Enabled   = true
         else
             targetHighlight.Enabled = false
-            targetHighlight.Parent = nil
+            targetHighlight.Parent  = nil
         end
     else
-        snapLine.Visible = false
-        headDot.Visible = false
+        snapLine.Visible        = false
+        headDot.Visible         = false
         targetHighlight.Enabled = false
-        targetHighlight.Parent = nil
+        targetHighlight.Parent  = nil
     end
 end)
 
+-- ESP registration
 for _, player in ipairs(Players:GetPlayers()) do
     if player ~= LocalPlayer then createPlayerESP(player) end
 end
-
 Players.PlayerAdded:Connect(function(player)
     if player ~= LocalPlayer then createPlayerESP(player) end
 end)
+Players.PlayerRemoving:Connect(function(player) removePlayerESP(player) end)
 
-Players.PlayerRemoving:Connect(function(player)
-    removePlayerESP(player)
-end)
-
+-- =========================================================
+-- PLAYER CHAMS
+-- =========================================================
 local function applyChams(player)
     if player == LocalPlayer then return end
-
     local function updateChams()
         local character = getCharacter(player)
         if not character then return end
-
         local highlight = character:FindFirstChild("ChamsHighlight")
         local isEnemy = not Chams.TeamCheck or (player:GetAttribute("Team") ~= LocalPlayer:GetAttribute("Team"))
-
         if Chams.Enabled and isAlive(character) and isEnemy then
             if not highlight then
                 highlight = Instance.new("Highlight")
-                highlight.Name = "ChamsHighlight"
+                highlight.Name      = "ChamsHighlight"
                 highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                highlight.Parent = character
+                highlight.Parent    = character
             end
-
-            highlight.FillColor = Chams.FillColor
-            highlight.OutlineColor = Chams.OutlineColor
-            highlight.FillTransparency = Chams.FillTransparency
-            highlight.OutlineTransparency = Chams.OutlineTransparency
-            highlight.Enabled = true
+            highlight.FillColor          = Chams.FillColor
+            highlight.OutlineColor       = Chams.OutlineColor
+            highlight.FillTransparency   = Chams.FillTransparency
+            highlight.OutlineTransparency= Chams.OutlineTransparency
+            highlight.Enabled            = true
         elseif highlight then
             highlight.Enabled = false
         end
     end
-
     player.CharacterAdded:Connect(function()
         task.wait(0.1)
         updateChams()
     end)
-
     updateChams()
 end
 
 for _, player in ipairs(Players:GetPlayers()) do applyChams(player) end
 Players.PlayerAdded:Connect(applyChams)
 
-RunService.Heartbeat:Connect(function()
-    if not Chams.Enabled then
+task.spawn(function()
+    while task.wait(0.1) do
         for _, player in ipairs(Players:GetPlayers()) do
-            local char = getCharacter(player)
-            if char and char:FindFirstChild("ChamsHighlight") then
-                char.ChamsHighlight.Enabled = false
-            end
-        end
-        return
-    end
-
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            local char = getCharacter(player)
-            if char then
-                local highlight = char:FindFirstChild("ChamsHighlight")
-                local isEnemy = not Chams.TeamCheck or (player:GetAttribute("Team") ~= LocalPlayer:GetAttribute("Team"))
-                
-                if isAlive(char) and isEnemy then
-                    if not highlight then
-                        applyChams(player)
-                    else
-                        highlight.Enabled = true
+            if player ~= LocalPlayer then
+                local char = getCharacter(player)
+                if char then
+                    local highlight = char:FindFirstChild("ChamsHighlight")
+                    local isEnemy = not Chams.TeamCheck or (player:GetAttribute("Team") ~= LocalPlayer:GetAttribute("Team"))
+                    if Chams.Enabled and isAlive(char) and isEnemy then
+                        if not highlight then applyChams(player) else highlight.Enabled = true end
+                    elseif highlight then
+                        highlight.Enabled = false
                     end
-                elseif highlight then
-                    highlight.Enabled = false
                 end
             end
         end
     end
 end)
 
--- Bhop & Movement Engine
-local function setupCharacterMovement(character)
-    if not character then return end
-    local hum = character:WaitForChild("Humanoid", 5)
-    local hrp = character:WaitForChild("HumanoidRootPart", 5)
-    if not hum or not hrp then return end
+-- =========================================================
+-- WEAPON MATERIAL CHAMS
+-- =========================================================
+local activeWeaponHighlights = {}
 
-    local origProps = hrp.CustomPhysicalProperties or PhysicalProperties.new(0.7, 0.3, 0.5, 1, 1)
-    local slipProps = PhysicalProperties.new(origProps.Density, MovementConfig.LowFriction, origProps.Elasticity, 100, origProps.ElasticityWeight)
+local function getWeaponViewModel()
+    for _, child in ipairs(Camera:GetChildren()) do
+        if child:IsA("Model") and child.Name ~= "Viewmodel" and not child.Name:lower():find("light") then
+            local w = child:FindFirstChild("Weapon") or child
+            if w:IsA("Model") and w.Name ~= "Viewmodel" and not w.Name:lower():find("light") then
+                return w
+            end
+        end
+    end
+    return nil
+end
 
-    local stateConn
-    stateConn = hum.StateChanged:Connect(function(_, newState)
-        if MovementConfig.BhopEnabled and newState == Enum.HumanoidStateType.Landed then
-            if hum.MoveDirection.Magnitude > 0 then
-                hum:ChangeState(Enum.HumanoidStateType.Jumping)
-                
-                currSpeed = math.min(currSpeed + MovementConfig.JumpBoost, MovementConfig.SpeedCap)
-                local multiplier = MovementConfig.SpeedEnabled and MovementConfig.SpeedMultiplier or 1.0
-                local finalSpeed = currSpeed * multiplier
-                
-                local moveDir = hum.MoveDirection.Unit
-                hrp.CustomPhysicalProperties = slipProps
-                hrp.AssemblyLinearVelocity = Vector3.new(
-                    moveDir.X * finalSpeed,
-                    hrp.AssemblyLinearVelocity.Y + 2,
-                    moveDir.Z * finalSpeed
-                )
+RunService.Heartbeat:Connect(function()
+    if os.clock() - lastWeaponChamsUpdate < WEAPON_CHAMS_RATE then return end
+    lastWeaponChamsUpdate = os.clock()
+
+    pcall(function()
+        if not WeaponMaterialConfig.Enabled then
+            for _, h in pairs(activeWeaponHighlights) do
+                if h and h.Parent then h:Destroy() end
+            end
+            activeWeaponHighlights = {}
+            return
+        end
+
+        local weaponModel = getWeaponViewModel()
+        if not weaponModel then
+            for _, h in pairs(activeWeaponHighlights) do
+                if h and h.Parent then h:Destroy() end
+            end
+            activeWeaponHighlights = {}
+            return
+        end
+
+        local mode  = WeaponMaterialConfig.Mode
+        local color = WeaponMaterialConfig.Color
+        local currentParts = {}
+
+        for _, part in ipairs(weaponModel:GetDescendants()) do
+            if part:IsA("BasePart") and part.Name ~= "Hitbox" and part.Name ~= "HumanoidRootPart" then
+                if part.Name == "ViewmodelLight" or part:FindFirstAncestor("ViewmodelLight") or part:FindFirstAncestor("Viewmodel") then
+                    continue
+                end
+                pcall(function()
+                    if mode == "Highlight" then
+                        currentParts[part] = true
+                        local h = part:FindFirstChild("WeaponMaterialHighlight")
+                        if not h then
+                            h = Instance.new("Highlight")
+                            h.Name = "WeaponMaterialHighlight"
+                            h.Adornee = part
+                            h.Parent = part
+                            h.FillTransparency = 0
+                            h.OutlineTransparency = 1
+                            h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                            table.insert(activeWeaponHighlights, h)
+                        end
+                        h.FillColor = color
+                    else
+                        local h = part:FindFirstChild("WeaponMaterialHighlight")
+                        if h then h:Destroy() end
+                        if mode ~= "Neon" then
+                            for _, v in ipairs(part:GetChildren()) do
+                                if v:IsA("SurfaceAppearance") or v:IsA("Texture") or v:IsA("Decal") then
+                                    v:Destroy()
+                                end
+                            end
+                        end
+                        if mode == "Glass" then
+                            part.Material = Enum.Material.Glass
+                            part.Color = color
+                            part.Transparency = WeaponMaterialConfig.GlassTransparency
+                        elseif mode == "ForceField" then
+                            part.Material = Enum.Material.ForceField
+                            part.Color = color
+                            part.Transparency = 0
+                        elseif mode == "Metal" then
+                            part.Material = Enum.Material.Metal
+                            part.Color = color
+                            part.Reflectance = WeaponMaterialConfig.MetalReflectance
+                            part.Transparency = 0
+                        elseif mode == "Neon" then
+                            part.Material = Enum.Material.Neon
+                            part.Color = color
+                            part.Transparency = 0
+                            for _, v in ipairs(part:GetChildren()) do
+                                if v:IsA("SurfaceAppearance") or v:IsA("Texture") or v:IsA("Decal") then
+                                    v:Destroy()
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+
+        if mode == "Highlight" then
+            for i = #activeWeaponHighlights, 1, -1 do
+                local h = activeWeaponHighlights[i]
+                if not h or not h.Parent or not currentParts[h.Adornee] then
+                    if h then h:Destroy() end
+                    table.remove(activeWeaponHighlights, i)
+                end
             end
         end
     end)
-
-    character.AncestryChanged:Connect(function(_, parent)
-        if not parent and stateConn then stateConn:Disconnect() end
-    end)
-end
-
-if LocalPlayer.Character then setupCharacterMovement(LocalPlayer.Character) end
-LocalPlayer.CharacterAdded:Connect(function(char)
-    currSpeed = MovementConfig.BaseSpeed
-    setupCharacterMovement(char)
 end)
 
-RunService.Heartbeat:Connect(function(delta)
-    local char = LocalPlayer.Character
-    if not char then return end
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hum or not hrp then return end
+-- =========================================================
+-- RAGEBOT AUTO RELOAD HELPERS
+-- =========================================================
+local reloadCooldownUntil = 0
+local RELOAD_METHOD_NAMES = { "reload", "Reload", "startReload", "StartReload", "reloadWeapon", "ReloadWeapon" }
 
-    local multiplier = MovementConfig.SpeedEnabled and MovementConfig.SpeedMultiplier or 1.0
+local function tryReloadWeapon(weapon)
+    if not weapon then return false end
+    if weapon.IsReloading then return false end
+    if os.clock() < reloadCooldownUntil then return false end
 
-    if MovementConfig.BhopEnabled then
-        local origProps = PhysicalProperties.new(0.7, 0.3, 0.5, 1, 1)
-        local slipProps = PhysicalProperties.new(origProps.Density, MovementConfig.LowFriction, origProps.Elasticity, 100, origProps.ElasticityWeight)
+    for _, name in ipairs(RELOAD_METHOD_NAMES) do
+        local fn = weapon[name]
+        if type(fn) == "function" then
+            local ok = pcall(fn, weapon)
+            if ok then
+                reloadCooldownUntil = os.clock() + (RagebotConfig.ReloadDelay or 0.15)
+                return true
+            end
+        end
+    end
 
-        if hum.FloorMaterial == Enum.Material.Air and hum.MoveDirection.Magnitude > 0 then
-            local moveDir = hum.MoveDirection.Unit
-            local finalSpeed = currSpeed * multiplier
-            
-            hrp.AssemblyLinearVelocity = Vector3.new(
-                moveDir.X * finalSpeed,
-                hrp.AssemblyLinearVelocity.Y,
-                moveDir.Z * finalSpeed
-            )
+    if weapon.Reload and typeof(weapon.Reload) == "RBXScriptSignal" then
+        pcall(function() weapon.Reload:Fire() end)
+        reloadCooldownUntil = os.clock() + (RagebotConfig.ReloadDelay or 0.15)
+        return true
+    end
+
+    return false
+end
+
+local function getWeaponAmmo(weapon)
+    if not weapon then return nil end
+    local ammo = weapon.Rounds
+    if ammo == nil then ammo = weapon.Ammo end
+    if ammo == nil then ammo = weapon.CurrentAmmo end
+    if ammo == nil then ammo = weapon.Magazine end
+    return ammo
+end
+
+-- =========================================================
+-- RAGEBOT SHOOTING
+-- =========================================================
+local RAGE_SHOOT_FUNC = nil
+pcall(function()
+    if WeaponModsModule.SendFunc then
+        RAGE_SHOOT_FUNC = WeaponModsModule.SendFunc
+    end
+end)
+
+local cachedShootWeapon = nil
+local cachedShootTime = 0
+
+local function getCachedShootWeapon()
+    local now = os.clock()
+    if cachedShootWeapon and (now - cachedShootTime) < 0.15 then
+        return cachedShootWeapon
+    end
+    local w = getWeaponObjectSafe()
+    if w and w.IsEquipped ~= false and type(w.shoot) == "function" then
+        cachedShootWeapon = w
+        cachedShootTime = now
+        return w
+    end
+    cachedShootWeapon = nil
+    return nil
+end
+
+task.spawn(function()
+    local nextShotTime = 0
+
+    while true do
+        local dt = RunService.Heartbeat:Wait()
+
+        if not RagebotConfig.Enabled then
+            nextShotTime = 0
+            continue
         end
 
-        if hum.FloorMaterial ~= Enum.Material.Air and hum.MoveDirection.Magnitude == 0 then
-            currSpeed = math.max(MovementConfig.BaseSpeed, currSpeed - MovementConfig.DecelRate * delta)
-            hrp.CustomPhysicalProperties = origProps
+        local target = currentRageTargetPart
+        if not target or not target.Parent then
+            nextShotTime = 0
+            continue
         end
-    else
-        if MovementConfig.SpeedEnabled then
-            hum.WalkSpeed = MovementConfig.BaseSpeed * MovementConfig.SpeedMultiplier
+
+        local weapon = getCachedShootWeapon()
+        if not weapon then continue end
+        if weapon.IsReloading then continue end
+
+        local ammo = getWeaponAmmo(weapon)
+        if ammo ~= nil and ammo <= 0 then
+            if RagebotConfig.AutoReload then tryReloadWeapon(weapon) end
+            continue
+        end
+
+        local now = os.clock()
+        if now < nextShotTime then continue end
+
+        local minInterval = math.max(RagebotConfig.Delay or 0.01, 0.0001)
+        local minAllowed  = 1 / (RagebotConfig.MaxShotsPerSec or 100)
+        if minInterval < minAllowed then minInterval = minAllowed end
+
+        if RagebotConfig.FastMode then
+            local maxShots = RagebotConfig.MaxShotsPerFrame or 4
+            local budget   = math.min(dt, 0.05)
+            local canShoot = math.min(maxShots, math.floor(budget / minInterval) + 1)
+            if canShoot < 1 then canShoot = 1 end
+
+            for _ = 1, canShoot do
+                pcall(weapon.shoot, weapon)
+            end
+            nextShotTime = now + (canShoot * minInterval)
+        else
+            pcall(weapon.shoot, weapon)
+            nextShotTime = now + minInterval
         end
     end
 end)
 
+-- =========================================================
+-- HIT BUILDER + REMOTE HOOK
+-- =========================================================
 local function buildHit(origin, part)
     local targetPos = part.Position
     local direction = (targetPos - origin).Unit
-
     return {
         Distance = (targetPos - origin).Magnitude,
         Instance = part,
         Position = targetPos,
-        Normal = -direction,
+        Normal   = -direction,
         Material = part.Material.Name,
-        Exit = false
+        Exit     = false
     }
 end
 
--- Hook Remote Engine (Safe Bullet Tracer & Hit Effects)
-local ok, Remotes = pcall(require, ReplicatedStorage:WaitForChild("Database", 2):WaitForChild("Security", 2):WaitForChild("Remotes", 2))
+local ok, Remotes = pcall(require, ReplicatedStorage:WaitForChild("Database", 5):WaitForChild("Security", 5):WaitForChild("Remotes", 5))
 local shootRemote = ok and Remotes and Remotes.Inventory and Remotes.Inventory.ShootWeapon
 
 if shootRemote and shootRemote.Send then
@@ -1786,35 +2114,32 @@ if shootRemote and shootRemote.Send then
                 end
                 playShootSound()
             end
-
             for _, bullet in ipairs(packet.Bullets) do
                 local origin = bullet.Origin
                 if origin then
-                    local targetToHit = SilentAim.Enabled and getTarget(origin)
-                    
+                    local targetToHit = currentRageTargetPart
+                    if not targetToHit and SilentAim.Enabled then
+                        targetToHit = getTarget(origin)
+                    end
                     if targetToHit then
                         bullet.Direction = (targetToHit.Position - origin).Unit
-                        bullet.Hits = { buildHit(origin, targetToHit) }
+                        bullet.Hits      = { buildHit(origin, targetToHit) }
                         playHitSound()
                         triggerHitOverlay()
                         triggerHitEffect(targetToHit.Position)
                         triggerHitChams(targetToHit.Parent)
-                        
                         if BulletTracer.Enabled then drawBulletTracer(origin, targetToHit.Position) end
                     else
-                        local dir = bullet.Direction or Camera.CFrame.LookVector
+                        local dir         = bullet.Direction or Camera.CFrame.LookVector
                         local maxDistance = 1000
-                        
-                        local rayParams = RaycastParams.new()
+                        local rayParams   = RaycastParams.new()
                         rayParams.FilterType = Enum.RaycastFilterType.Exclude
                         local ignoreList = {}
                         if LocalPlayer.Character then table.insert(ignoreList, LocalPlayer.Character) end
                         if Camera:FindFirstChildOfClass("Model") then table.insert(ignoreList, Camera:FindFirstChildOfClass("Model")) end
                         rayParams.FilterDescendantsInstances = ignoreList
-
                         local rayRes = Workspace:Raycast(origin, dir * maxDistance, rayParams)
                         local endPos = rayRes and rayRes.Position or (origin + (dir * maxDistance))
-
                         if BulletTracer.Enabled then drawBulletTracer(origin, endPos) end
                     end
                 end
@@ -1831,845 +2156,373 @@ if shootRemote and shootRemote.Send then
     end
 end
 
--- ==================== UI CREATION ==================== --
+-- =========================================================
+-- =========================================================
+-- UI — REORGANIZED TABS
+-- =========================================================
+--   Tabs:
+--     Blatant     → Silent Aim / Hitbox Extender / Gun Mods / Shoot Sound
+--     Ragebot     → Ragebot Main / Rage Checks / Height Filter
+--     Hit Effect  → Hit Chams / Hit Overlay / Hit Particles / Hit Sound
+--     Visual      → Weapon Material / Bullet Tracers / FOV / Target Visuals
+--     ESP         → ESP (boxes / bars / skeleton) / Player Chams
+--     World       → Camera & Effects (+ Third Person) / Lighting / Ambient / Atmosphere / CC / Weather
+--     Settings    → Menu / Keybind / Config
+-- =========================================================
 
-local window = NeverLose:CreateWindow({
-    Logo = NeverLose.GlobalLogo,
-    Name = "Neverlose",
-    Content = "BloxStrike",
-    Size = NeverLose.Scales.Default,
-    ConfigFolder = "NeverLoseConfigs",
-    Enable3DRenderer = false,
-    Keybind = "RightControl"
-})
+local Tabs = {
+    Blatant   = Window:AddTab("Blatant",   "crosshair"),
+    Ragebot   = Window:AddTab("Ragebot",   "flame"),
+    HitEffect = Window:AddTab("Hit Effect","sparkles"),
+    Visual    = Window:AddTab("Visual",    "eye"),
+    ESP       = Window:AddTab("ESP",       "scan-eye"),
+    World     = Window:AddTab("World",     "moon"),
+    Setting   = Window:AddTab("Settings",  "settings"),
+}
 
-window.UserSettings:AddLabel("Menu Keybind"):AddKeybind({
-    Default = 'Insert',
-    Callback = function(v) window.Keybind = v end,
-})
+-- =========================================================
+-- TAB: BLATANT
+-- =========================================================
+local SilentAimBox = Tabs.Blatant:AddLeftGroupbox("Silent Aim", "crosshair")
+SilentAimBox:AddToggle("silent_enabled",   { Text = "Enable Silent Aim", Default = SilentAim.Enabled,   Callback = function(v) SilentAim.Enabled = v end })
+SilentAimBox:AddToggle("silent_teamcheck", { Text = "Team Check",        Default = SilentAim.TeamCheck, Callback = function(v) SilentAim.TeamCheck = v end })
+SilentAimBox:AddToggle("silent_wallcheck", { Text = "Wall Check",        Default = SilentAim.WallCheck, Callback = function(v) SilentAim.WallCheck = v end })
+SilentAimBox:AddSlider("silent_fov", { Text = "Field of View", Default = SilentAim.FOV, Min = 1, Max = 180, Rounding = 0, Suffix = "°", Callback = function(v) SilentAim.FOV = v end })
+SilentAimBox:AddDropdown("silent_hitpart", { Text = "Hit Part", Values = { "Head", "HumanoidRootPart", "Closest" }, Default = "Head", Callback = function(v) SilentAim.AimPart = v end })
 
-window.UserSettings:AddLabel('Menu Scale'):AddDropdown({
-    Default = "Large",
-    Values = {"Default",'Large','Mobile','Small'},
-    Callback = function(v) window:SetSize(NeverLose.Scales[v]) end,
-})
+local HitboxBox = Tabs.Blatant:AddLeftGroupbox("Hitbox Extender", "box")
+HitboxBox:AddToggle("hitbox_enabled", { Text = "Enable Head Hitbox", Default = HitboxConfig.Enabled, Callback = function(v) HitboxConfig.Enabled = v end })
+HitboxBox:AddSlider("hitbox_size", { Text = "Size", Default = HitboxConfig.Size, Min = 1, Max = 5, Rounding = 1, Suffix = "x", Callback = function(v) HitboxConfig.Size = v end })
+HitboxBox:AddLabel("Hitbox Color"):AddColorPicker("hitbox_color", { Default = HitboxConfig.Color, Title = "Hitbox Color", Callback = function(v) HitboxConfig.Color = v end })
+HitboxBox:AddSlider("hitbox_transparency", { Text = "Transparency", Default = HitboxConfig.Transparency, Min = 0, Max = 1, Rounding = 2, Callback = function(v) HitboxConfig.Transparency = v end })
 
-window.UserSettings:AddLabel('3D Menu'):AddToggle({
-    Default = false,
-    Callback = function(v) window:Set3DRender(v) end,
-})
+local GunModsBox = Tabs.Blatant:AddRightGroupbox("Gun Modifications", "wrench")
+GunModsBox:AddToggle("gun_norecoil",          { Text = "No Recoil",            Default = GunModsConfig.NoRecoil,        Callback = function(v) GunModsConfig.NoRecoil = v end })
+GunModsBox:AddToggle("gun_nospread",          { Text = "No Spread",            Default = GunModsConfig.NoSpread,        Callback = function(v) GunModsConfig.NoSpread = v end })
+GunModsBox:AddToggle("gun_instantreload",     { Text = "Instant Reload",       Default = GunModsConfig.InstantReload,   Callback = function(v) GunModsConfig.InstantReload = v end })
+GunModsBox:AddToggle("gun_firerate_enabled",  { Text = "Enable Rapid Firerate",Default = GunModsConfig.FirerateEnabled, Callback = function(v) GunModsConfig.FirerateEnabled = v end })
+GunModsBox:AddSlider("gun_firerate_val",      { Text = "Firerate Delay",       Default = GunModsConfig.FirerateValue,   Min = 0.001, Max = 0.5, Rounding = 3, Suffix = "s", Callback = function(v) GunModsConfig.FirerateValue = v end })
 
--- WATERMARK
-local Watermark = window:Watermark()
-local pingBlock = Watermark:AddBlock("chart-four-vertical-bars", "0MS")
-local uiToggleBlock = Watermark:AddBlock("cube-vertexes", "Toggle ui")
+local ShootSoundBox = Tabs.Blatant:AddRightGroupbox("Shoot Sound", "volume-2")
+ShootSoundBox:AddToggle("shootsound_enabled", { Text = "Enable Shoot Sound", Default = ShootSoundConfig.Enabled, Callback = function(v) ShootSoundConfig.Enabled = v end })
+ShootSoundBox:AddDropdown("shootsound_mode",  { Text = "Shoot Sound", Values = { "SGG 08" }, Default = "SGG 08", Callback = function(v) ShootSoundConfig.Mode = v end })
+ShootSoundBox:AddSlider("shootsound_volume",  { Text = "Shoot Volume", Default = ShootSoundConfig.Volume, Min = 0, Max = 10, Rounding = 1, Callback = function(v) ShootSoundConfig.Volume = v end })
 
-uiToggleBlock:Input(function()
-    if window.ToggleInterface then window:ToggleInterface()
-    elseif window.Toggle then window:Toggle() end
-end)
+-- =========================================================
+-- TAB: RAGEBOT
+-- =========================================================
+local RageMainBox = Tabs.Ragebot:AddLeftGroupbox("Ragebot", "target")
+RageMainBox:AddToggle("rage_enabled",  { Text = "Enable Ragebot", Default = RagebotConfig.Enabled, Callback = function(v) RagebotConfig.Enabled = v end })
+RageMainBox:AddSlider("rage_delay",    { Text = "Shoot Delay", Default = RagebotConfig.Delay, Min = 0.001, Max = 1, Rounding = 3, Suffix = "s", Callback = function(v) RagebotConfig.Delay = v end })
+RageMainBox:AddDropdown("rage_hitpart",{ Text = "Hit Part", Values = { "Head", "HumanoidRootPart", "UpperTorso", "LowerTorso" }, Default = "Head", Callback = function(v) RagebotConfig.HitPart = v end })
+RageMainBox:AddSlider("rage_fov",      { Text = "Ragebot FOV", Default = RagebotConfig.FOV, Min = 10, Max = 180, Rounding = 0, Suffix = "°", Callback = function(v) RagebotConfig.FOV = v end })
+RageMainBox:AddToggle("rage_fastmode", { Text = "Fast Mode (Burst)", Default = RagebotConfig.FastMode, Callback = function(v) RagebotConfig.FastMode = v end })
+RageMainBox:AddSlider("rage_maxshots", { Text = "Max Shots / Frame", Default = RagebotConfig.MaxShotsPerFrame, Min = 1, Max = 10, Rounding = 0, Callback = function(v) RagebotConfig.MaxShotsPerFrame = v end })
+RageMainBox:AddSlider("rage_maxsps",   { Text = "Max Shots / Second", Default = RagebotConfig.MaxShotsPerSec, Min = 10, Max = 300, Rounding = 0, Callback = function(v) RagebotConfig.MaxShotsPerSec = v end })
+RageMainBox:AddToggle("rage_autoreload",{ Text = "Auto Reload", Default = RagebotConfig.AutoReload, Callback = function(v) RagebotConfig.AutoReload = v end })
+RageMainBox:AddSlider("rage_autoreload_delay", { Text = "Auto Reload Cooldown", Default = RagebotConfig.ReloadDelay, Min = 0.05, Max = 1.0, Rounding = 2, Suffix = "s", Callback = function(v) RagebotConfig.ReloadDelay = v end })
 
-Watermark:SetRender(true)
+local RageCheckBox = Tabs.Ragebot:AddRightGroupbox("Rage Checks", "shield-check")
+RageCheckBox:AddToggle("rage_teamcheck",    { Text = "Team Check",                    Default = RagebotConfig.TeamCheck,    Callback = function(v) RagebotConfig.TeamCheck = v end })
+RageCheckBox:AddToggle("rage_visiblecheck", { Text = "Visible Check",                 Default = RagebotConfig.VisibleCheck, Callback = function(v) RagebotConfig.VisibleCheck = v end })
+RageCheckBox:AddToggle("rage_wallcheck",    { Text = "Wall Check",                    Default = RagebotConfig.WallCheck,    Callback = function(v) RagebotConfig.WallCheck = v end })
+RageCheckBox:AddToggle("rage_autowall",     { Text = "Auto Wall (Penetration)",       Default = RagebotConfig.AutoWall,     Callback = function(v) RagebotConfig.AutoWall = v end })
+RageCheckBox:AddSlider("rage_maxpen",       { Text = "Max Penetration",               Default = RagebotConfig.MaxPen,       Min = 0.1, Max = 20, Rounding = 1, Suffix = " studs", Callback = function(v) RagebotConfig.MaxPen = v end })
 
-task.spawn(function()
-    while true do
-        task.wait(1)
-        local pingValue = math.floor(LocalPlayer:GetNetworkPing() * 1000)
-        pingBlock:SetText(tostring(pingValue) .. "MS")
+local RageHeightBox = Tabs.Ragebot:AddLeftGroupbox("Height Filter", "arrow-down-up")
+RageHeightBox:AddToggle("rage_height_enabled", { Text = "Enable Height Filter", Default = RagebotConfig.HeightCheck, Callback = function(v) RagebotConfig.HeightCheck = v end })
+RageHeightBox:AddSlider("rage_height_diff",    { Text = "Max Height Above (studs)", Default = RagebotConfig.MaxHeightDiff, Min = 0, Max = 100, Rounding = 0, Suffix = " studs", Callback = function(v) RagebotConfig.MaxHeightDiff = v end })
+RageHeightBox:AddSlider("rage_target_refresh", { Text = "Target Refresh Rate", Default = RagebotConfig.TargetRefresh, Min = 0.01, Max = 0.5, Rounding = 2, Suffix = "s", Callback = function(v) RagebotConfig.TargetRefresh = v end })
+
+local function refreshPriorityList()
+    local names = {"[ AUTO ]"}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then table.insert(names, p.Name) end
     end
-end)
+    return names
+end
 
--- TAB: LEGIT
-local LegitTab = window:AddTab({
-    Icon = 'mouse-scrollwheel',
-    Name = "Blatant"
+RageCheckBox:AddDropdown("rage_priority", {
+    Text = "Priority Target",
+    Values = refreshPriorityList(),
+    Default = "[ AUTO ]",
+    Searchable = true,
+    Callback = function(v) RagebotConfig.PriorityName = (v == "[ AUTO ]") and nil or v end,
 })
-
-local SilentAimSection = LegitTab:AddSection({
-    Name = "SILENT AIM",
-    Position = 'left'
-})
-
-SilentAimSection:AddLabel('Enable Silent Aim'):AddToggle({
-    Default = SilentAim.Enabled,
-    Callback = function(v) SilentAim.Enabled = v end,
-    Flag = "silent_enabled"
-})
-
-SilentAimSection:AddLabel('Team Check'):AddToggle({
-    Default = SilentAim.TeamCheck,
-    Callback = function(v) SilentAim.TeamCheck = v end,
-    Flag = "silent_teamcheck"
-})
-
-SilentAimSection:AddLabel('Wall Check'):AddToggle({
-    Default = SilentAim.WallCheck,
-    Callback = function(v) SilentAim.WallCheck = v end,
-    Flag = "silent_wallcheck"
-})
-
-SilentAimSection:AddLabel('Field of View'):AddSlider({
-    Min = 1,
-    Max = 180,
-    Rounding = 0,
-    Default = SilentAim.FOV,
-    Type = "°",
-    Size = 100,
-    Callback = function(v) SilentAim.FOV = v end,
-    Flag = "silent_fov"
-})
-
-SilentAimSection:AddLabel('Hit Part'):AddDropdown({
-    Default = 'Head',
-    Values = {'Head', 'HumanoidRootPart', 'Closest'},
-    Callback = function(v) SilentAim.AimPart = v end,
-    Flag = "silent_hitpart"
-})
-
-local HitboxSection = LegitTab:AddSection({
-    Name = "HITBOX EXTENDER",
-    Position = 'right'
-})
-
-HitboxSection:AddLabel('Enable Head Hitbox'):AddToggle({
-    Default = HitboxConfig.Enabled,
-    Callback = function(v) HitboxConfig.Enabled = v end,
-    Flag = "hitbox_enabled"
-})
-
-HitboxSection:AddLabel('Size'):AddSlider({
-    Min = 1,
-    Max = 5,
-    Rounding = 1,
-    Default = HitboxConfig.Size,
-    Type = "x",
-    Size = 100,
-    Callback = function(v) HitboxConfig.Size = v end,
-    Flag = "hitbox_size"
-})
-
-HitboxSection:AddLabel('Color'):AddDropdown({
-    Default = 'Red',
-    Values = {'Red', 'Blue', 'Green', 'Cyan', 'Pink', 'Yellow', 'White'},
-    Callback = function(v)
-        local colors = {
-            ["Red"] = Color3.fromRGB(255, 0, 0),
-            ["Blue"] = Color3.fromRGB(0, 170, 255),
-            ["Green"] = Color3.fromRGB(0, 255, 0),
-            ["Cyan"] = Color3.fromRGB(0, 255, 255),
-            ["Pink"] = Color3.fromRGB(255, 105, 180),
-            ["Yellow"] = Color3.fromRGB(255, 255, 0),
-            ["White"] = Color3.fromRGB(255, 255, 255)
-        }
-        HitboxConfig.Color = colors[v] or Color3.fromRGB(255, 0, 0)
+RageCheckBox:AddButton({
+    Text = "Refresh Priority List",
+    Func = function()
+        if Options.rage_priority and Options.rage_priority.Refresh then
+            pcall(function() Options.rage_priority:Refresh(refreshPriorityList(), true) end)
+        end
     end,
-    Flag = "hitbox_color"
 })
 
-HitboxSection:AddLabel('Transparency'):AddSlider({
-    Min = 0,
-    Max = 1,
-    Rounding = 2,
-    Default = HitboxConfig.Transparency,
-    Type = "",
-    Size = 100,
-    Callback = function(v) HitboxConfig.Transparency = v end,
-    Flag = "hitbox_transparency"
-})
+-- =========================================================
+-- TAB: HIT EFFECT
+-- =========================================================
+local HitChamsBox = Tabs.HitEffect:AddLeftGroupbox("Hit Chams", "ghost")
+HitChamsBox:AddToggle("hit_chams_enabled", { Text = "Enable Hit Chams", Default = HitChamsConfig.Enabled, Callback = function(v) HitChamsConfig.Enabled = v end })
+HitChamsBox:AddLabel("Hit Chams Color"):AddColorPicker("hit_chams_color", { Default = HitChamsConfig.Color, Title = "Hit Chams Color", Callback = function(v) HitChamsConfig.Color = v end })
+HitChamsBox:AddSlider("hit_chams_duration", { Text = "Duration", Default = HitChamsConfig.Duration, Min = 0.1, Max = 3.0, Rounding = 1, Suffix = "s", Callback = function(v) HitChamsConfig.Duration = v end })
+
+local HitOverlayBox = Tabs.HitEffect:AddLeftGroupbox("Hit Overlay", "square")
+HitOverlayBox:AddToggle("hit_overlay_enabled", { Text = "Enable Hit Overlay", Default = HitOverlayConfig.Enabled, Callback = function(v) HitOverlayConfig.Enabled = v end })
+HitOverlayBox:AddLabel("Overlay Color"):AddColorPicker("hit_overlay_color", { Default = HitOverlayConfig.Color, Title = "Overlay Color", Callback = function(v) HitOverlayConfig.Color = v end })
+HitOverlayBox:AddSlider("hit_overlay_duration", { Text = "Duration", Default = HitOverlayConfig.Duration, Min = 0.05, Max = 2.0, Rounding = 1, Suffix = "s", Callback = function(v) HitOverlayConfig.Duration = v end })
+HitOverlayBox:AddSlider("hit_overlay_transparency", { Text = "Max Transparency", Default = HitOverlayConfig.MaxTransparency, Min = 0, Max = 1, Rounding = 2, Callback = function(v) HitOverlayConfig.MaxTransparency = v end })
+
+local HitParticleBox = Tabs.HitEffect:AddRightGroupbox("Hit Effect Particles", "sparkles")
+HitParticleBox:AddToggle("hit_particle_enabled", { Text = "Enable Hit Effect", Default = HitEffectConfig.Enabled, Callback = function(v) HitEffectConfig.Enabled = v end })
+HitParticleBox:AddDropdown("hit_particle_style", { Text = "Effect Style", Values = { "Sparks", "Bubble", "Orbs", "Air" }, Default = "Sparks", Callback = function(v) HitEffectConfig.Style = v end })
+HitParticleBox:AddLabel("Particle Color"):AddColorPicker("hit_particle_color", { Default = HitEffectConfig.Color, Title = "Particle Color", Callback = function(v) HitEffectConfig.Color = v end })
 
 local hitSoundList = {}
 for name, _ in pairs(SoundIDs) do table.insert(hitSoundList, name) end
+table.sort(hitSoundList)
 
-local ShootSoundSection = LegitTab:AddSection({
-    Name = "SHOOT SOUND",
-    Position = 'right'
-})
+local HitSoundBox = Tabs.HitEffect:AddRightGroupbox("Hit Sound", "bell")
+HitSoundBox:AddToggle("hitsound_enabled", { Text = "Enable Hit Sound", Default = HitSoundConfig.Enabled, Callback = function(v) HitSoundConfig.Enabled = v end })
+HitSoundBox:AddDropdown("hitsound_mode", { Text = "Hit Sound Style", Values = hitSoundList, Default = HitSoundConfig.Mode, Searchable = true, Callback = function(v) HitSoundConfig.Mode = v end })
+HitSoundBox:AddSlider("hitsound_volume", { Text = "Hit Volume", Default = HitSoundConfig.Volume, Min = 0, Max = 10, Rounding = 1, Callback = function(v) HitSoundConfig.Volume = v end })
 
-ShootSoundSection:AddLabel('Enable Shoot Sound'):AddToggle({
-    Default = ShootSoundConfig.Enabled,
-    Callback = function(v) ShootSoundConfig.Enabled = v end,
-    Flag = "shootsound_enabled"
-})
+-- =========================================================
+-- TAB: VISUAL
+-- =========================================================
+local WeaponMatBox = Tabs.Visual:AddLeftGroupbox("Weapon Material", "paintbrush")
+WeaponMatBox:AddToggle("weapon_mat_enabled", { Text = "Enable Weapon Material", Default = WeaponMaterialConfig.Enabled, Callback = function(v) WeaponMaterialConfig.Enabled = v end })
+WeaponMatBox:AddDropdown("weapon_mat_mode",  { Text = "Material / Type", Values = { "Glass", "ForceField", "Metal", "Highlight", "Neon" }, Default = "Glass", Callback = function(v) WeaponMaterialConfig.Mode = v end })
+WeaponMatBox:AddLabel("Weapon Color"):AddColorPicker("weapon_mat_color", { Default = WeaponMaterialConfig.Color, Title = "Weapon Color", Callback = function(v) WeaponMaterialConfig.Color = v end })
+WeaponMatBox:AddSlider("weapon_mat_glass_transparency", { Text = "Glass Transparency", Default = WeaponMaterialConfig.GlassTransparency, Min = 0, Max = 1, Rounding = 2, Callback = function(v) WeaponMaterialConfig.GlassTransparency = v end })
+WeaponMatBox:AddSlider("weapon_mat_metal_reflectance",  { Text = "Metal Reflectance",  Default = WeaponMaterialConfig.MetalReflectance,  Min = 0, Max = 1, Rounding = 1, Callback = function(v) WeaponMaterialConfig.MetalReflectance = v end })
 
-ShootSoundSection:AddLabel('Shoot Sound'):AddDropdown({
-    Default = "SGG 08",
-    Values = {"SGG 08"},
-    Callback = function(v) ShootSoundConfig.Mode = v end,
-    Flag = "shootsound_mode"
-})
+local FOVBox = Tabs.Visual:AddLeftGroupbox("FOV Settings", "circle-dot")
+FOVBox:AddToggle("draw_fov",    { Text = "Draw FOV", Default = SilentAim.ShowFOV,     Callback = function(v) SilentAim.ShowFOV = v end })
+FOVBox:AddToggle("fov_outline", { Text = "Outline",  Default = SilentAim.ShowOutline, Callback = function(v) SilentAim.ShowOutline = v end })
 
-ShootSoundSection:AddLabel('Shoot Volume'):AddSlider({
-    Min = 0,
-    Max = 10,
-    Rounding = 1,
-    Default = ShootSoundConfig.Volume,
-    Type = "",
-    Size = 100,
-    Callback = function(v) ShootSoundConfig.Volume = v end,
-    Flag = "shootsound_volume"
-})
+local TargetBox = Tabs.Visual:AddLeftGroupbox("Target Visuals", "target")
+TargetBox:AddToggle("target_snapline", { Text = "Target SnapLine", Default = TargetVisuals.SnapLine, Callback = function(v) TargetVisuals.SnapLine = v end })
+TargetBox:AddLabel("SnapLine Color"):AddColorPicker("target_snapline_color", { Default = TargetVisuals.SnapLineColor, Title = "SnapLine Color", Callback = function(v) TargetVisuals.SnapLineColor = v; snapLine.Color = v end })
+TargetBox:AddSlider("target_snapline_thickness", { Text = "SnapLine Thickness", Default = TargetVisuals.SnapLineThickness, Min = 0.5, Max = 5, Rounding = 1, Callback = function(v) TargetVisuals.SnapLineThickness = v; snapLine.Thickness = v end })
+TargetBox:AddToggle("target_headdot", { Text = "Target HeadDot", Default = TargetVisuals.HeadDot, Callback = function(v) TargetVisuals.HeadDot = v end })
+TargetBox:AddLabel("HeadDot Color"):AddColorPicker("target_headdot_color", { Default = TargetVisuals.HeadDotColor, Title = "HeadDot Color", Callback = function(v) TargetVisuals.HeadDotColor = v; headDot.Color = v end })
+TargetBox:AddSlider("target_headdot_radius", { Text = "HeadDot Radius", Default = TargetVisuals.HeadDotRadius, Min = 1, Max = 10, Rounding = 1, Callback = function(v) TargetVisuals.HeadDotRadius = v; headDot.Radius = v end })
+TargetBox:AddToggle("target_highlight", { Text = "Target Highlight", Default = TargetVisuals.Highlight, Callback = function(v) TargetVisuals.Highlight = v end })
+TargetBox:AddLabel("Highlight Color"):AddColorPicker("target_highlight_color", { Default = TargetVisuals.HighlightColor, Title = "Highlight Color", Callback = function(v) TargetVisuals.HighlightColor = v; targetHighlight.FillColor = v end })
 
-local HitSoundSection = LegitTab:AddSection({
-    Name = "HIT SOUND",
-    Position = 'left'
-})
-
-HitSoundSection:AddLabel('Enable Hit Sound'):AddToggle({
-    Default = HitSoundConfig.Enabled,
-    Callback = function(v) HitSoundConfig.Mode = v end,
-    Flag = "hitsound_enabled"
-})
-
-HitSoundSection:AddLabel('Hit Sound Style'):AddDropdown({
-    Default = HitSoundConfig.Mode,
-    Values = hitSoundList,
-    Callback = function(v) HitSoundConfig.Mode = v end,
-    Flag = "hitsound_mode"
-})
-
-HitSoundSection:AddLabel('Hit Volume'):AddSlider({
-    Min = 0,
-    Max = 10,
-    Rounding = 1,
-    Default = HitSoundConfig.Volume,
-    Type = "",
-    Size = 100,
-    Callback = function(v) HitSoundConfig.Volume = v end,
-    Flag = "hitsound_volume"
-})
-
-local GunModsTab = window:AddTab({
-    Icon = 'flame',
-    Name = "Gun Mods"
-})
-
-local GunModsSection = GunModsTab:AddSection({
-    Name = "WEAPON MODIFICATIONS",
-    Position = 'left'
-})
-
-GunModsSection:AddLabel('No Recoil'):AddToggle({
-    Default = GunModsConfig.NoRecoil,
-    Callback = function(v) GunModsConfig.NoRecoil = v end,
-    Flag = "gun_norecoil"
-})
-
-GunModsSection:AddLabel('No Spread'):AddToggle({
-    Default = GunModsConfig.NoSpread,
-    Callback = function(v) GunModsConfig.NoSpread = v end,
-    Flag = "gun_nospread"
-})
-
-GunModsSection:AddLabel('Instant Reload'):AddToggle({
-    Default = GunModsConfig.InstantReload,
-    Callback = function(v) GunModsConfig.InstantReload = v end,
-    Flag = "gun_instantreload"
-})
-
-GunModsSection:AddLabel('Enable Rapid Firerate'):AddToggle({
-    Default = GunModsConfig.FirerateEnabled,
-    Callback = function(v) GunModsConfig.FirerateEnabled = v end,
-    Flag = "gun_firerate_enabled"
-})
-
-GunModsSection:AddLabel('Firerate Delay'):AddSlider({
-    Min = 0.001,
-    Max = 0.5,
-    Rounding = 2,
-    Default = GunModsConfig.FirerateValue,
-    Type = "s",
-    Size = 100,
-    Callback = function(v) GunModsConfig.FirerateValue = v end,
-    Flag = "gun_firerate_val"
-})
-
--- TAB: SKINS (SKIN CHANGER & KNIFE CHANGER)
-local SkinsTab = window:AddTab({
-    Icon = 'shirt',
-    Name = "Inventory"
-})
-
-local KnifeSection = SkinsTab:AddSection({
-    Name = "KNIFE CHANGER",
-    Position = 'left'
-})
-
-local knifeTypeDropdown = nil
-local knifeSkinDropdown = nil
-
-local knifeModels = {}
-local knifeSkinsMap = {}
-
-if SkinsFolder then
-    for _, folder in ipairs(SkinsFolder:GetChildren()) do
-        if isKnife(folder.Name) then
-            table.insert(knifeModels, folder.Name)
-            knifeSkinsMap[folder.Name] = {"Vanilla"}
-            for _, skinObj in ipairs(folder:GetChildren()) do
-                if skinObj.Name ~= "Stock" and skinObj.Name ~= "Vanilla" then
-                    table.insert(knifeSkinsMap[folder.Name], skinObj.Name)
-                end
-            end
-        end
-    end
-end
-
-if #knifeModels == 0 then
-    knifeModels = {"Butterfly Knife", "Karambit", "M9 Bayonet", "Skeleton Knife", "Flip Knife", "Gut Knife", "CT Knife", "T Knife"}
-end
-
-KnifeSection:AddLabel('Enable Knife Changer'):AddToggle({
-    Default = SkinChangerConfig.KNIFE_ENABLED,
-    Callback = function(v) 
-        SkinChangerConfig.KNIFE_ENABLED = v 
-        SkinChanger.forceRefreshCurrentKnife()
-    end,
-    Flag = "knife_changer_enabled"
-})
-
-knifeTypeDropdown = KnifeSection:AddLabel('Knife Type'):AddDropdown({
-    Default = SkinChangerConfig.KNIFE_MODEL,
-    Values = knifeModels,
-    Callback = function(v)
-        SkinChangerConfig.KNIFE_MODEL = v
-        if knifeSkinDropdown and knifeSkinsMap[v] then
-            knifeSkinDropdown:SetValues(knifeSkinsMap[v])
-            knifeSkinDropdown:Set("Vanilla")
-            SkinChangerConfig.KNIFE_SKIN = "Vanilla"
-        end
-        SkinChanger.forceRefreshCurrentKnife()
-    end,
-    Flag = "knife_model_type"
-})
-
-local initialSkins = knifeSkinsMap[SkinChangerConfig.KNIFE_MODEL] or {"Vanilla", "Fade", "Lore", "Crimson Web"}
-knifeSkinDropdown = KnifeSection:AddLabel('Knife Skin'):AddDropdown({
-    Default = SkinChangerConfig.KNIFE_SKIN,
-    Values = initialSkins,
-    Callback = function(v)
-        SkinChangerConfig.KNIFE_SKIN = v
-        SkinChanger.forceRefreshCurrentKnife()
-    end,
-    Flag = "knife_skin_type"
-})
-
-local SkinsSectionLeft = SkinsTab:AddSection({
-    Name = "WEAPON SKINS 1",
-    Position = 'left'
-})
-
-local SkinsSectionRight = SkinsTab:AddSection({
-    Name = "WEAPON SKINS 2",
-    Position = 'right'
-})
-
-local function setupSkinChangerUI()
-    if not SkinsFolder then return end
-
-    local validGunSkins = {}
-    for _, skinFolder in ipairs(SkinsFolder:GetChildren()) do
-        if not isKnife(skinFolder.Name) and not isExemptUtility(skinFolder.Name) and #skinFolder:GetChildren() > 0 then
-            table.insert(validGunSkins, skinFolder)
-        end
-    end
-
-    local midPoint = math.ceil(#validGunSkins / 2)
-
-    for i, skinFolder in ipairs(validGunSkins) do
-        local gunName = skinFolder.Name
-        local skinNames = {"None"}
-
-        for _, skinObj in ipairs(skinFolder:GetChildren()) do
-            if skinObj.Name ~= "Stock" and skinObj.Name ~= "Vanilla" then
-                table.insert(skinNames, skinObj.Name)
-            end
-        end
-
-        local targetSection = (i <= midPoint) and SkinsSectionLeft or SkinsSectionRight
-
-        targetSection:AddLabel(gunName):AddDropdown({
-            Default = "None",
-            Values = skinNames,
-            Callback = function(selectedName)
-                SkinChangerConfig.SELECTED_SKINS[gunName] = selectedName
-                SkinChanger.applyToCurrentViewModel(gunName)
-            end,
-            Flag = "skin_" .. gunName
-        })
-    end
-end
-
-setupSkinChangerUI()
-
--- TAB: MOVEMENT
-local MovementTab = window:AddTab({
-    Icon = 'person-running',
-    Name = "Movement"
-})
-
-local MovementSection = MovementTab:AddSection({
-    Name = "MOVEMENT MODS",
-    Position = 'left'
-})
-
-MovementSection:AddLabel('Enable Bhop'):AddToggle({
-    Default = MovementConfig.BhopEnabled,
-    Callback = function(v) 
-        MovementConfig.BhopEnabled = v 
-        if not v and LocalPlayer.Character then
-            local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if hum then hum.WalkSpeed = MovementConfig.BaseSpeed end
-        end
-    end,
-    Flag = "bhop_enabled"
-})
-
-MovementSection:AddLabel('Enable Speed Multiplier'):AddToggle({
-    Default = MovementConfig.SpeedEnabled,
-    Callback = function(v) 
-        MovementConfig.SpeedEnabled = v 
-        if not v and LocalPlayer.Character then
-            local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if hum then hum.WalkSpeed = MovementConfig.BaseSpeed end
-        end
-    end,
-    Flag = "speed_enabled"
-})
-
-MovementSection:AddLabel('Speed Multiplier'):AddSlider({
-    Min = 0.5,
-    Max = 30.0,
-    Rounding = 1,
-    Default = MovementConfig.SpeedMultiplier,
-    Type = "x",
-    Size = 100,
-    Callback = function(v) MovementConfig.SpeedMultiplier = v end,
-    Flag = "speed_multiplier"
-})
-
--- TAB: VISUALS
-local VisualsTab = window:AddTab({
-    Icon = 'eye',
-    Name = "Visuals"
-})
-
-local HitChamsSection = VisualsTab:AddSection({
-    Name = "HIT CHAMS",
-    Position = 'left'
-})
-
-HitChamsSection:AddLabel('Enable Hit Chams'):AddToggle({
-    Default = HitChamsConfig.Enabled,
-    Callback = function(v) HitChamsConfig.Enabled = v end,
-    Flag = "hit_chams_enabled"
-})
-
-HitChamsSection:AddLabel('Color'):AddDropdown({
-    Default = 'Cyan',
-    Values = {'Cyan', 'Red', 'Green', 'Purple', 'Yellow', 'White'},
-    Callback = function(v)
-        local colors = {
-            ["Cyan"] = Color3.fromRGB(0, 255, 255),
-            ["Red"] = Color3.fromRGB(255, 50, 50),
-            ["Green"] = Color3.fromRGB(0, 255, 128),
-            ["Purple"] = Color3.fromRGB(180, 0, 255),
-            ["Yellow"] = Color3.fromRGB(255, 255, 0),
-            ["White"] = Color3.fromRGB(255, 255, 255)
-        }
-        HitChamsConfig.Color = colors[v] or Color3.fromRGB(0, 255, 255)
-    end,
-    Flag = "hit_chams_color"
-})
-
-HitChamsSection:AddLabel('Duration'):AddSlider({
-    Min = 0.1,
-    Max = 3.0,
-    Rounding = 1,
-    Default = HitChamsConfig.Duration,
-    Type = "s",
-    Size = 100,
-    Callback = function(v) HitChamsConfig.Duration = v end,
-    Flag = "hit_chams_duration"
-})
-
-local HitParticleSection = VisualsTab:AddSection({
-    Name = "HIT EFFECT PARTICLES",
-    Position = 'left'
-})
-
-HitParticleSection:AddLabel('Enable Hit Effect'):AddToggle({
-    Default = HitEffectConfig.Enabled,
-    Callback = function(v) HitEffectConfig.Enabled = v end,
-    Flag = "hit_particle_enabled"
-})
-
-HitParticleSection:AddLabel('Effect Style'):AddDropdown({
-    Default = 'Sparks',
-    Values = {'Sparks', 'Bubble', 'Orbs', 'Air'},
-    Callback = function(v) HitEffectConfig.Style = v end,
-    Flag = "hit_particle_style"
-})
-
-HitParticleSection:AddLabel('Color'):AddDropdown({
-    Default = 'Green',
-    Values = {'Green', 'Cyan', 'Red', 'Purple', 'Yellow', 'White'},
-    Callback = function(v)
-        local colors = {
-            ["Green"] = Color3.fromRGB(0, 255, 128),
-            ["Cyan"] = Color3.fromRGB(85, 255, 255),
-            ["Red"] = Color3.fromRGB(255, 50, 50),
-            ["Purple"] = Color3.fromRGB(180, 0, 255),
-            ["Yellow"] = Color3.fromRGB(255, 255, 0),
-            ["White"] = Color3.fromRGB(255, 255, 255)
-        }
-        HitEffectConfig.Color = colors[v] or Color3.fromRGB(0, 255, 128)
-    end,
-    Flag = "hit_particle_color"
-})
-
-local TracerSection = VisualsTab:AddSection({
-    Name = "BULLET TRACERS",
-    Position = 'left'
-})
-
-TracerSection:AddLabel('Enable Bullet Tracer'):AddToggle({
-    Default = BulletTracer.Enabled,
-    Callback = function(v) BulletTracer.Enabled = v end,
-    Flag = "tracer_enabled"
-})
-
-TracerSection:AddLabel('Color Style'):AddDropdown({
-    Default = 'Gradient 2 Colors',
-    Values = {
-        'Gradient 2 Colors', 'cool', 'Gradient 3 Colors', 'Cyber Neon', 'Sunset Glow', 'Cotton Candy', 'Fire', 'Rainbow',
-        'Electric Blue', 'Hot Pink', 'White', 'Crimson Red', 'Lime Green', 'Neon Purple'
-    },
+local TracerBox = Tabs.Visual:AddRightGroupbox("Bullet Tracers", "zap")
+TracerBox:AddToggle("tracer_enabled", { Text = "Enable Bullet Tracer", Default = BulletTracer.Enabled, Callback = function(v) BulletTracer.Enabled = v end })
+TracerBox:AddDropdown("tracer_colormode", {
+    Text = "Color Style",
+    Values = { 'Gradient 2 Colors', 'cool', 'Gradient 3 Colors', 'Cyber Neon', 'Sunset Glow', 'Cotton Candy', 'Fire', 'Rainbow', 'Electric Blue', 'Hot Pink', 'White', 'Crimson Red', 'Lime Green', 'Neon Purple' },
+    Default = "Gradient 2 Colors",
     Callback = function(v) BulletTracer.ColorMode = v end,
-    Flag = "tracer_colormode"
 })
+TracerBox:AddLabel("Gradient Color 1"):AddColorPicker("tracer_gc1", { Default = BulletTracer.GradientColor1, Title = "Gradient Color 1", Callback = function(v) BulletTracer.GradientColor1 = v end })
+TracerBox:AddLabel("Gradient Color 2"):AddColorPicker("tracer_gc2", { Default = BulletTracer.GradientColor2, Title = "Gradient Color 2", Callback = function(v) BulletTracer.GradientColor2 = v end })
+TracerBox:AddLabel("Gradient Color 3"):AddColorPicker("tracer_gc3", { Default = BulletTracer.GradientColor3, Title = "Gradient Color 3", Callback = function(v) BulletTracer.GradientColor3 = v end })
+TracerBox:AddLabel("Solid Color"):AddColorPicker("tracer_solidcolor", { Default = BulletTracer.Color, Title = "Solid Color", Callback = function(v) BulletTracer.Color = v end })
+TracerBox:AddDropdown("tracer_anim_easing", { Text = "Animation", Values = { 'Linear', 'Sine', 'Elastic', 'Bounce', 'Back' }, Default = 'Sine', Callback = function(v) BulletTracer.AnimEasing = v end })
+TracerBox:AddDropdown("tracer_fade_mode",   { Text = "Fade Style", Values = { 'Smooth', 'Instant', 'Shrink' }, Default = 'Smooth', Callback = function(v) BulletTracer.FadeMode = v end })
+TracerBox:AddToggle("tracer_bloom",         { Text = "Glow / Light Emission", Default = BulletTracer.BloomEffect, Callback = function(v) BulletTracer.BloomEffect = v end })
+TracerBox:AddToggle("tracer_glow_light",    { Text = "Dynamic Glow Light", Default = BulletTracer.GlowLight, Callback = function(v) BulletTracer.GlowLight = v end })
+TracerBox:AddSlider("tracer_glow_brightness", { Text = "Intensity", Default = BulletTracer.GlowBrightness, Min = 0.5, Max = 10.0, Rounding = 1, Callback = function(v) BulletTracer.GlowBrightness = v end })
+TracerBox:AddSlider("tracer_traveltime",    { Text = "Travel Time", Default = BulletTracer.TravelTime, Min = 0.01, Max = 0.50, Rounding = 2, Suffix = "s", Callback = function(v) BulletTracer.TravelTime = v end })
+TracerBox:AddSlider("tracer_thickness",     { Text = "Thickness", Default = BulletTracer.Thickness, Min = 0.05, Max = 1.0, Rounding = 2, Suffix = "px", Callback = function(v) BulletTracer.Thickness = v end })
+TracerBox:AddSlider("tracer_transparency",  { Text = "Transparency", Default = BulletTracer.Transparency, Min = 0, Max = 1, Rounding = 2, Callback = function(v) BulletTracer.Transparency = v end })
+TracerBox:AddSlider("tracer_lifetime",      { Text = "Lifetime", Default = BulletTracer.LifeTime, Min = 0.1, Max = 3.0, Rounding = 1, Suffix = "s", Callback = function(v) BulletTracer.LifeTime = v end })
+TracerBox:AddSlider("tracer_fadetime",      { Text = "Fade Duration", Default = BulletTracer.FadeTime, Min = 0.1, Max = 2.0, Rounding = 1, Suffix = "s", Callback = function(v) BulletTracer.FadeTime = v end })
 
-TracerSection:AddLabel('Animation'):AddDropdown({
-    Default = 'Sine',
-    Values = {'Linear', 'Sine', 'Elastic', 'Bounce', 'Back'},
-    Callback = function(v) BulletTracer.AnimEasing = v end,
-    Flag = "tracer_anim_easing"
-})
+-- =========================================================
+-- TAB: ESP
+-- =========================================================
+local ESPMainBox = Tabs.ESP:AddLeftGroupbox("ESP", "scan-eye")
+ESPMainBox:AddToggle("esp_enabled",    { Text = "Enable ESP",     Default = ESPConfig.Enabled,   Callback = function(v) ESPConfig.Enabled = v end })
+ESPMainBox:AddToggle("esp_teamcheck",  { Text = "Team Check",     Default = ESPConfig.TeamCheck, Callback = function(v) ESPConfig.TeamCheck = v end })
+ESPMainBox:AddToggle("esp_boxes",      { Text = "Box ESP",        Default = ESPConfig.Boxes,     Callback = function(v) ESPConfig.Boxes = v end })
+ESPMainBox:AddToggle("esp_healthbar",  { Text = "Health Bar",     Default = ESPConfig.HealthBar, Callback = function(v) ESPConfig.HealthBar = v end })
+ESPMainBox:AddToggle("esp_skeletons",  { Text = "Skeleton ESP",   Default = ESPConfig.Skeletons, Callback = function(v) ESPConfig.Skeletons = v end })
+ESPMainBox:AddToggle("esp_outline",    { Text = "Black Outline",  Default = ESPConfig.Outline,   Callback = function(v) ESPConfig.Outline = v end })
 
-TracerSection:AddLabel('Fade Style'):AddDropdown({
-    Default = 'Smooth',
-    Values = {'Smooth', 'Instant', 'Shrink'},
-    Callback = function(v) BulletTracer.FadeMode = v end,
-    Flag = "tracer_fade_mode"
-})
+local ESPColorBox = Tabs.ESP:AddLeftGroupbox("ESP Colors", "palette")
+ESPColorBox:AddLabel("Box Color"):AddColorPicker("esp_box_color", { Default = ESPConfig.BoxColor, Title = "Box Color", Callback = function(v) ESPConfig.BoxColor = v; for _, objs in pairs(espObjects) do objs.Box.Color = v end end })
+ESPColorBox:AddLabel("Skeleton Color"):AddColorPicker("esp_skel_color", { Default = ESPConfig.SkeletonColor, Title = "Skeleton Color", Callback = function(v) ESPConfig.SkeletonColor = v; for _, objs in pairs(espObjects) do for _, line in ipairs(objs.Skeletons) do line.Color = v end end end })
+ESPColorBox:AddLabel("Outline Color"):AddColorPicker("esp_outline_color", { Default = ESPConfig.OutlineColor, Title = "Outline Color", Callback = function(v)
+    ESPConfig.OutlineColor = v
+    for _, objs in pairs(espObjects) do
+        objs.BoxOutline.Color = v
+        objs.HealthBarOutline.Color = v
+        for _, line in ipairs(objs.SkeletonOutlines) do line.Color = v end
+    end
+end })
 
-TracerSection:AddLabel('Glow / Light Emission'):AddToggle({
-    Default = BulletTracer.BloomEffect,
-    Callback = function(v) BulletTracer.BloomEffect = v end,
-    Flag = "tracer_bloom"
-})
+local ChamsBox = Tabs.ESP:AddRightGroupbox("Player Chams", "ghost")
+ChamsBox:AddToggle("chams_enabled",   { Text = "Enable Chams", Default = Chams.Enabled, Callback = function(v) Chams.Enabled = v end })
+ChamsBox:AddToggle("chams_teamcheck", { Text = "Team Check",   Default = Chams.TeamCheck, Callback = function(v) Chams.TeamCheck = v end })
+ChamsBox:AddLabel("Fill Color"):AddColorPicker("chams_fill_color", { Default = Chams.FillColor, Title = "Chams Fill Color", Callback = function(v)
+    Chams.FillColor = v
+    for _, player in ipairs(Players:GetPlayers()) do
+        local char = player.Character
+        if char and char:FindFirstChild("ChamsHighlight") then char.ChamsHighlight.FillColor = v end
+    end
+end })
+ChamsBox:AddLabel("Outline Color"):AddColorPicker("chams_outline_color", { Default = Chams.OutlineColor, Title = "Chams Outline Color", Callback = function(v)
+    Chams.OutlineColor = v
+    for _, player in ipairs(Players:GetPlayers()) do
+        local char = player.Character
+        if char and char:FindFirstChild("ChamsHighlight") then char.ChamsHighlight.OutlineColor = v end
+    end
+end })
+ChamsBox:AddSlider("chams_fill_transparency",    { Text = "Fill Transparency",    Default = Chams.FillTransparency,    Min = 0, Max = 1, Rounding = 2, Callback = function(v) Chams.FillTransparency = v end })
+ChamsBox:AddSlider("chams_outline_transparency", { Text = "Outline Transparency", Default = Chams.OutlineTransparency, Min = 0, Max = 1, Rounding = 2, Callback = function(v) Chams.OutlineTransparency = v end })
 
-TracerSection:AddLabel('Dynamic Glow Light'):AddToggle({
-    Default = BulletTracer.GlowLight,
-    Callback = function(v) BulletTracer.GlowLight = v end,
-    Flag = "tracer_glow_light"
-})
-
-TracerSection:AddLabel('Intensity'):AddSlider({
-    Min = 0.5,
-    Max = 10.0,
-    Rounding = 1,
-    Default = BulletTracer.GlowBrightness,
-    Type = "",
-    Size = 100,
-    Callback = function(v) BulletTracer.GlowBrightness = v end,
-    Flag = "tracer_glow_brightness"
-})
-
-TracerSection:AddLabel('Travel Time'):AddSlider({
-    Min = 0.01,
-    Max = 0.50,
-    Rounding = 2,
-    Default = BulletTracer.TravelTime,
-    Type = "s",
-    Size = 100,
-    Callback = function(v) BulletTracer.TravelTime = v end,
-    Flag = "tracer_traveltime"
-})
-
-TracerSection:AddLabel('Thickness'):AddSlider({
-    Min = 0.05,
-    Max = 1.0,
-    Rounding = 2,
-    Default = BulletTracer.Thickness,
-    Type = "px",
-    Size = 100,
-    Callback = function(v) BulletTracer.Thickness = v end,
-    Flag = "tracer_thickness"
-})
-
-TracerSection:AddLabel('Transparency'):AddSlider({
-    Min = 0,
-    Max = 1,
-    Rounding = 2,
-    Default = BulletTracer.Transparency,
-    Type = "",
-    Size = 100,
-    Callback = function(v) BulletTracer.Transparency = v end,
-    Flag = "tracer_transparency"
-})
-
-TracerSection:AddLabel('Lifetime'):AddSlider({
-    Min = 0.1,
-    Max = 3.0,
-    Rounding = 1,
-    Default = BulletTracer.LifeTime,
-    Type = "s",
-    Size = 100,
-    Callback = function(v) BulletTracer.LifeTime = v end,
-    Flag = "tracer_lifetime"
-})
-
-TracerSection:AddLabel('Fade Duration'):AddSlider({
-    Min = 0.1,
-    Max = 2.0,
-    Rounding = 1,
-    Default = BulletTracer.FadeTime,
-    Type = "s",
-    Size = 100,
-    Callback = function(v) BulletTracer.FadeTime = v end,
-    Flag = "tracer_fadetime"
-})
-
-local HitOverlaySection = VisualsTab:AddSection({
-    Name = "HIT OVERLAY",
-    Position = 'left'
-})
-
-HitOverlaySection:AddLabel('Enable Hit Overlay'):AddToggle({
-    Default = HitOverlayConfig.Enabled,
-    Callback = function(v) HitOverlayConfig.Enabled = v end,
-    Flag = "hit_overlay_enabled"
-})
-
-HitOverlaySection:AddLabel('Color'):AddDropdown({
-    Default = 'Red',
-    Values = {'Red', 'White', 'Cyan', 'Purple', 'Yellow'},
-    Callback = function(v)
-        local colors = {
-            ["Red"] = Color3.fromRGB(255, 0, 50),
-            ["White"] = Color3.fromRGB(255, 255, 255),
-            ["Cyan"] = Color3.fromRGB(0, 255, 255),
-            ["Purple"] = Color3.fromRGB(180, 0, 255),
-            ["Yellow"] = Color3.fromRGB(255, 255, 0)
-        }
-        HitOverlayConfig.Color = colors[v] or Color3.fromRGB(255, 0, 50)
-    end,
-    Flag = "hit_overlay_color"
-})
-
-HitOverlaySection:AddLabel('Duration'):AddSlider({
-    Min = 0.05,
-    Max = 2.0,
-    Rounding = 1,
-    Default = HitOverlayConfig.Duration,
-    Type = "s",
-    Size = 100,
-    Callback = function(v) HitOverlayConfig.Duration = v end,
-    Flag = "hit_overlay_duration"
-})
-
-local FOVSection = VisualsTab:AddSection({
-    Name = "FOV SETTINGS",
-    Position = 'right'
-})
-
-FOVSection:AddLabel('Draw FOV'):AddToggle({
-    Default = SilentAim.ShowFOV,
-    Callback = function(v) SilentAim.ShowFOV = v end,
-    Flag = "draw_fov"
-})
-
-FOVSection:AddLabel('Outline'):AddToggle({
-    Default = SilentAim.ShowOutline,
-    Callback = function(v) SilentAim.ShowOutline = v end,
-    Flag = "fov_outline"
-})
-
-local TargetSection = VisualsTab:AddSection({
-    Name = "TARGET VISUALS",
-    Position = 'left'
-})
-
-TargetSection:AddLabel('Target SnapLine'):AddToggle({
-    Default = TargetVisuals.SnapLine,
-    Callback = function(v) TargetVisuals.SnapLine = v end,
-    Flag = "target_snapline"
-})
-
-TargetSection:AddLabel('Target HeadDot'):AddToggle({
-    Default = TargetVisuals.HeadDot,
-    Callback = function(v) TargetVisuals.HeadDot = v end,
-    Flag = "target_headdot"
-})
-
-TargetSection:AddLabel('Target Highlight'):AddToggle({
-    Default = TargetVisuals.Highlight,
-    Callback = function(v) TargetVisuals.Highlight = v end,
-    Flag = "target_highlight"
-})
-
-local ESPSection = VisualsTab:AddSection({
-    Name = "ESP & CHAMS",
-    Position = 'right'
-})
-
-ESPSection:AddLabel('Enable ESP'):AddToggle({
-    Default = ESPConfig.Enabled,
-    Callback = function(v) ESPConfig.Enabled = v end,
-    Flag = "esp_enabled"
-})
-
-ESPSection:AddLabel('ESP Team Check'):AddToggle({
-    Default = ESPConfig.TeamCheck,
-    Callback = function(v) ESPConfig.TeamCheck = v end,
-    Flag = "esp_teamcheck"
-})
-
-ESPSection:AddLabel('Box ESP'):AddToggle({
-    Default = ESPConfig.Boxes,
-    Callback = function(v) ESPConfig.Boxes = v end,
-    Flag = "esp_boxes"
-})
-
-ESPSection:AddLabel('Health Bar'):AddToggle({
-    Default = ESPConfig.HealthBar,
-    Callback = function(v) ESPConfig.HealthBar = v end,
-    Flag = "esp_healthbar"
-})
-
-ESPSection:AddLabel('Skeleton ESP'):AddToggle({
-    Default = ESPConfig.Skeletons,
-    Callback = function(v) ESPConfig.Skeletons = v end,
-    Flag = "esp_skeletons"
-})
-
-ESPSection:AddLabel('Black Outline'):AddToggle({
-    Default = ESPConfig.Outline,
-    Callback = function(v) ESPConfig.Outline = v end,
-    Flag = "esp_outline"
-})
-
-ESPSection:AddLabel('Enable Chams'):AddToggle({
-    Default = Chams.Enabled,
-    Callback = function(v) Chams.Enabled = v end,
-    Flag = "chams_enabled"
-})
-
-ESPSection:AddLabel('Chams Team Check'):AddToggle({
-    Default = Chams.TeamCheck,
-    Callback = function(v) Chams.TeamCheck = v end,
-    Flag = "chams_teamcheck"
-})
-
+-- =========================================================
 -- TAB: WORLD
-local WorldTab = window:AddTab({
-    Icon = 'moon',
-    Name = "World"
+-- =========================================================
+local CameraBox = Tabs.World:AddLeftGroupbox("Camera & Effects", "camera")
+CameraBox:AddSlider("world_camera_fov", { Text = "Camera FOV", Default = WorldConfig.CameraFOV, Min = 30, Max = 160, Rounding = 0, Suffix = "°", Callback = function(v) WorldConfig.CameraFOV = v; if Camera then Camera.FieldOfView = v end; markLightingDirty() end })
+CameraBox:AddToggle("world_blur_enabled", { Text = "World Blur", Default = WorldConfig.WorldBlur, Callback = function(v) WorldConfig.WorldBlur = v; markLightingDirty() end })
+CameraBox:AddSlider("world_blur_size", { Text = "Blur", Default = WorldConfig.BlurSize, Min = 0, Max = 50, Rounding = 0, Suffix = "px", Callback = function(v) WorldConfig.BlurSize = v; markLightingDirty() end })
+
+-- ==== THIRD PERSON (NEW) ====
+CameraBox:AddDivider()
+CameraBox:AddToggle("third_person_enabled", {
+    Text = "Enable Third Person",
+    Default = ThirdPersonConfig.Enabled,
+    Callback = function(v) applyThirdPerson(v) end
+})
+CameraBox:AddSlider("third_person_distance", {
+    Text = "Third Person Distance",
+    Default = ThirdPersonConfig.Distance,
+    Min = 1, Max = 100, Rounding = 0, Suffix = " studs",
+    Callback = function(v) setThirdPersonDistance(v) end
+})
+CameraBox:AddButton({
+    Text = "Reset Third Person Distance",
+    Func = function()
+        setThirdPersonDistance(10)
+        if Options.third_person_distance then
+            pcall(function() Options.third_person_distance:SetValue(10) end)
+        end
+    end
 })
 
-local CameraSection = WorldTab:AddSection({
-    Name = "CAMERA & EFFECTS",
-    Position = 'left'
-})
+local NightBox = Tabs.World:AddLeftGroupbox("Lighting & Night Mode", "sun-moon")
+NightBox:AddToggle("world_nightmode", { Text = "Enable Night Mode", Default = WorldConfig.NightMode, Callback = function(v) WorldConfig.NightMode = v; markLightingDirty() end })
+NightBox:AddSlider("world_clocktime", { Text = "Time of Day", Default = WorldConfig.ClockTime, Min = 0, Max = 24, Rounding = 1, Suffix = "h", Callback = function(v) WorldConfig.ClockTime = v; markLightingDirty() end })
+NightBox:AddSlider("world_brightness", { Text = "Brightness", Default = WorldConfig.Brightness, Min = 0, Max = 10, Rounding = 1, Callback = function(v) WorldConfig.Brightness = v; markLightingDirty() end })
+NightBox:AddSlider("world_exposure", { Text = "Exposure", Default = WorldConfig.ExposureCompensation, Min = -3, Max = 3, Rounding = 2, Callback = function(v) WorldConfig.ExposureCompensation = v; markLightingDirty() end })
+NightBox:AddToggle("world_shadows", { Text = "Global Shadows", Default = WorldConfig.GlobalShadows, Callback = function(v) WorldConfig.GlobalShadows = v; markLightingDirty() end })
+NightBox:AddDropdown("world_skybox", { Text = "Skybox Preset", Values = { 'Default', 'Night', 'Cyberpunk', 'Sunset', 'Purple Nebula', 'Clear Daylight', 'Red Moon' }, Default = "Night", Callback = function(v) WorldConfig.SelectedSky = v; applySky(v) end })
 
-CameraSection:AddLabel('Camera FOV'):AddSlider({
-    Min = 70,
-    Max = 120,
-    Rounding = 0,
-    Default = WorldConfig.CameraFOV,
-    Type = "°",
-    Size = 100,
-    Callback = function(v) WorldConfig.CameraFOV = v end,
-    Flag = "world_camera_fov"
+-- Custom Ambient
+local AmbientBox = Tabs.World:AddLeftGroupbox("Custom Ambient", "sun")
+AmbientBox:AddLabel("Ambient Color"):AddColorPicker("world_ambient_color", {
+    Default = WorldConfig.Ambient,
+    Title = "Ambient Color",
+    Callback = function(v) WorldConfig.Ambient = v; markLightingDirty() end
 })
-
-CameraSection:AddLabel('World Blur'):AddToggle({
-    Default = WorldConfig.WorldBlur,
-    Callback = function(v) WorldConfig.WorldBlur = v end,
-    Flag = "world_blur_enabled"
+AmbientBox:AddLabel("Outdoor Ambient Color"):AddColorPicker("world_outdoor_ambient_color", {
+    Default = WorldConfig.OutdoorAmbient,
+    Title = "Outdoor Ambient Color",
+    Callback = function(v) WorldConfig.OutdoorAmbient = v; markLightingDirty() end
 })
-
-CameraSection:AddLabel('Blur'):AddSlider({
-    Min = 0,
-    Max = 50,
-    Rounding = 0,
-    Default = WorldConfig.BlurSize,
-    Type = "px",
-    Size = 100,
-    Callback = function(v) WorldConfig.BlurSize = v end,
-    Flag = "world_blur_size"
+AmbientBox:AddDivider()
+AmbientBox:AddToggle("world_fog_enabled", { Text = "Enable Fog", Default = WorldConfig.FogEnabled, Callback = function(v) WorldConfig.FogEnabled = v; markLightingDirty() end })
+AmbientBox:AddLabel("Fog Color"):AddColorPicker("world_fog_color", {
+    Default = WorldConfig.FogColor,
+    Title = "Fog Color",
+    Callback = function(v) WorldConfig.FogColor = v; markLightingDirty() end
 })
+AmbientBox:AddSlider("world_fog_start", { Text = "Fog Start", Default = WorldConfig.FogStart, Min = 0, Max = 500, Rounding = 0, Suffix = " studs", Callback = function(v) WorldConfig.FogStart = v; markLightingDirty() end })
+AmbientBox:AddSlider("world_fog_end",   { Text = "Fog End",   Default = WorldConfig.FogEnd,   Min = 100, Max = 5000, Rounding = 0, Suffix = " studs", Callback = function(v) WorldConfig.FogEnd = v; markLightingDirty() end })
 
-local NightModeSection = WorldTab:AddSection({
-    Name = "LIGHTING & NIGHT MODE",
-    Position = 'right'
-})
+-- Atmosphere
+local AtmoBox = Tabs.World:AddRightGroupbox("Atmosphere", "cloud")
+AtmoBox:AddToggle("atmo_enabled", { Text = "Enable Atmosphere", Default = false, Callback = function(v) WorldConfig.AtmosphereEnabled = v; updateAtmosphere() end })
+AtmoBox:AddSlider("atmo_density", { Text = "Density", Default = 0.35, Min = 0, Max = 1, Rounding = 3, Callback = function(v) WorldConfig.AtmosphereDensity = v; updateAtmosphere() end })
+AtmoBox:AddSlider("atmo_offset",  { Text = "Offset",  Default = 0,    Min = -1, Max = 1, Rounding = 3, Callback = function(v) WorldConfig.AtmosphereOffset = v; updateAtmosphere() end })
+AtmoBox:AddSlider("atmo_glare",   { Text = "Glare",   Default = 0,    Min = 0, Max = 5, Rounding = 2, Callback = function(v) WorldConfig.AtmosphereGlare = v; updateAtmosphere() end })
+AtmoBox:AddSlider("atmo_haze",    { Text = "Haze",    Default = 1.5,  Min = 0, Max = 10, Rounding = 2, Callback = function(v) WorldConfig.AtmosphereHaze = v; updateAtmosphere() end })
+AtmoBox:AddLabel("Atmosphere Color"):AddColorPicker("atmo_color", { Default = Color3.fromRGB(199,199,199), Title = "Atmosphere Color", Callback = function(v) WorldConfig.AtmosphereColor = v; updateAtmosphere() end })
+AtmoBox:AddLabel("Atmosphere Decay"):AddColorPicker("atmo_decay", { Default = Color3.fromRGB(106,112,125), Title = "Atmosphere Decay", Callback = function(v) WorldConfig.AtmosphereDecay = v; updateAtmosphere() end })
 
-NightModeSection:AddLabel('Enable Night Mode'):AddToggle({
-    Default = WorldConfig.NightMode,
-    Callback = function(v) WorldConfig.NightMode = v end,
-    Flag = "world_nightmode"
-})
+-- Color Correction
+local CCBox = Tabs.World:AddRightGroupbox("Color Correction", "palette")
+CCBox:AddToggle("cc_enabled", { Text = "Enable Color Correction", Default = false, Callback = function(v) WorldConfig.ColorCorrectionEnabled = v; updateCC() end })
+CCBox:AddSlider("cc_brightness", { Text = "Brightness", Default = 0, Min = -1, Max = 1, Rounding = 2, Callback = function(v) WorldConfig.CC_Brightness = v; updateCC() end })
+CCBox:AddSlider("cc_contrast",   { Text = "Contrast",   Default = 0, Min = -1, Max = 1, Rounding = 2, Callback = function(v) WorldConfig.CC_Contrast = v; updateCC() end })
+CCBox:AddSlider("cc_saturation", { Text = "Saturation", Default = 0, Min = -1, Max = 1, Rounding = 2, Callback = function(v) WorldConfig.CC_Saturation = v; updateCC() end })
+CCBox:AddLabel("Tint Color"):AddColorPicker("cc_tint", { Default = Color3.fromRGB(255,255,255), Title = "Tint Color", Callback = function(v) WorldConfig.CC_TintColor = v; updateCC() end })
 
-NightModeSection:AddLabel('Time of Day'):AddSlider({
-    Min = 0,
-    Max = 24,
-    Rounding = 1,
-    Default = WorldConfig.ClockTime,
-    Type = "h",
-    Size = 100,
-    Callback = function(v) WorldConfig.ClockTime = v end,
-    Flag = "world_clocktime"
-})
-
-NightModeSection:AddLabel('Brightness'):AddSlider({
-    Min = 0,
-    Max = 10,
-    Rounding = 1,
-    Default = WorldConfig.Brightness,
-    Type = "",
-    Size = 100,
-    Callback = function(v) WorldConfig.Brightness = v end,
-    Flag = "world_brightness"
-})
-
-NightModeSection:AddLabel('Exposure'):AddSlider({
-    Min = -3,
-    Max = 3,
-    Rounding = 2,
-    Default = WorldConfig.ExposureCompensation,
-    Type = "",
-    Size = 100,
-    Callback = function(v) WorldConfig.ExposureCompensation = v end,
-    Flag = "world_exposure"
-})
-
-NightModeSection:AddLabel('Global Shadows'):AddToggle({
-    Default = WorldConfig.GlobalShadows,
-    Callback = function(v) WorldConfig.GlobalShadows = v end,
-    Flag = "world_shadows"
-})
-
-NightModeSection:AddLabel('Skybox Preset'):AddDropdown({
-    Default = 'Night',
-    Values = {'Default', 'Night', 'Cyberpunk', 'Sunset', 'Purple Nebula', 'Clear Daylight', 'Red Moon'},
+-- Weather
+local WeatherBox = Tabs.World:AddRightGroupbox("Weather", "cloud-rain")
+WeatherBox:AddDropdown("weather_type", {
+    Text = "Weather Type",
+    Values = { "None", "Rain", "Snow", "Stars", "Ember" },
+    Default = "None",
     Callback = function(v)
-        WorldConfig.SelectedSky = v
-        applySky(v)
+        WorldConfig.WeatherType = v
+        createWeather(v)
     end,
-    Flag = "world_skybox"
 })
+WeatherBox:AddSlider("weather_intensity", { Text = "Intensity", Default = 1.0, Min = 0.1, Max = 5.0, Rounding = 1, Callback = function(v) WorldConfig.WeatherIntensity = v; createWeather(WorldConfig.WeatherType) end })
+WeatherBox:AddSlider("weather_speed",     { Text = "Speed",     Default = 1.0, Min = 0.1, Max = 3.0, Rounding = 2, Callback = function(v) WorldConfig.WeatherSpeed = v; createWeather(WorldConfig.WeatherType) end })
+WeatherBox:AddSlider("weather_size",      { Text = "Size",      Default = 1.0, Min = 0.3, Max = 3.0, Rounding = 2, Callback = function(v) WorldConfig.WeatherSize = v; createWeather(WorldConfig.WeatherType) end })
+WeatherBox:AddLabel("Weather Color"):AddColorPicker("weather_color", { Default = Color3.fromRGB(255,255,255), Title = "Weather Color", Callback = function(v) WorldConfig.WeatherColor = v; createWeather(WorldConfig.WeatherType) end })
 
--- INITIALIZE HOOKS
+-- =========================================================
+-- TAB: SETTINGS
+-- =========================================================
+local MenuBox = Tabs.Setting:AddLeftGroupbox("Menu", "wrench")
+MenuBox:AddToggle("KeybindMenuOpen", { Default = Library.KeybindFrame.Visible, Text = "Open Keybind Menu", Callback = function(v) Library.KeybindFrame.Visible = v end })
+MenuBox:AddToggle("ShowCustomCursor", { Text = "Custom Cursor", Default = true, Callback = function(v) Library.ShowCustomCursor = v end })
+MenuBox:AddDropdown("NotificationSide", { Values = { "Left", "Right" }, Default = "Right", Text = "Notification Side", Callback = function(v) Library:SetNotifySide(v) end })
+MenuBox:AddDropdown("DPIDropdown", { Values = { "50%", "75%", "100%", "125%", "150%", "175%", "200%" }, Default = "100%", Text = "DPI Scale", Callback = function(v)
+    local n = tonumber(v:gsub("%%", ""))
+    Library:SetDPIScale(n)
+end })
+MenuBox:AddDivider()
+MenuBox:AddLabel("Menu keybind"):AddKeyPicker("MenuKeybind", { Default = "RightControl", NoUI = true, Text = "Menu keybind" })
+MenuBox:AddButton({ Text = "Unload", Func = function() Library:Unload() end })
+
+Library.ToggleKeybind = Options.MenuKeybind
+
+-- =========================================================
+-- ADDONS
+-- =========================================================
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
+ThemeManager:SetFolder("NeverloseBloxStrike")
+SaveManager:SetFolder("NeverloseBloxStrike/specific-game")
+SaveManager:BuildConfigSection(Tabs.Setting)
+ThemeManager:ApplyToTab(Tabs.Setting)
+SaveManager:LoadAutoloadConfig()
+
+-- =========================================================
+-- INIT
+-- =========================================================
 WeaponModsModule.InitHooks()
 WeaponModsModule.StartFirerateLoop()
+
+markLightingDirty()
+updateWorldLighting(true)
+updateAtmosphere()
+updateCC()
+createWeather(WorldConfig.WeatherType)
+
+-- apply Third Person ถ้าตอน load config แล้วมีค่าเปิดไว้
+applyThirdPerson(ThirdPersonConfig.Enabled)
+
+Players.PlayerRemoving:Connect(function(p)
+    if RagebotConfig.PriorityName and p.Name == RagebotConfig.PriorityName then
+        RagebotConfig.PriorityName = nil
+        pcall(function()
+            if Options.rage_priority then Options.rage_priority:SetValue("[ AUTO ]") end
+        end)
+    end
+end)
+
+Library:Notify("Neverlose v1.6 loaded — Third Person + Custom Ambient ready!", 5)
