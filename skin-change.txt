@@ -495,7 +495,7 @@ mobileBtn.Size = UDim2.new(0, 42, 0, 42)
 mobileBtn.Position = UDim2.new(0.05, 0, 0.2, 0)
 mobileBtn.BackgroundColor3 = T.panel
 mobileBtn.BackgroundTransparency = 0
-mobileBtn.Text = "R"
+mobileBtn.Text = "x"
 mobileBtn.TextColor3 = T.accentBright
 mobileBtn.TextSize = 16
 mobileBtn.Font = MAIN_FONT
@@ -525,7 +525,7 @@ dot.BorderSizePixel = 0
 dot.Parent = top
 corner(dot, 5)
 
-local ttl = label(top, "REBORN", 15, T.text, MAIN_FONT)
+local ttl = label(top, "Skin change", 15, T.text, MAIN_FONT)
 ttl.Size = UDim2.new(0, 70, 1, 0)
 ttl.Position = UDim2.new(0, 28, 0, 0)
 
