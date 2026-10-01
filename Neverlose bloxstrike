@@ -1,6 +1,6 @@
 -- =========================================================
 -- Neverlose x BloxStrike (Obsidian UI Version)
--- v1.7.9 — Memesense Ragebot + Hit Notify + Auto Priority + No Miss + Ignore Invincible + Unity Tab
+-- v1.8.0 — Memesense Ragebot + Hit Notify + Auto Priority + No Miss + Ignore Invincible + Unity Tab + Skin Changes
 -- =========================================================
 
 local Players          = game:GetService("Players")
@@ -33,7 +33,7 @@ Library.NotifySide                = "Right"
 
 local Window = Library:CreateWindow({
     Title           = '<font color="#ffffff"><b>Never</b></font><font color="#00BFFF"><b>lose</b></font>',
-    Footer          = "BloxStrike | v1.7.9",
+    Footer          = "BloxStrike | v1.8.0",
     Icon            = 9736039840,
     Center          = true,
     AutoShow        = true,
@@ -108,6 +108,14 @@ local UnityConfig = {
     ArmGlassTransparency = 0.4,
     ArmMetalReflectance  = 1.0,
     NoGlove = false,
+}
+
+-- ★ Skin Changes Config
+local SkinConfig = {
+    Enabled  = true,
+    Loaded   = false,
+    AutoLoad = false,
+    URL      = "https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/skin-change.txt",
 }
 
 -- ★ RagebotConfig
@@ -2846,6 +2854,7 @@ local Tabs = {
     ESP       = Window:AddTab("ESP",       "scan-eye"),
     World     = Window:AddTab("World",     "moon"),
     Unity     = Window:AddTab("Unity",     "layers"),
+    Skin      = Window:AddTab("Skin Changes", "palette"),
     Setting   = Window:AddTab("Settings",  "settings"),
 }
 
@@ -3268,6 +3277,95 @@ UnityArmBox:AddToggle("unity_noglove", {
 })
 
 -- =========================================================
+-- ★ TAB: SKIN CHANGES
+-- =========================================================
+local function loadSkinChanges()
+    if not SkinConfig.Enabled then
+        Library:Notify("Skin Changes is disabled", 3)
+        return
+    end
+    Library:Notify("Loading Skin Changes...", 3)
+    task.spawn(function()
+        local ok, err = pcall(function()
+            loadstring(game:HttpGet(SkinConfig.URL))()
+        end)
+        if ok then
+            SkinConfig.Loaded = true
+            Library:Notify("✔ Skin Changes loaded successfully!", 4)
+        else
+            Library:Notify("✖ Failed to load Skin Changes: " .. tostring(err), 5)
+        end
+    end)
+end
+
+local SkinMainBox = Tabs.Skin:AddLeftGroupbox("Skin Changes", "palette")
+SkinMainBox:AddLabel("Custom weapon & character skins")
+
+SkinMainBox:AddToggle("skin_enabled", {
+    Text = "Enable Skin Changes",
+    Default = SkinConfig.Enabled,
+    Callback = function(v) SkinConfig.Enabled = v end,
+})
+
+SkinMainBox:AddToggle("skin_autoload", {
+    Text = "Auto Load on Inject",
+    Default = SkinConfig.AutoLoad,
+    Callback = function(v)
+        SkinConfig.AutoLoad = v
+        if v and not SkinConfig.Loaded then
+            loadSkinChanges()
+        end
+    end,
+})
+
+SkinMainBox:AddDivider()
+
+SkinMainBox:AddButton({
+    Text = "🎨 Load Skin Changes",
+    Func = function()
+        loadSkinChanges()
+    end,
+})
+
+SkinMainBox:AddButton({
+    Text = "🔁 Reload Skin Changes",
+    Func = function()
+        SkinConfig.Loaded = false
+        loadSkinChanges()
+    end,
+})
+
+SkinMainBox:AddButton({
+    Text = "📋 Copy Script URL",
+    Func = function()
+        pcall(function()
+            if setclipboard then
+                setclipboard(SkinConfig.URL)
+                Library:Notify("URL copied to clipboard", 3)
+            else
+                Library:Notify("Clipboard not supported", 3)
+            end
+        end)
+    end,
+})
+
+local SkinInfoBox = Tabs.Skin:AddRightGroupbox("Info", "info")
+SkinInfoBox:AddLabel("Source: xqmt/Resolution-loader")
+SkinInfoBox:AddLabel("Version: skin-change.txt")
+SkinInfoBox:AddLabel("Press the button to inject skins")
+SkinInfoBox:AddDivider()
+SkinInfoBox:AddLabel("URL:")
+SkinInfoBox:AddInput("skin_url_input", {
+    Default = SkinConfig.URL,
+    Text = "Script URL",
+    Placeholder = "https://...",
+    Callback = function(v)
+        SkinConfig.URL = v
+    end,
+})
+SkinInfoBox:AddLabel("don't delete url")
+
+-- =========================================================
 -- TAB: SETTINGS
 -- =========================================================
 local MenuBox = Tabs.Setting:AddLeftGroupbox("Menu", "wrench")
@@ -3319,4 +3417,11 @@ Players.PlayerRemoving:Connect(function(p)
     end
 end)
 
-Library:Notify("Neverlose v1.7.9 — Unity Tab Added (No Smoke / No Flash / Arm Material / No Glove)", 5)
+-- ★ Auto-load Skin Changes ถ้าเปิดไว้
+task.delay(2, function()
+    if SkinConfig.AutoLoad then
+        loadSkinChanges()
+    end
+end)
+
+Library:Notify("Neverlose v1.8.0 — Skin Changes Tab Added 🎨", 5)
