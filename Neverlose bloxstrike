@@ -33,8 +33,7 @@ Library.NotifySide                = "Right"
 
 local Window = Library:CreateWindow({
     Title           = '<font color="#ffffff"><b>Mango</b></font><font color="#a9bdff"><b>.lol</b></font>',
-    Footer          = "BloxStrike | v1.8.0",
-    Icon            = 9736039840,
+    Footer          = "BloxStrike | v1.8.1",
     Center          = true,
     AutoShow        = true,
     Resizable       = true,
