@@ -1,0 +1,976 @@
+if _G.RebornUnload then pcall(_G.RebornUnload) end
+if _G.SoloScriptsUnload then pcall(_G.SoloScriptsUnload) end
+
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local LP = Players.LocalPlayer
+
+local MAIN_FONT = Enum.Font.SourceSansBold
+
+local function safeRequire(mod)
+    local old = getthreadidentity and getthreadidentity()
+    if setthreadidentity then pcall(setthreadidentity, 2) end
+    local ok, res = pcall(require, mod)
+    if setthreadidentity and old then pcall(setthreadidentity, old) end
+    if ok and res ~= nil then return res end
+    local ok2, res2 = pcall(require, mod)
+    if ok2 and res2 ~= nil then return res2 end
+    return nil, res
+end
+
+local SkinsLib = safeRequire(RS.Database.Components.Libraries.Skins)
+if type(SkinsLib) ~= "table" then error("[Reborn.cs] Failed to load Skins library") end
+local GetWeaponProperties = safeRequire(RS.Components.Common.GetWeaponProperties)
+local CharacterAnimator = safeRequire(RS.Classes.WeaponComponent.Classes.CharacterAnimator)
+local SoundClass = safeRequire(RS.Classes.Sound)
+
+local InventoryController = nil
+pcall(function()
+    InventoryController = require(RS.Controllers.InventoryController)
+end)
+
+local CFG_FILE = "RebornCS_SkinsOnly.json"
+local CFG = {
+    enabled = true,
+    skins = {},
+    knifeModel = nil,
+    gloveModel = nil,
+    factoryNew = true,
+    statTrak = false,
+    statTrakKills = 1337,
+    applyOthers = false,
+}
+
+local function saveCfg()
+    pcall(function() 
+        writefile(CFG_FILE, HttpService:JSONEncode(CFG)) 
+    end)
+end
+
+local function loadCfg()
+    pcall(function()
+        if isfile and isfile(CFG_FILE) then
+            local d = HttpService:JSONDecode(readfile(CFG_FILE))
+            if type(d) == "table" then
+                for k, v in pairs(d) do CFG[k] = v end
+                if type(CFG.skins) ~= "table" then CFG.skins = {} end
+            end
+        end
+    end)
+end
+loadCfg()
+
+local weaponProps = {}
+local function props(name)
+    if weaponProps[name] == nil then
+        local ok, p = pcall(GetWeaponProperties, name)
+        weaponProps[name] = (ok and type(p) == "table") and p or false
+    end
+    return weaponProps[name] or nil
+end
+
+local CATS = { "All", "Pistols", "Rifles", "Snipers", "SMGs", "Heavy", "Knives", "Gloves", "Grenades", "Other" }
+local CAT_ORDER = {}
+for i, c in ipairs(CATS) do CAT_ORDER[c] = i end
+
+local NAME_CAT = {}
+local function tag(cat, list)
+    for _, n in ipairs(list) do NAME_CAT[n] = cat end
+end
+
+tag("Knives", { "T Knife", "CT Knife", "Gut Knife", "Flip Knife", "Butterfly Knife", "M9 Bayonet", "Karambit", "Stiletto Knife", "Skeleton Knife", "LightSaber" })
+tag("Gloves", { "Hand Wraps", "T Glove", "CT Glove", "Driver Gloves", "Operator Gloves", "Sports Gloves" })
+tag("Snipers", { "AWP", "SSG 08" })
+tag("Pistols", { "Glock-18", "USP-S", "P250", "Five-SeveN", "Tec-9", "Dual Berettas", "Desert Eagle", "R8 Revolver", "Zeus x27" })
+tag("SMGs", { "MP9", "MAC-10", "P90" })
+tag("Heavy", { "Nova", "XM1014", "MAG-7", "Sawed-Off", "Negev" })
+tag("Rifles", { "AK-47", "M4A4", "M4A1-S", "FAMAS", "Galil AR", "AUG", "SG 553" })
+tag("Grenades", { "HE Grenade", "Flashbang", "Smoke Grenade", "Molotov", "Incendiary Grenade", "Decoy Grenade" })
+tag("Other", { "C4" })
+
+local function classOf(name)
+    local p = props(name)
+    if p then
+        local cls, typ = p.Class or "", p.Type or ""
+        if cls == "Glove" then return "Gloves" end
+        if cls == "Melee" then return "Knives" end
+        if cls == "Grenade" then return "Grenades" end
+        if cls == "C4" then return "Other" end
+        if typ == "Pistol" then return "Pistols" end
+        if typ == "Rifle" then return (name == "AWP" or name == "SSG 08") and "Snipers" or "Rifles" end
+        if typ == "SMG" then return "SMGs" end
+        if typ == "Heavy" then return "Heavy" end
+    end
+    if NAME_CAT[name] then return NAME_CAT[name] end
+    if name:find("Knife") or name:find("Bayonet") or name:find("Karambit") then return "Knives" end
+    if name:find("Glove") or name == "Hand Wraps" then return "Gloves" end
+    if name:find("Grenade") or name == "Molotov" or name == "Flashbang" then return "Grenades" end
+    return "Other"
+end
+
+local function isKnife(name) return classOf(name) == "Knives" end
+local function isGlove(name) return classOf(name) == "Gloves" end
+
+local WeaponsFolderAssets = RS.Assets:FindFirstChild("Weapons")
+local function weaponExists(name) 
+    return type(name) == "string" and WeaponsFolderAssets ~= nil and WeaponsFolderAssets:FindFirstChild(name) ~= nil 
+end
+
+local function skinsFor(weapon)
+    local ok, list = pcall(SkinsLib.GetAllSkinsForWeapon, weapon)
+    if not ok or type(list) ~= "table" then return {} end
+    local out = {}
+    for _, s in ipairs(list) do
+        local nm = s.skin or s.name
+        if type(nm) == "string" then
+            local icon = s.imageAssetId
+            if not icon and type(s.wearImages) == "table" then
+                local first
+                for _, v in pairs(s.wearImages) do
+                    if type(v) == "table" then 
+                        first = first or v.assetId 
+                        if v.wear == "Factory New" then icon = v.assetId break end
+                    elseif type(v) == "string" then 
+                        first = first or v 
+                    end
+                end
+                icon = icon or first
+            end
+            out[#out + 1] = { name = nm, icon = icon, rarity = s.rarity, enabled = s.isEnabled }
+        end
+    end
+    table.sort(out, function(a, b)
+        if a.name == "Stock" then return true end
+        if b.name == "Stock" then return false end
+        return a.name < b.name
+    end)
+    return out
+end
+
+local function skinExists(weapon, skin)
+    if type(weapon) ~= "string" or type(skin) ~= "string" then return false end
+    local ok, info = pcall(SkinsLib.GetSkinInformation, weapon, skin)
+    return ok and info ~= nil
+end
+
+local function fallbackSkin(weapon, prefer)
+    if prefer and skinExists(weapon, prefer) then return prefer end
+    if skinExists(weapon, "Stock") then return "Stock" end
+    local l = skinsFor(weapon)
+    return l[1] and l[1].name or prefer
+end
+
+local allWeapons = {}
+for _, f in ipairs(RS.Assets.Weapons:GetChildren()) do
+    if f:IsA("Folder") and classOf(f.Name) ~= "Grenades" then
+        local n = 0
+        for _, s in ipairs(skinsFor(f.Name)) do 
+            if s.name ~= "Stock" then n = n + 1 end 
+        end
+        if n > 0 then allWeapons[#allWeapons + 1] = f.Name end
+    end
+end
+
+table.sort(allWeapons, function(a, b)
+    local ca, cb = CAT_ORDER[classOf(a)] or 99, CAT_ORDER[classOf(b)] or 99
+    if ca ~= cb then return ca < cb end
+    return a < b
+end)
+
+local function resolve(weapon, skin)
+    if not CFG.enabled or type(weapon) ~= "string" then return weapon, skin end
+    local w = weapon
+    if CFG.knifeModel and isKnife(weapon) and CFG.knifeModel ~= weapon and weaponExists(CFG.knifeModel) then 
+        w = CFG.knifeModel
+    elseif CFG.gloveModel and isGlove(weapon) and CFG.gloveModel ~= weapon and weaponExists(CFG.gloveModel) then 
+        w = CFG.gloveModel 
+    end
+    local want = CFG.skins[w]
+    if want and skinExists(w, want) then return w, want end
+    if w ~= weapon then return w, fallbackSkin(w, skin) end
+    return weapon, skin
+end
+
+local function resolveFloat(float) return (CFG.enabled and CFG.factoryNew) and 0 or float end
+local function resolveStatTrak(st) return (CFG.enabled and CFG.statTrak and st == nil) and CFG.statTrakKills or st end
+
+local orig = {}
+for _, n in ipairs({ "GetCameraModel", "GetCharacterModel", "GetWorldModel", "GetMagazine", "GetGloves" }) do 
+    orig[n] = SkinsLib[n] 
+end
+
+SkinsLib.GetCameraModel = function(weapon, skin, float, st, nameTag, charm, stickers, variant)
+    local w, s = resolve(weapon, skin)
+    local ok, res = pcall(orig.GetCameraModel, w, s, resolveFloat(float), resolveStatTrak(st), nameTag, charm, stickers, variant)
+    return (ok and res) and res or orig.GetCameraModel(weapon, skin, float, st, nameTag, charm, stickers, variant)
+end
+
+SkinsLib.GetMagazine = function(weapon, skin, float)
+    local w, s = resolve(weapon, skin)
+    local ok, res = pcall(orig.GetMagazine, w, s, resolveFloat(float))
+    return (ok and res) and res or orig.GetMagazine(weapon, skin, float)
+end
+
+SkinsLib.GetGloves = function(name, skin, float)
+    local w, s = resolve(name, skin)
+    local ok, res = pcall(orig.GetGloves, w, s, resolveFloat(float))
+    return (ok and res) and res or orig.GetGloves(name, skin, float)
+end
+
+SkinsLib.GetCharacterModel = function(weapon, skin, float, st, nameTag, charm, stickers, variant)
+    if not CFG.applyOthers then return orig.GetCharacterModel(weapon, skin, float, st, nameTag, charm, stickers, variant) end
+    local w, s = resolve(weapon, skin)
+    local ok, res = pcall(orig.GetCharacterModel, w, s, resolveFloat(float), resolveStatTrak(st), nameTag, charm, stickers, variant)
+    return (ok and res) and res or orig.GetCharacterModel(weapon, skin, float, st, nameTag, charm, stickers, variant)
+end
+
+SkinsLib.GetWorldModel = function(weapon, skin, float, st, nameTag, charm, stickers)
+    if not CFG.applyOthers then return orig.GetWorldModel(weapon, skin, float, st, nameTag, charm, stickers) end
+    local w, s = resolve(weapon, skin)
+    local ok, res = pcall(orig.GetWorldModel, w, s, resolveFloat(float), resolveStatTrak(st), nameTag, charm, stickers)
+    return (ok and res) and res or orig.GetWorldModel(weapon, skin, float, st, nameTag, charm, stickers)
+end
+
+local ViewmodelMod = safeRequire(RS.Classes.WeaponComponent.Classes.Viewmodel)
+if type(ViewmodelMod) == "table" and type(ViewmodelMod.new) == "function" then
+    orig.ViewmodelNew = ViewmodelMod.new
+    ViewmodelMod.new = function(comp, weapon, skin, inspecting)
+        if CFG.enabled and type(weapon) == "string" then
+            local w, s = resolve(weapon, skin)
+            local ok, res = pcall(orig.ViewmodelNew, comp, w, s, inspecting)
+            if ok and res then return res end
+        end
+        return orig.ViewmodelNew(comp, weapon, skin, inspecting)
+    end
+end
+
+local function getActiveLoadout()
+    if not InventoryController then
+        pcall(function() InventoryController = require(RS.Controllers.InventoryController) end)
+    end
+    if not InventoryController then return nil end
+
+    if type(getupvalues) == "function" or type(debug.getupvalues) == "function" then
+        local gUp = getupvalues or debug.getupvalues
+        for _, fnName in ipairs({"getCurrentEquipped", "removeInventoryItem", "getInventorySlot", "getCurrentInventory"}) do
+            local fn = InventoryController[fnName]
+            if type(fn) == "function" then
+                local ok, uvs = pcall(gUp, fn)
+                if ok and type(uvs) == "table" then
+                    for _, uv in pairs(uvs) do
+                        if type(uv) == "table" and rawget(uv, "Inventory") then
+                            return uv
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function isViewingLocalPlayer()
+    local char = LP.Character
+    if not char or char.Parent ~= workspace:FindFirstChild("Characters") then return false end
+    if char:GetAttribute("Dead") == true then return false end
+    local cam = workspace.CurrentCamera
+    local subject = cam and cam.CameraSubject
+    if not subject then return true end
+    return subject == char or subject:IsDescendantOf(char)
+end
+
+local function updateLiveInventory()
+    if not CFG.enabled or not isViewingLocalPlayer() then return end
+    local ld = getActiveLoadout()
+    if not ld or not ld.Inventory then return end
+
+    for slotIdx = 1, 3 do
+        local slotData = ld.Inventory[slotIdx]
+        if slotData and slotData._items and slotData._items[1] then
+            local item = slotData._items[1]
+            local baseName = item.Name
+            
+            local targetWeapon, targetSkin
+            if isKnife(baseName) then
+                local team = LP:GetAttribute("Team")
+                local defaultKnife = (team == "Terrorists") and "T Knife" or "CT Knife"
+                targetWeapon = CFG.knifeModel or defaultKnife
+                targetSkin = (CFG.skins[targetWeapon]) or fallbackSkin(targetWeapon, "Stock")
+            else
+                targetWeapon = baseName
+                targetSkin = CFG.skins[baseName] or item.Skin or "Stock"
+            end
+
+            if item.Name ~= targetWeapon or item.Skin ~= targetSkin then
+                local wasEquipped = (ld.CurrentEquipped == item) or (item.Viewmodel and item.Viewmodel.IsEquipped == true)
+
+                item.Name = targetWeapon
+                item.Skin = targetSkin
+
+                pcall(function()
+                    if GetWeaponProperties then
+                        item.Properties = GetWeaponProperties(targetWeapon) or item.Properties
+                    end
+                end)
+
+                if item.CharacterAnimator and CharacterAnimator then
+                    pcall(function()
+                        item.CharacterAnimator:destroy()
+                        item.CharacterAnimator = CharacterAnimator.new(LP, targetWeapon)
+                    end)
+                end
+
+                if item.Viewmodel then
+                    local vm = item.Viewmodel
+                    vm.Weapon = targetWeapon
+                    vm.CameraModelWeapon = targetWeapon
+                    vm.Skin = targetSkin
+
+                    if SoundClass and SoundClass.new then
+                        pcall(function()
+                            if vm.Sound then vm.Sound:destroy() end
+                            vm.Sound = SoundClass.new(targetWeapon)
+                            if vm.Animation then
+                                vm.Animation.Sound = vm.Sound
+                            end
+                        end)
+                    end
+
+                    local char = LP.Character
+                    if char then
+                        pcall(function() vm:construct(char, item) end)
+                    end
+
+                    if wasEquipped then
+                        pcall(function() vm:equip(false) end)
+                    end
+                end
+
+                pcall(function()
+                    if InventoryController then
+                        if InventoryController.OnInventoryChanged then
+                            InventoryController.OnInventoryChanged:Fire(ld.Inventory)
+                        end
+                        if wasEquipped and InventoryController.OnInventoryItemEquipped then
+                            InventoryController.OnInventoryItemEquipped:Fire(slotIdx, item)
+                        end
+                    end
+                end)
+            end
+        end
+    end
+
+    local gloveSlot = ld.Inventory[7] or ld.Inventory[6] or ld.Inventory["Gloves"]
+    if gloveSlot and gloveSlot._items and gloveSlot._items[1] then
+        local gloveItem = gloveSlot._items[1]
+        local baseGlove = gloveItem.Name
+        local team = LP:GetAttribute("Team")
+        local defaultGlove = (team == "Terrorists") and "T Glove" or "CT Glove"
+        local targetGlove = CFG.gloveModel or baseGlove or defaultGlove
+        local targetGloveSkin = CFG.skins[targetGlove] or fallbackSkin(targetGlove, "Stock")
+
+        if gloveItem.Name ~= targetGlove or gloveItem.Skin ~= targetGloveSkin then
+            gloveItem.Name = targetGlove
+            gloveItem.Skin = targetGloveSkin
+
+            local equippedItem = ld.CurrentEquipped
+            if equippedItem and equippedItem.Viewmodel then
+                pcall(function()
+                    local vm = equippedItem.Viewmodel
+                    if vm.Gloves then
+                        pcall(function() vm.Gloves:Destroy() end)
+                        vm.Gloves = nil
+                    end
+                    local newGloves = SkinsLib.GetGloves(targetGlove, targetGloveSkin, 0)
+                    if newGloves then
+                        if vm.Model then
+                            newGloves.Parent = vm.Model
+                        end
+                        vm.Gloves = newGloves
+                    end
+                end)
+            end
+
+            pcall(function()
+                if InventoryController and InventoryController.OnInventoryChanged then
+                    InventoryController.OnInventoryChanged:Fire(ld.Inventory)
+                end
+            end)
+        end
+    end
+end
+
+task.spawn(function()
+    while true do
+        pcall(updateLiveInventory)
+        task.wait(0.35)
+    end
+end)
+
+local T = {
+    bg = Color3.fromRGB(0, 0, 0),          
+    panel = Color3.fromRGB(0, 0, 0),       
+    card = Color3.fromRGB(8, 8, 8),        
+    stroke = Color3.fromRGB(12, 12, 12),      
+    accent = Color3.fromRGB(235, 150, 45),      
+    accentBright = Color3.fromRGB(255, 168, 55),  
+    accentSoft = Color3.fromRGB(255, 200, 120),  
+    accentDim = Color3.fromRGB(45, 32, 18),   
+    text = Color3.fromRGB(255, 255, 255),           
+    dim = Color3.fromRGB(140, 150, 165),         
+    off = Color3.fromRGB(18, 20, 26),         
+}
+
+local function corner(i, r) 
+    local c = Instance.new("UICorner") 
+    c.CornerRadius = UDim.new(0, r or 8) 
+    c.Parent = i 
+    return c 
+end
+
+local function stroke(i, col, th, trans)
+    local s = Instance.new("UIStroke")
+    s.Color = col or T.stroke
+    s.Thickness = th or 1.2
+    s.Transparency = trans or 0.2
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    s.Parent = i
+    return s
+end
+
+local function label(parent, text, size, color, font)
+    local l = Instance.new("TextLabel")
+    l.BackgroundTransparency = 1 
+    l.Text = text 
+    l.TextSize = size or 13 
+    l.TextColor3 = color or T.text
+    l.Font = font or MAIN_FONT 
+    l.TextXAlignment = Enum.TextXAlignment.Left 
+    l.Parent = parent
+    return l
+end
+
+local hui
+do
+    local ok, h = pcall(function() return gethui and gethui() end)
+    if ok and typeof(h) == "Instance" then hui = h end
+    if not hui then 
+        local ok2, cg = pcall(function() return game:GetService("CoreGui") end) 
+        if ok2 and typeof(cg) == "Instance" then hui = cg end 
+    end
+    if not hui then hui = LP:WaitForChild("PlayerGui") end
+end
+
+local oldGuis = { "Reborn.cc", "SoloScripts", "LuxSkins" }
+for _, gName in ipairs(oldGuis) do
+    local old = hui:FindFirstChild(gName)
+    if old then old:Destroy() end
+end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "Reborn.cc"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.DisplayOrder = 1000
+gui.Parent = hui
+
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 640, 0, 420)
+main.Position = UDim2.new(0.5, -320, 0.5, -210)
+main.BackgroundColor3 = T.bg
+main.BackgroundTransparency = 0
+main.BorderSizePixel = 0
+main.Active = true
+main.Parent = gui
+corner(main, 12)
+stroke(main, T.stroke, 1.5, 0)
+
+local mobileBtn = Instance.new("TextButton")
+mobileBtn.Name = "RebornMobileToggle"
+mobileBtn.Size = UDim2.new(0, 42, 0, 42)
+mobileBtn.Position = UDim2.new(0.05, 0, 0.2, 0)
+mobileBtn.BackgroundColor3 = T.panel
+mobileBtn.BackgroundTransparency = 0
+mobileBtn.Text = "R"
+mobileBtn.TextColor3 = T.accentBright
+mobileBtn.TextSize = 16
+mobileBtn.Font = MAIN_FONT
+mobileBtn.Active = true
+mobileBtn.Draggable = true
+mobileBtn.Parent = gui
+corner(mobileBtn, 21)
+stroke(mobileBtn, T.accent, 1.5, 0)
+
+mobileBtn.MouseButton1Click:Connect(function() 
+    main.Visible = not main.Visible 
+end)
+
+local top = Instance.new("Frame")
+top.Size = UDim2.new(1, 0, 0, 38)
+top.BackgroundColor3 = T.panel
+top.BackgroundTransparency = 0
+top.BorderSizePixel = 0
+top.Parent = main
+corner(top, 12)
+
+local dot = Instance.new("Frame")
+dot.Size = UDim2.new(0, 10, 0, 10)
+dot.Position = UDim2.new(0, 12, 0.5, -5)
+dot.BackgroundColor3 = T.accentBright
+dot.BorderSizePixel = 0
+dot.Parent = top
+corner(dot, 5)
+
+local ttl = label(top, "REBORN", 15, T.text, MAIN_FONT)
+ttl.Size = UDim2.new(0, 70, 1, 0)
+ttl.Position = UDim2.new(0, 28, 0, 0)
+
+local mainTabContainer = Instance.new("Frame")
+mainTabContainer.Size = UDim2.new(0, 320, 0, 26)
+mainTabContainer.Position = UDim2.new(0, 110, 0.5, -13)
+mainTabContainer.BackgroundTransparency = 1
+mainTabContainer.Parent = top
+
+local mainTabLayout = Instance.new("UIListLayout")
+mainTabLayout.FillDirection = Enum.FillDirection.Horizontal
+mainTabLayout.Padding = UDim.new(0, 6)
+mainTabLayout.Parent = mainTabContainer
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 24, 0, 24)
+closeBtn.Position = UDim2.new(1, -30, 0.5, -12)
+closeBtn.BackgroundColor3 = T.card
+closeBtn.Text = "–"
+closeBtn.TextColor3 = T.text
+closeBtn.TextSize = 14
+closeBtn.Font = MAIN_FONT
+closeBtn.Parent = top
+corner(closeBtn, 6)
+stroke(closeBtn, T.stroke, 1, 0.3)
+
+closeBtn.MouseButton1Click:Connect(function()
+    main.Visible = not main.Visible
+end)
+
+do
+    local dragging, start, startPos
+    top.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            dragging, start, startPos = true, i.Position, main.Position
+            i.Changed:Connect(function()
+                if i.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    UIS.InputChanged:Connect(function(i)
+        if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            local d = i.Position - start
+            main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+        end
+    end)
+end
+
+local left = Instance.new("Frame")
+left.Size = UDim2.new(0, 180, 1, -50)
+left.Position = UDim2.new(0, 10, 0, 42)
+left.BackgroundColor3 = T.panel
+left.Parent = main
+corner(left, 8)
+stroke(left, T.stroke, 1, 0.3)
+
+local search = Instance.new("TextBox")
+search.Size = UDim2.new(1, -12, 0, 26)
+search.Position = UDim2.new(0, 6, 0, 6)
+search.BackgroundColor3 = T.card
+search.PlaceholderText = "Search Item..."
+search.PlaceholderColor3 = T.dim
+search.Text = ""
+search.TextColor3 = T.text
+search.TextSize = 11
+search.Font = MAIN_FONT
+search.ClearTextOnFocus = false
+search.TextXAlignment = Enum.TextXAlignment.Left
+search.Parent = left
+corner(search, 6)
+stroke(search, T.stroke, 1, 0.4)
+
+local pad = Instance.new("UIPadding") 
+pad.PaddingLeft = UDim.new(0, 8) 
+pad.Parent = search
+
+local catBar = Instance.new("ScrollingFrame")
+catBar.Size = UDim2.new(1, -12, 0, 26)
+catBar.Position = UDim2.new(0, 6, 0, 38)
+catBar.BackgroundTransparency = 1
+catBar.BorderSizePixel = 0
+catBar.ScrollBarThickness = 0
+catBar.ScrollingDirection = Enum.ScrollingDirection.X
+catBar.AutomaticCanvasSize = Enum.AutomaticSize.X
+catBar.CanvasSize = UDim2.new()
+catBar.Parent = left
+
+local catLayout = Instance.new("UIListLayout") 
+catLayout.FillDirection = Enum.FillDirection.Horizontal 
+catLayout.Padding = UDim.new(0, 5) 
+catLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+catLayout.Parent = catBar
+
+local wepList = Instance.new("ScrollingFrame")
+wepList.Size = UDim2.new(1, -12, 1, -74)
+wepList.Position = UDim2.new(0, 6, 0, 68)
+wepList.BackgroundTransparency = 1
+wepList.BorderSizePixel = 0
+wepList.ScrollBarThickness = 3
+wepList.ScrollBarImageColor3 = T.accent
+wepList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+wepList.CanvasSize = UDim2.new()
+wepList.Parent = left
+
+local wepLayout = Instance.new("UIListLayout") 
+wepLayout.Padding = UDim.new(0, 4) 
+wepLayout.Parent = wepList
+
+local right = Instance.new("Frame")
+right.Size = UDim2.new(1, -206, 1, -50)
+right.Position = UDim2.new(0, 196, 0, 42)
+right.BackgroundColor3 = T.panel
+right.Parent = main
+corner(right, 8)
+stroke(right, T.stroke, 1, 0.3)
+
+local rTitle = label(right, "Select Item", 13, T.text, MAIN_FONT) 
+rTitle.Size = UDim2.new(1, -90, 0, 22) 
+rTitle.Position = UDim2.new(0, 10, 0, 4)
+
+local rSub = label(right, "", 10, T.dim) 
+rSub.Size = UDim2.new(1, -90, 0, 12) 
+rSub.Position = UDim2.new(0, 10, 0, 24)
+
+local resetBtn = Instance.new("TextButton")
+resetBtn.Size = UDim2.new(0, 65, 0, 22)
+resetBtn.Position = UDim2.new(1, -75, 0, 8)
+resetBtn.BackgroundColor3 = T.card
+resetBtn.Text = "Reset Skin"
+resetBtn.TextColor3 = T.dim
+resetBtn.TextSize = 10
+resetBtn.Font = MAIN_FONT
+resetBtn.Parent = right
+corner(resetBtn, 5)
+stroke(resetBtn, T.stroke, 1, 0.4)
+
+local skinGrid = Instance.new("ScrollingFrame")
+skinGrid.Size = UDim2.new(1, -16, 1, -48)
+skinGrid.Position = UDim2.new(0, 8, 0, 40)
+skinGrid.BackgroundTransparency = 1
+skinGrid.BorderSizePixel = 0
+skinGrid.ScrollBarThickness = 3
+skinGrid.ScrollBarImageColor3 = T.accent
+skinGrid.AutomaticCanvasSize = Enum.AutomaticSize.Y
+skinGrid.CanvasSize = UDim2.new()
+skinGrid.Parent = right
+
+local grid = Instance.new("UIGridLayout")
+grid.CellSize = UDim2.new(0, 125, 0, 95)
+grid.CellPadding = UDim2.new(0, 8, 0, 8)
+grid.SortOrder = Enum.SortOrder.LayoutOrder
+grid.Parent = skinGrid
+
+local currentMainTab = "Weapons"
+local selectedWeapon = nil
+local currentCat = "All"
+local wepButtons = {}
+
+local function iconImage(parent, img, size, color)
+    local im = Instance.new("ImageLabel")
+    im.BackgroundTransparency = 1 
+    im.Size = size 
+    im.ScaleType = Enum.ScaleType.Fit
+    if color then im.ImageColor3 = color end
+    if type(img) == "string" and #img > 0 then 
+        im.Image = img:match("^rbxassetid://") and img or ("rbxassetid://" .. tostring(img):gsub("%D", ""))
+    elseif type(img) == "number" then 
+        im.Image = "rbxassetid://" .. img 
+    end
+    im.Parent = parent
+    return im
+end
+
+local function buildSkins(weapon)
+    for _, c in ipairs(skinGrid:GetChildren()) do 
+        if not c:IsA("UIGridLayout") then c:Destroy() end 
+    end
+    if not weapon then return end
+    
+    local list = skinsFor(weapon)
+    local sel = CFG.skins[weapon]
+    rTitle.Text = weapon
+    rSub.Text = #list .. " skins" .. (sel and (" • " .. sel) or "")
+
+    for i, s in ipairs(list) do
+        local isSelected = (sel == s.name)
+        
+        local card = Instance.new("TextButton")
+        card.LayoutOrder = i 
+        card.Text = "" 
+        card.AutoButtonColor = false
+        card.BackgroundColor3 = isSelected and T.accentDim or T.card
+        card.Parent = skinGrid
+        corner(card, 8)
+        
+        stroke(card, isSelected and T.accentBright or T.stroke, isSelected and 1.5 or 1, isSelected and 0 or 0.4)
+        
+        local skinImg = iconImage(card, s.icon, UDim2.new(1, -12, 0, 62))
+        skinImg.Position = UDim2.new(0, 6, 0, 6)
+        
+        local nm = label(card, s.name, 11, isSelected and T.accentBright or T.text, MAIN_FONT)
+        nm.Size = UDim2.new(1, -8, 0, 32) 
+        nm.Position = UDim2.new(0, 4, 1, -36) 
+        nm.TextXAlignment = Enum.TextXAlignment.Center 
+        nm.TextWrapped = true
+
+        card.MouseButton1Click:Connect(function()
+            CFG.skins[weapon] = s.name
+            if isKnife(weapon) then CFG.knifeModel = weapon end
+            
+            if isGlove(weapon) then 
+                CFG.gloveModel = weapon 
+                local currentKnifeModel = CFG.knifeModel or "T Knife"
+                local knifeSkins = skinsFor(currentKnifeModel)
+                local currentKnifeSkin = CFG.skins[currentKnifeModel] or "Stock"
+                local tempKnifeSkin = "Stock"
+                
+                for _, kSkin in ipairs(knifeSkins) do
+                    if kSkin.name ~= currentKnifeSkin then
+                        tempKnifeSkin = kSkin.name
+                        break
+                    end
+                end
+                
+                CFG.skins[currentKnifeModel] = tempKnifeSkin
+                updateLiveInventory()
+                task.wait(0.05)
+                CFG.skins[currentKnifeModel] = currentKnifeSkin
+                updateLiveInventory()
+
+                for _, wName in ipairs(allWeapons) do
+                    if not isKnife(wName) and not isGlove(wName) then
+                        local wSkins = skinsFor(wName)
+                        if #wSkins > 0 then
+                            local origSkin = CFG.skins[wName] or "Stock"
+                            local tempGunSkin = "Stock"
+                            for _, gSkin in ipairs(wSkins) do
+                                if gSkin.name ~= origSkin then
+                                    tempGunSkin = gSkin.name
+                                    break
+                                end
+                            end
+                            
+                            CFG.skins[wName] = tempGunSkin
+                            updateLiveInventory()
+                            task.wait(0.02)
+                            CFG.skins[wName] = origSkin
+                            updateLiveInventory()
+                        end
+                    end
+                end
+            end
+
+            saveCfg()
+            buildSkins(weapon)
+            pcall(updateLiveInventory)
+        end)
+    end
+end
+
+resetBtn.MouseButton1Click:Connect(function()
+    if not selectedWeapon then return end
+    CFG.skins[selectedWeapon] = nil
+    if CFG.knifeModel == selectedWeapon then CFG.knifeModel = nil end
+    if CFG.gloveModel == selectedWeapon then CFG.gloveModel = nil end
+    saveCfg()
+    buildSkins(selectedWeapon)
+    pcall(updateLiveInventory)
+end)
+
+local function selectWeapon(w)
+    selectedWeapon = w
+    for name, b in pairs(wepButtons) do 
+        local isSel = (name == w)
+        b.BackgroundColor3 = isSel and T.accentDim or T.card 
+        
+        local imgLabel = b:FindFirstChildOfClass("ImageLabel")
+        if imgLabel then 
+            imgLabel.ImageColor3 = isSel and T.accentSoft or Color3.fromRGB(180, 120, 60)
+        end
+        local textLabel = b:FindFirstChildOfClass("TextLabel")
+        if textLabel then textLabel.TextColor3 = isSel and T.accentBright or T.text end
+    end
+    buildSkins(w)
+end
+
+local function buildWeapons()
+    for _, c in ipairs(wepList:GetChildren()) do 
+        if c:IsA("TextButton") then c:Destroy() end 
+    end
+    wepButtons = {}
+    local q = search.Text:lower()
+    
+    local firstSelectable = nil
+    
+    for i, w in ipairs(allWeapons) do
+        local cat = classOf(w)
+        local isMatchTab = false
+        
+        if currentMainTab == "Weapons" and not isKnife(w) and not isGlove(w) then
+            isMatchTab = (currentCat == "All" or cat == currentCat)
+        elseif currentMainTab == "Knives" and isKnife(w) then
+            isMatchTab = true
+        elseif currentMainTab == "Gloves" and isGlove(w) then
+            isMatchTab = true
+        end
+
+        if isMatchTab and (q == "" or w:lower():find(q, 1, true)) then
+            if not firstSelectable then firstSelectable = w end
+            local isSel = (selectedWeapon == w)
+            local b = Instance.new("TextButton")
+            b.Size = UDim2.new(1, 0, 0, 28) 
+            b.LayoutOrder = i 
+            b.Text = "" 
+            b.AutoButtonColor = false
+            b.BackgroundColor3 = isSel and T.accentDim or T.card
+            b.Parent = wepList
+            corner(b, 6)
+            
+            stroke(b, isSel and T.accentBright or T.stroke, 1, isSel and 0.2 or 0.5)
+
+            local p = props(w)
+            if p and (p.Icon or p.ReverseIcon) then 
+                local iconCol = isSel and T.accentSoft or Color3.fromRGB(180, 120, 60)
+                iconImage(b, p.Icon or p.ReverseIcon, UDim2.new(0, 30, 0, 18), iconCol).Position = UDim2.new(0, 6, 0.5, -9) 
+            end
+
+            local l = label(b, w, 11, isSel and T.accentBright or T.text, MAIN_FONT)
+            l.Size = UDim2.new(1, -40, 1, 0) 
+            l.Position = UDim2.new(0, 40, 0, 0)
+
+            b.MouseButton1Click:Connect(function() selectWeapon(w) end)
+            wepButtons[w] = b
+        end
+    end
+    
+    if firstSelectable and not wepButtons[selectedWeapon] then
+        selectWeapon(firstSelectable)
+    elseif not firstSelectable then
+        selectedWeapon = nil
+        for _, c in ipairs(skinGrid:GetChildren()) do 
+            if not c:IsA("UIGridLayout") then c:Destroy() end 
+        end
+        rTitle.Text = "Select Item"
+        rSub.Text = ""
+    end
+end
+
+local mainTabs = { "Weapons", "Knives", "Gloves" }
+local mainTabBtns = {}
+
+local function switchMainTab(tabName)
+    currentMainTab = tabName
+    for tName, btn in pairs(mainTabBtns) do
+        local active = (tName == tabName)
+        btn.BackgroundColor3 = active and T.accentBright or T.card
+        btn.TextColor3 = active and Color3.new(1, 1, 1) or T.dim
+    end
+    
+    if tabName == "Weapons" then
+        catBar.Visible = true
+        search.Position = UDim2.new(0, 6, 0, 6)
+        wepList.Size = UDim2.new(1, -12, 1, -74)
+        wepList.Position = UDim2.new(0, 6, 0, 68)
+    else
+        catBar.Visible = false
+        search.Position = UDim2.new(0, 6, 0, 6)
+        wepList.Size = UDim2.new(1, -12, 1, -42)
+        wepList.Position = UDim2.new(0, 6, 0, 36)
+    end
+    
+    buildWeapons()
+end
+
+for _, tabName in ipairs(mainTabs) do
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 95, 1, 0)
+    btn.BackgroundColor3 = T.card
+    btn.Text = tabName
+    btn.TextColor3 = T.dim
+    btn.TextSize = 11
+    btn.Font = MAIN_FONT
+    btn.AutoButtonColor = false
+    btn.Parent = mainTabContainer
+    corner(btn, 6)
+    stroke(btn, T.stroke, 1, 0.4)
+    
+    btn.MouseButton1Click:Connect(function()
+        switchMainTab(tabName)
+    end)
+    mainTabBtns[tabName] = btn
+end
+
+do
+    local present = {} 
+    for _, w in ipairs(allWeapons) do 
+        if not isKnife(w) and not isGlove(w) then
+            present[classOf(w)] = true 
+        end
+    end
+    local cats = {} 
+    for _, c in ipairs(CATS) do 
+        if c ~= "Knives" and c ~= "Gloves" and (c == "All" or present[c]) then 
+            cats[#cats + 1] = c 
+        end 
+    end
+    local catBtns = {}
+
+    local function refreshCats()
+        for c, b in pairs(catBtns) do
+            local active = (c == currentCat)
+            b.BackgroundColor3 = active and T.accentBright or T.card
+            b.TextColor3 = active and Color3.new(1, 1, 1) or T.dim
+        end
+    end
+
+    for i, c in ipairs(cats) do
+        local b = Instance.new("TextButton")
+        b.LayoutOrder = i 
+        b.Size = UDim2.new(0, 0, 1, 0) 
+        b.AutomaticSize = Enum.AutomaticSize.X
+        b.BackgroundColor3 = T.card 
+        b.Text = c 
+        b.TextColor3 = T.dim 
+        b.TextSize = 10 
+        b.Font = MAIN_FONT 
+        b.AutoButtonColor = false 
+        b.Parent = catBar
+        corner(b, 5)
+        stroke(b, T.stroke, 1, 0.4)
+        
+        local pp = Instance.new("UIPadding") 
+        pp.PaddingLeft = UDim.new(0, 8) 
+        pp.PaddingRight = UDim.new(0, 8) 
+        pp.Parent = b
+
+        b.MouseButton1Click:Connect(function()
+            currentCat = c
+            refreshCats()
+            buildWeapons()
+        end)
+        catBtns[c] = b
+    end
+    refreshCats()
+end
+
+search:GetPropertyChangedSignal("Text"):Connect(buildWeapons)
+switchMainTab("Weapons")
