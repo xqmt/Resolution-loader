@@ -1,6 +1,6 @@
 -- =========================================================
 -- Neverlose x BloxStrike (Obsidian UI Version)
--- v1.8.0 — Memesense Ragebot + Hit Notify + Auto Priority + No Miss + Ignore Invincible + Unity Tab + Skin Changes
+-- v1.8.1 — Health Bar Color + Atmosphere Fix + Priority Refresh Fix
 -- =========================================================
 
 local Players          = game:GetService("Players")
@@ -32,8 +32,8 @@ Library.ShowCustomCursor          = true
 Library.NotifySide                = "Right"
 
 local Window = Library:CreateWindow({
-    Title           = '<font color="#ffffff"><b>Nebula</b></font><font color="#ff0000"><b>.hit</b></font>',
-    Footer          = "BloxStrike | v1.8.0",
+    Title           = '<font color="#ffffff"><b>Fatality</b></font><font color="#ff0000"><b>.win</b></font>',
+    Footer          = "BloxStrike | v1.8.1",
     Center          = true,
     AutoShow        = true,
     Resizable       = true,
@@ -52,6 +52,8 @@ local SoundIDs = {
     ["Neverlose"]        = "rbxassetid://18391691942",
     ["Rust"]             = "rbxassetid://138750331387064",
     ["Break"]            = "rbxassetid://103059835203534",
+    ["impact"]           = "rbxassetid://128314503038887",
+    ["coin"]             = "rbxassetid://127645268874265",
     ["Fatality"]         = "rbxassetid://17802817724",
     ["Primordial"]       = "rbxassetid://97511223764004",
     ["Minecraft xp"]     = "rbxassetid://17148249625",
@@ -73,7 +75,6 @@ local HitOverlayConfig = { Enabled = true, Color = Color3.fromRGB(255, 0, 50), D
 local HitEffectConfig  = { Enabled = true, Style = "Sparks", Color = Color3.fromRGB(0, 255, 128) }
 local HitChamsConfig   = { Enabled = true, Color = Color3.fromRGB(0, 255, 255), Duration = 1.0, Material = Enum.Material.Neon }
 
--- ★ Hit Notify
 local HitNotifyConfig = {
     Enabled      = true,
     Duration     = 3,
@@ -97,7 +98,6 @@ local WeaponMaterialConfig = {
     MetalReflectance  = 1.0
 }
 
--- ★ Unity Tab Config
 local UnityConfig = {
     NoSmoke = false,
     NoFlash = false,
@@ -109,7 +109,6 @@ local UnityConfig = {
     NoGlove = false,
 }
 
--- ★ Skin Changes Config
 local SkinConfig = {
     Enabled  = true,
     Loaded   = false,
@@ -117,7 +116,6 @@ local SkinConfig = {
     URL      = "https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/skin-change.txt",
 }
 
--- ★ RagebotConfig
 local RagebotConfig = {
     Enabled         = false,
     Delay           = 0.01,
@@ -145,7 +143,7 @@ local RagebotConfig = {
 local rageCache = { part = nil, player = nil, time = 0 }
 
 -- =========================================================
--- ★ RAGEBOT: HELPER
+-- RAGEBOT HELPERS
 -- =========================================================
 local function isRageTargetValid(char)
     if not char or not char.Parent then return false end
@@ -165,7 +163,7 @@ local ThirdPersonConfig = {
 }
 
 -- =========================================================
--- ⭐ BHOP CONFIG
+-- BHOP CONFIG
 -- =========================================================
 local BhopConfig = {
     Enabled = false,
@@ -780,7 +778,12 @@ local ESPConfig = {
     BoxColor = Color3.fromRGB(255, 255, 255),
     HealthBar = true, Skeletons = true,
     SkeletonColor = Color3.fromRGB(255, 255, 255),
-    Outline = true, OutlineColor = Color3.fromRGB(0, 0, 0)
+    Outline = true, OutlineColor = Color3.fromRGB(0, 0, 0),
+
+    -- ★ NEW: Health Bar colors
+    HealthBarLowColor  = Color3.fromRGB(255, 0, 0),
+    HealthBarHighColor = Color3.fromRGB(0, 255, 0),
+    HealthBarUseGradient = true,
 }
 
 local WorldConfig = {
@@ -873,8 +876,11 @@ local function getTracerColorSequence()
 end
 
 -- =========================================================
--- ATMOSPHERE + COLOR CORRECTION + WEATHER
+-- ★ ATMOSPHERE (FIXED)
 -- =========================================================
+-- Keep our atmosphere alive: if game destroys it, recreate it.
+-- Store original values of other atmospheres and restore them when disabled.
+
 local AtmosphereObj = Lighting:FindFirstChild("NL_Atmosphere")
 if not AtmosphereObj then
     AtmosphereObj = Instance.new("Atmosphere")
@@ -882,9 +888,45 @@ if not AtmosphereObj then
     AtmosphereObj.Parent = Lighting
 end
 
-local function suppressOneAtmosphere(obj)
-    if not obj or obj == AtmosphereObj then return end
+local originalAtmosValues = {} -- [atmosObj] = {Density=, Haze=, Glare=, Offset=, Color=, Decay=}
+
+local function isOurAtmosphere(obj)
+    return obj == AtmosphereObj or (obj and obj.Name == "NL_Atmosphere")
+end
+
+local function ensureAtmosphereObj()
+    -- Recreate if destroyed
+    if not AtmosphereObj or not AtmosphereObj.Parent then
+        local found = Lighting:FindFirstChild("NL_Atmosphere")
+        if found then
+            AtmosphereObj = found
+        else
+            AtmosphereObj = Instance.new("Atmosphere")
+            AtmosphereObj.Name = "NL_Atmosphere"
+            AtmosphereObj.Parent = Lighting
+        end
+    end
+    return AtmosphereObj
+end
+
+local function rememberAtmos(obj)
+    if not obj or isOurAtmosphere(obj) then return end
     if not obj:IsA("Atmosphere") then return end
+    if originalAtmosValues[obj] then return end
+    originalAtmosValues[obj] = {
+        Density = obj.Density,
+        Haze    = obj.Haze,
+        Glare   = obj.Glare,
+        Offset  = obj.Offset,
+        Color   = obj.Color,
+        Decay   = obj.Decay,
+    }
+end
+
+local function suppressOneAtmosphere(obj)
+    if not obj or isOurAtmosphere(obj) then return end
+    if not obj:IsA("Atmosphere") then return end
+    rememberAtmos(obj)
     pcall(function()
         if obj.Density ~= 0 then obj.Density = 0 end
         if obj.Haze    ~= 0 then obj.Haze    = 0 end
@@ -893,49 +935,66 @@ local function suppressOneAtmosphere(obj)
     end)
 end
 
+local function restoreOneAtmosphere(obj)
+    if not obj or isOurAtmosphere(obj) then return end
+    local orig = originalAtmosValues[obj]
+    if not orig then return end
+    pcall(function()
+        if obj.Parent then
+            obj.Density = orig.Density
+            obj.Haze    = orig.Haze
+            obj.Glare   = orig.Glare
+            obj.Offset  = orig.Offset
+            obj.Color   = orig.Color
+            obj.Decay   = orig.Decay
+        end
+    end)
+    originalAtmosValues[obj] = nil
+end
+
 local function suppressAllOtherAtmospheres()
     for _, obj in ipairs(Lighting:GetChildren()) do
-        if obj:IsA("Atmosphere") and obj ~= AtmosphereObj then
+        if obj:IsA("Atmosphere") and not isOurAtmosphere(obj) then
             suppressOneAtmosphere(obj)
         end
     end
 end
 
+local function restoreAllOtherAtmospheres()
+    local toRestore = {}
+    for obj, _ in pairs(originalAtmosValues) do
+        table.insert(toRestore, obj)
+    end
+    for _, obj in ipairs(toRestore) do
+        restoreOneAtmosphere(obj)
+    end
+end
+
+-- Watch for newly added atmospheres
 Lighting.DescendantAdded:Connect(function(desc)
-    if desc:IsA("Atmosphere") and desc ~= AtmosphereObj then
+    if desc:IsA("Atmosphere") and not isOurAtmosphere(desc) then
         task.defer(function()
             if not WorldConfig.AtmosphereEnabled then return end
             suppressOneAtmosphere(desc)
-            pcall(function()
-                desc:GetPropertyChangedSignal("Density"):Connect(function()
-                    if WorldConfig.AtmosphereEnabled and desc.Density ~= 0 then
-                        desc.Density = 0
-                    end
-                end)
-                desc:GetPropertyChangedSignal("Haze"):Connect(function()
-                    if WorldConfig.AtmosphereEnabled and desc.Haze ~= 0 then
-                        desc.Haze = 0
-                    end
-                end)
-                desc:GetPropertyChangedSignal("Glare"):Connect(function()
-                    if WorldConfig.AtmosphereEnabled and desc.Glare ~= 0 then
-                        desc.Glare = 0
-                    end
-                end)
-            end)
         end)
     end
 end)
 
-task.spawn(function()
-    while task.wait(0.05) do
-        if WorldConfig.AtmosphereEnabled then
-            suppressAllOtherAtmospheres()
-        end
+-- Also watch if our own atmosphere was destroyed → recreate
+Lighting.DescendantRemoving:Connect(function(desc)
+    if desc == AtmosphereObj then
+        task.defer(function()
+            task.wait() -- let it finish removing
+            ensureAtmosphereObj()
+            if WorldConfig.AtmosphereEnabled then
+                updateAtmosphere()
+            end
+        end)
     end
 end)
 
 local function updateAtmosphere()
+    ensureAtmosphereObj()
     if not AtmosphereObj then return end
     if WorldConfig.AtmosphereEnabled then
         suppressAllOtherAtmospheres()
@@ -946,6 +1005,8 @@ local function updateAtmosphere()
         AtmosphereObj.Glare   = WorldConfig.AtmosphereGlare
         AtmosphereObj.Haze    = WorldConfig.AtmosphereHaze
     else
+        -- Restore game's original atmospheres
+        restoreAllOtherAtmospheres()
         AtmosphereObj.Density = 0
         AtmosphereObj.Offset  = 0
         AtmosphereObj.Haze    = 0
@@ -953,6 +1014,19 @@ local function updateAtmosphere()
     end
 end
 
+-- Heartbeat loop to keep suppression active (recreates if destroyed)
+task.spawn(function()
+    while task.wait(0.1) do
+        if WorldConfig.AtmosphereEnabled then
+            ensureAtmosphereObj()
+            suppressAllOtherAtmospheres()
+        end
+    end
+end)
+
+-- =========================================================
+-- COLOR CORRECTION
+-- =========================================================
 local CCObj = Lighting:FindFirstChild("NL_CC")
 if not CCObj then
     CCObj = Instance.new("ColorCorrectionEffect")
@@ -1254,7 +1328,7 @@ local function drawBulletTracer(startPos, targetPos)
 end
 
 -- =========================================================
--- FOV & TARGET DRAWINGS (Silent Aim)
+-- FOV & TARGET DRAWINGS
 -- =========================================================
 local fovOutlineOuter = Drawing.new("Circle")
 fovOutlineOuter.Thickness    = 1.25
@@ -1345,7 +1419,7 @@ local function createPlayerESP(player)
         BoxOutline      = createDrawing("Square", {Thickness=3.5, Color=ESPConfig.OutlineColor, Filled=false, Visible=false}),
         Box             = createDrawing("Square", {Thickness=1.5, Color=ESPConfig.BoxColor, Filled=false, Visible=false}),
         HealthBarOutline= createDrawing("Square", {Thickness=1, Color=ESPConfig.OutlineColor, Filled=true, Visible=false}),
-        HealthBar       = createDrawing("Square", {Thickness=1, Color=Color3.fromRGB(0,255,100), Filled=true, Visible=false}),
+        HealthBar       = createDrawing("Square", {Thickness=1, Color=ESPConfig.HealthBarHighColor, Filled=true, Visible=false}),
         Skeletons       = {},
         SkeletonOutlines= {}
     }
@@ -1638,9 +1712,6 @@ local function GetPenetrationStats(origin, direction, maxPen, ignoreList, target
     return { Success = false, FailReason = "Max Steps" }
 end
 
--- =========================================================
--- isVisibleRage
--- =========================================================
 local PART_SAMPLE_OFFSETS = {
     Vector3.new( 1,  0,  0),
     Vector3.new(-1,  0,  0),
@@ -1710,9 +1781,6 @@ local function canWallbangRage(targetPart)
     return stats.Success
 end
 
--- =========================================================
--- ★ MEMESENSE: hasVestDetails / isEnemyByVest
--- =========================================================
 local function hasVestDetails(character)
     if not character then return false end
     local armor = character:FindFirstChild("CharacterArmor")
@@ -1753,7 +1821,7 @@ local function collectCharactersFromFolder()
 end
 
 -- =========================================================
--- ★ RAGEBOT TARGET SELECTION — MEMESENSE STYLE
+-- ★ RAGEBOT TARGET SELECTION
 -- =========================================================
 local function findRageTarget()
     local camPos      = Camera.CFrame.Position
@@ -1974,12 +2042,14 @@ RunService.RenderStepped:Connect(function()
                         objs.Box.Visible        = false
                     end
 
+                    -- ★ HEALTH BAR (with custom colors)
                     if ESPConfig.HealthBar then
                         local health      = character:GetAttribute("Health")    or 100
                         local maxHealth   = character:GetAttribute("MaxHealth") or 100
                         local healthPct   = math.clamp(health / maxHealth, 0, 1)
                         local barHeight   = boxHeight * healthPct
                         local barPos      = Vector2.new(boxPos.X - 5, boxPos.Y + (boxHeight - barHeight))
+
                         if ESPConfig.Outline then
                             objs.HealthBarOutline.Size     = Vector2.new(3, boxHeight + 2)
                             objs.HealthBarOutline.Position = Vector2.new(boxPos.X - 6, boxPos.Y - 1)
@@ -1987,9 +2057,17 @@ RunService.RenderStepped:Connect(function()
                         else
                             objs.HealthBarOutline.Visible = false
                         end
+
+                        -- ★ Apply custom colors
+                        if ESPConfig.HealthBarUseGradient then
+                            objs.HealthBar.Color = ESPConfig.HealthBarLowColor:Lerp(
+                                ESPConfig.HealthBarHighColor, healthPct)
+                        else
+                            objs.HealthBar.Color = ESPConfig.HealthBarHighColor
+                        end
+
                         objs.HealthBar.Size     = Vector2.new(1, barHeight)
                         objs.HealthBar.Position = barPos
-                        objs.HealthBar.Color    = Color3.fromRGB(255,0,0):Lerp(Color3.fromRGB(0,255,0), healthPct)
                         objs.HealthBar.Visible  = true
                     else
                         objs.HealthBarOutline.Visible = false
@@ -2289,7 +2367,7 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- =========================================================
--- ★ UNITY: NO SMOKE / NO FLASH HOOKS
+-- UNITY: NO SMOKE / NO FLASH
 -- =========================================================
 task.spawn(function()
     if typeof(hookfunction) ~= "function" then return end
@@ -2320,7 +2398,7 @@ task.spawn(function()
 end)
 
 -- =========================================================
--- ★ UNITY: ARM MATERIAL + NO GLOVE
+-- UNITY: ARM MATERIAL + NO GLOVE
 -- =========================================================
 local lastArmUpdate = 0
 local ARM_UPDATE_RATE = 0.1
@@ -2361,7 +2439,6 @@ RunService.Heartbeat:Connect(function()
             return
         end
 
-        -- NO GLOVE
         for _, part in ipairs(vm:GetDescendants()) do
             if part:IsA("BasePart") and isGlovePart(part) then
                 if UnityConfig.NoGlove then
@@ -2371,7 +2448,6 @@ RunService.Heartbeat:Connect(function()
             end
         end
 
-        -- ARM MATERIAL
         if not UnityConfig.ArmMaterialEnabled then
             for _, h in pairs(activeArmHighlights) do
                 if h and h.Parent then h:Destroy() end
@@ -2628,9 +2704,6 @@ local function buildHit(origin, part)
     }
 end
 
--- =========================================================
--- ★ HIT NOTIFY
--- =========================================================
 local hitWatchActive = {}
 
 local function getTargetName(char)
@@ -2678,7 +2751,7 @@ local function notifyHit(targetPart)
 end
 
 -- =========================================================
--- ★ AUTO PRIORITY ON DAMAGE TAKEN
+-- AUTO PRIORITY ON DAMAGE TAKEN
 -- =========================================================
 local lastLocalHealthValue = nil
 
@@ -2750,7 +2823,7 @@ end
 LocalPlayer.CharacterAdded:Connect(setupLocalDamageListener)
 
 -- =========================================================
--- REMOTE HOOK — RAGEBOT ห้ามพลาด + IGNORE INVINCIBLE
+-- REMOTE HOOK — RAGEBOT + IGNORE INVINCIBLE
 -- =========================================================
 local ok, Remotes = pcall(require, ReplicatedStorage:WaitForChild("Database", 5):WaitForChild("Security", 5):WaitForChild("Remotes", 5))
 local shootRemote = ok and Remotes and Remotes.Inventory and Remotes.Inventory.ShootWeapon
@@ -2897,9 +2970,7 @@ MovementBox:AddToggle("bhop_enabled", {
     Default = false,
     Callback = function(v)
         BhopConfig.Enabled = v
-        if not v then
-            _bhop_stop()
-        end
+        if not v then _bhop_stop() end
     end
 })
 MovementBox:AddLabel("hold space")
@@ -2957,8 +3028,11 @@ RageCheckBox:AddToggle("rage_autopriority", {
     Callback = function(v) RagebotConfig.AutoPriorityOnDamage = v end,
 })
 
+-- ★ Priority List — Fixed
+local PRIORITY_AUTO = "[ AUTO ]"
+
 local function refreshPriorityList()
-    local names = {"[ AUTO ]"}
+    local names = { PRIORITY_AUTO }
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer then table.insert(names, p.Name) end
     end
@@ -2968,20 +3042,45 @@ end
 RageCheckBox:AddDropdown("rage_priority", {
     Text = "Priority Target Player",
     Values = refreshPriorityList(),
-    Default = "AUTO",
+    Default = PRIORITY_AUTO,
     Searchable = true,
     Callback = function(v)
-        RagebotConfig.PriorityName = (v == "[ AUTO ]") and nil or v
+        RagebotConfig.PriorityName = (v == PRIORITY_AUTO) and nil or v
     end,
 })
+
+local function doRefreshPriorityDropdown()
+    local dropdown = Options.rage_priority
+    if not dropdown then return end
+    local newList = refreshPriorityList()
+    pcall(function()
+        dropdown:Refresh(newList, true)
+    end)
+end
+
 RageCheckBox:AddButton({
     Text = "Refresh Priority List",
     Func = function()
-        if Options.rage_priority and Options.rage_priority.Refresh then
-            pcall(function() Options.rage_priority:Refresh(refreshPriorityList(), true) end)
-        end
+        doRefreshPriorityDropdown()
+        Library:Notify("Priority list refreshed", 2)
     end,
 })
+
+-- ★ Auto-refresh on player join/leave
+Players.PlayerAdded:Connect(function()
+    task.wait(0.5)
+    doRefreshPriorityDropdown()
+end)
+Players.PlayerRemoving:Connect(function(p)
+    if RagebotConfig.PriorityName and p.Name == RagebotConfig.PriorityName then
+        RagebotConfig.PriorityName = nil
+        pcall(function()
+            if Options.rage_priority then Options.rage_priority:SetValue(PRIORITY_AUTO) end
+        end)
+    end
+    task.wait(0.5)
+    doRefreshPriorityDropdown()
+end)
 
 -- =========================================================
 -- TAB: HIT EFFECT
@@ -3110,6 +3209,24 @@ ESPColorBox:AddLabel("Outline Color"):AddColorPicker("esp_outline_color", { Defa
     end
 end })
 
+-- ★ NEW: Health Bar Colors
+ESPColorBox:AddDivider()
+ESPColorBox:AddToggle("esp_hb_gradient", {
+    Text = "Health Bar Gradient (Low→High)",
+    Default = ESPConfig.HealthBarUseGradient,
+    Callback = function(v) ESPConfig.HealthBarUseGradient = v end,
+})
+ESPColorBox:AddLabel("Health Bar Low Color"):AddColorPicker("esp_hb_low_color", {
+    Default = ESPConfig.HealthBarLowColor,
+    Title = "Health Bar Low Color",
+    Callback = function(v) ESPConfig.HealthBarLowColor = v end,
+})
+ESPColorBox:AddLabel("Health Bar High Color"):AddColorPicker("esp_hb_high_color", {
+    Default = ESPConfig.HealthBarHighColor,
+    Title = "Health Bar High Color",
+    Callback = function(v) ESPConfig.HealthBarHighColor = v end,
+})
+
 local ChamsBox = Tabs.ESP:AddRightGroupbox("Player Chams", "ghost")
 ChamsBox:AddToggle("chams_enabled",   { Text = "Enable Chams", Default = Chams.Enabled, Callback = function(v) Chams.Enabled = v end })
 ChamsBox:AddToggle("chams_teamcheck", { Text = "Team Check",   Default = Chams.TeamCheck, Callback = function(v) Chams.TeamCheck = v end })
@@ -3190,7 +3307,14 @@ AmbientBox:AddSlider("world_fog_start", { Text = "Fog Start", Default = WorldCon
 AmbientBox:AddSlider("world_fog_end",   { Text = "Fog End",   Default = WorldConfig.FogEnd,   Min = 100, Max = 5000, Rounding = 0, Suffix = " studs", Callback = function(v) WorldConfig.FogEnd = v end })
 
 local AtmoBox = Tabs.World:AddRightGroupbox("Atmosphere", "cloud")
-AtmoBox:AddToggle("atmo_enabled", { Text = "Enable Atmosphere", Default = WorldConfig.AtmosphereEnabled, Callback = function(v) WorldConfig.AtmosphereEnabled = v; updateAtmosphere() end })
+AtmoBox:AddToggle("atmo_enabled", {
+    Text = "Enable Atmosphere",
+    Default = WorldConfig.AtmosphereEnabled,
+    Callback = function(v)
+        WorldConfig.AtmosphereEnabled = v
+        updateAtmosphere()
+    end
+})
 AtmoBox:AddSlider("atmo_density", { Text = "Density", Default = WorldConfig.AtmosphereDensity, Min = 0, Max = 1, Rounding = 3, Callback = function(v) WorldConfig.AtmosphereDensity = v; updateAtmosphere() end })
 AtmoBox:AddSlider("atmo_offset",  { Text = "Offset",  Default = WorldConfig.AtmosphereOffset,    Min = -1, Max = 1, Rounding = 3, Callback = function(v) WorldConfig.AtmosphereOffset = v; updateAtmosphere() end })
 AtmoBox:AddSlider("atmo_glare",   { Text = "Glare",   Default = WorldConfig.AtmosphereGlare,    Min = 0, Max = 5, Rounding = 2, Callback = function(v) WorldConfig.AtmosphereGlare = v; updateAtmosphere() end })
@@ -3276,7 +3400,7 @@ UnityArmBox:AddToggle("unity_noglove", {
 })
 
 -- =========================================================
--- ★ TAB: SKIN CHANGES
+-- TAB: SKIN CHANGES
 -- =========================================================
 local function loadSkinChanges()
     if not SkinConfig.Enabled then
@@ -3321,9 +3445,7 @@ SkinMainBox:AddDivider()
 
 SkinMainBox:AddButton({
     Text = "🎨 Load Skin Changes",
-    Func = function()
-        loadSkinChanges()
-    end,
+    Func = function() loadSkinChanges() end,
 })
 
 SkinMainBox:AddButton({
@@ -3358,10 +3480,9 @@ SkinInfoBox:AddInput("skin_url_input", {
     Default = SkinConfig.URL,
     Text = "Script URL",
     Placeholder = "https://...",
-    Callback = function(v)
-        SkinConfig.URL = v
-    end,
+    Callback = function(v) SkinConfig.URL = v end,
 })
+SkinInfoBox:AddLabel("don't delete url")
 
 -- =========================================================
 -- TAB: SETTINGS
@@ -3406,20 +3527,11 @@ createWeather(WorldConfig.WeatherType)
 
 applyThirdPerson(ThirdPersonConfig.Enabled)
 
-Players.PlayerRemoving:Connect(function(p)
-    if RagebotConfig.PriorityName and p.Name == RagebotConfig.PriorityName then
-        RagebotConfig.PriorityName = nil
-        pcall(function()
-            if Options.rage_priority then Options.rage_priority:SetValue("[ AUTO ]") end
-        end)
-    end
-end)
-
--- ★ Auto-load Skin Changes ถ้าเปิดไว้
+-- Auto-load Skin Changes
 task.delay(2, function()
     if SkinConfig.AutoLoad then
         loadSkinChanges()
     end
 end)
 
-Library:Notify("Neverlose v1.8.0 — Skin Changes Tab Added 🎨", 5)
+Library:Notify("Neverlose v1.8.1 — Health Bar Color + Atmosphere & Priority Fixes ✅", 5)
