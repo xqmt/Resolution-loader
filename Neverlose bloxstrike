@@ -1,6 +1,6 @@
 -- =========================================================
 -- Neverlose x BloxStrike (Obsidian UI Version)
--- v1.8.1 — Fixed Ragebot Aim + Health Bar Color + Atmosphere + Priority Refresh
+-- v1.8.0 — Memesense Ragebot + Hit Notify + Auto Priority + No Miss + Ignore Invincible + Unity Tab + Skin Changes
 -- =========================================================
 
 local Players          = game:GetService("Players")
@@ -33,7 +33,7 @@ Library.NotifySide                = "Right"
 
 local Window = Library:CreateWindow({
     Title           = '<font color="#ffffff"><b>Nebula</b></font><font color="#ff0000"><b>.hit</b></font>',
-    Footer          = "BloxStrike | v1.8.1",
+    Footer          = "BloxStrike | v1.8.0",
     Center          = true,
     AutoShow        = true,
     Resizable       = true,
@@ -52,8 +52,6 @@ local SoundIDs = {
     ["Neverlose"]        = "rbxassetid://18391691942",
     ["Rust"]             = "rbxassetid://138750331387064",
     ["Break"]            = "rbxassetid://103059835203534",
-    ["impact"]           = "rbxassetid://128314503038887",
-    ["coin"]             = "rbxassetid://127645268874265",
     ["Fatality"]         = "rbxassetid://17802817724",
     ["Primordial"]       = "rbxassetid://97511223764004",
     ["Minecraft xp"]     = "rbxassetid://17148249625",
@@ -69,17 +67,18 @@ local ShootSoundIDs = { ["SGG 08"] = "rbxassetid://110661851940409" }
 -- =========================================================
 -- CONFIGS
 -- =========================================================
-local ShootSoundConfig = { Enabled = false, Mode = "SGG 08", Volume = 2 }
-local HitSoundConfig   = { Enabled = false, Mode = "Skeet",  Volume = 2 }
-local HitOverlayConfig = { Enabled = false, Color = Color3.fromRGB(255, 0, 50), Duration = 0.25, MaxTransparency = 0.6 }
-local HitEffectConfig  = { Enabled = false, Style = "Sparks", Color = Color3.fromRGB(0, 255, 128) }
-local HitChamsConfig   = { Enabled = false, Color = Color3.fromRGB(0, 255, 255), Duration = 1.0, Material = Enum.Material.Neon }
+local ShootSoundConfig = { Enabled = true, Mode = "SGG 08", Volume = 2 }
+local HitSoundConfig   = { Enabled = true, Mode = "Skeet",  Volume = 2 }
+local HitOverlayConfig = { Enabled = true, Color = Color3.fromRGB(255, 0, 50), Duration = 0.25, MaxTransparency = 0.6 }
+local HitEffectConfig  = { Enabled = true, Style = "Sparks", Color = Color3.fromRGB(0, 255, 128) }
+local HitChamsConfig   = { Enabled = true, Color = Color3.fromRGB(0, 255, 255), Duration = 1.0, Material = Enum.Material.Neon }
 
+-- ★ Hit Notify
 local HitNotifyConfig = {
-    Enabled      = false,
+    Enabled      = true,
     Duration     = 3,
-    ShowPartName = false,
-    ShowDamage   = false,
+    ShowPartName = true,
+    ShowDamage   = true,
 }
 
 local GunModsConfig = {
@@ -98,6 +97,7 @@ local WeaponMaterialConfig = {
     MetalReflectance  = 1.0
 }
 
+-- ★ Unity Tab Config
 local UnityConfig = {
     NoSmoke = false,
     NoFlash = false,
@@ -109,46 +109,43 @@ local UnityConfig = {
     NoGlove = false,
 }
 
+-- ★ Skin Changes Config
 local SkinConfig = {
-    Enabled  = false,
+    Enabled  = true,
     Loaded   = false,
     AutoLoad = false,
     URL      = "https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/skin-change.txt",
 }
 
+-- ★ RagebotConfig
 local RagebotConfig = {
     Enabled         = false,
     Delay           = 0.01,
     HitPart         = "Head",
-    VisibleCheck    = false,
-    TeamCheck       = false,
+    VisibleCheck    = true,
+    TeamCheck       = true,
     WallCheck       = false,
     AutoWall        = false,
     MaxPen          = 7,
     PriorityEnabled = false,
     PriorityName    = nil,
     FOV             = 180,
-    ShowFOV         = false,
+    ShowFOV         = true,
     TargetRefresh   = 0.05,
-    AutoReload      = false,
+    AutoReload      = true,
     ReloadDelay     = 0.15,
-    FastMode        = false,
+    FastMode        = true,
     MaxShotsPerFrame= 4,
     MaxShotsPerSec  = 100,
     HitChance       = 100,
-    AutoPriorityOnDamage = false,
-    IgnoreInvincible = false,
+    AutoPriorityOnDamage = true,
+    IgnoreInvincible = true,
 }
 
 local rageCache = { part = nil, player = nil, time = 0 }
 
--- ★ FIX: Target snapshot for synchronized shooting
-local rageTargetForShot = nil
-local rageTargetForShotTime = 0
-local RAGE_SHOT_SNAPSHOT_TTL = 0.35
-
 -- =========================================================
--- RAGEBOT: HELPER
+-- ★ RAGEBOT: HELPER
 -- =========================================================
 local function isRageTargetValid(char)
     if not char or not char.Parent then return false end
@@ -168,9 +165,11 @@ local ThirdPersonConfig = {
 }
 
 -- =========================================================
--- BHOP CONFIG
+-- ⭐ BHOP CONFIG
 -- =========================================================
-local BhopConfig = { Enabled = false }
+local BhopConfig = {
+    Enabled = false,
+}
 
 local _bhop = {
     Running    = false,
@@ -743,11 +742,11 @@ LocalPlayer.CharacterAdded:Connect(setupSoundMuter)
 -- =========================================================
 local HitboxConfig = {
     Enabled = false, Size = 1, Transparency = 0.7,
-    Color = Color3.fromRGB(255, 0, 0), TeamCheck = false
+    Color = Color3.fromRGB(255, 0, 0), TeamCheck = true
 }
 
 local BulletTracer = {
-    Enabled = false, Type = "Corner", FadeMode = "Smooth",
+    Enabled = true, Type = "Corner", FadeMode = "Smooth",
     AnimEasing = "Sine", ColorMode = "Gradient 2 Colors",
     GradientColor1 = Color3.fromRGB(0, 255, 255),
     GradientColor2 = Color3.fromRGB(255, 0, 150),
@@ -755,46 +754,43 @@ local BulletTracer = {
     Color = Color3.fromRGB(0, 170, 255), Transparency = 0,
     Material = "Neon", Thickness = 0.12, LifeTime = 0.5,
     FadeTime = 0.3, TravelTime = 0.08,
-    BloomEffect = false, GlowLight = false, GlowBrightness = 2
+    BloomEffect = true, GlowLight = true, GlowBrightness = 2
 }
 
 local SilentAim = {
-    Enabled = false, TeamCheck = false, WallCheck = false,
-    FOV = 35, AimPart = "Head", ShowFOV = false, ShowOutline = false
+    Enabled = true, TeamCheck = true, WallCheck = true,
+    FOV = 35, AimPart = "Head", ShowFOV = true, ShowOutline = true
 }
 
 local TargetVisuals = {
-    SnapLine = false, SnapLineColor = Color3.fromRGB(255, 0, 0), SnapLineThickness = 1.5,
-    HeadDot = false, HeadDotColor = Color3.fromRGB(255, 0, 0), HeadDotRadius = 4,
-    Highlight = false, HighlightColor = Color3.fromRGB(0, 255, 0)
+    SnapLine = true, SnapLineColor = Color3.fromRGB(255, 0, 0), SnapLineThickness = 1.5,
+    HeadDot = true, HeadDotColor = Color3.fromRGB(255, 0, 0), HeadDotRadius = 4,
+    Highlight = true, HighlightColor = Color3.fromRGB(0, 255, 0)
 }
 
 local Chams = {
-    Enabled = false, TeamCheck = false,
+    Enabled = true, TeamCheck = true,
     FillColor = Color3.fromRGB(255, 0, 0),
     OutlineColor = Color3.fromRGB(255, 100, 100),
     FillTransparency = 0.5, OutlineTransparency = 0
 }
 
 local ESPConfig = {
-    Enabled = false, TeamCheck = false, Boxes = false,
+    Enabled = true, TeamCheck = true, Boxes = true,
     BoxColor = Color3.fromRGB(255, 255, 255),
-    HealthBar = false,
-    HealthBarColor = Color3.fromRGB(0, 255, 100),
-    HealthBarUseGradient = false,
-    Skeletons = false,
+    HealthBar = true, Skeletons = true,
     SkeletonColor = Color3.fromRGB(255, 255, 255),
-    Outline = false, OutlineColor = Color3.fromRGB(0, 0, 0)
+    Outline = true, OutlineColor = Color3.fromRGB(0, 0, 0)
 }
 
 local WorldConfig = {
     CameraFOV = 70, WorldBlur = false, BlurSize = 10,
-    NightMode = false, ClockTime = 0, Brightness = 1.2,
+    NightMode = true, ClockTime = 0, Brightness = 1.2,
     OutdoorAmbient = Color3.fromRGB(10, 20, 35),
     Ambient = Color3.fromRGB(15, 25, 40),
     GlobalShadows = true, ExposureCompensation = -0.2,
-    FogEnabled = false, FogColor = Color3.fromRGB(5, 18, 32),
-    FogStart = 10, FogEnd = 1200, SelectedSky = "Default",
+    FogEnabled = true, FogColor = Color3.fromRGB(5, 18, 32),
+    FogStart = 10, FogEnd = 1200, SelectedSky = "Night",
 
     AtmosphereEnabled = false,
     AtmosphereDensity = 0.35,
@@ -829,7 +825,6 @@ if not BlurObj then
     BlurObj.Name = "WorldBlurEffect"
     BlurObj.Parent = Lighting
 end
-BlurObj.Enabled = false
 
 local SkyPresets = {
     ["Default"] = nil,
@@ -886,24 +881,6 @@ if not AtmosphereObj then
     AtmosphereObj.Name = "NL_Atmosphere"
     AtmosphereObj.Parent = Lighting
 end
-AtmosphereObj.Density = 0
-AtmosphereObj.Haze    = 0
-AtmosphereObj.Glare   = 0
-AtmosphereObj.Offset  = 0
-
-local function ensureAtmosphereObj()
-    if not AtmosphereObj or not AtmosphereObj.Parent then
-        local existing = Lighting:FindFirstChild("NL_Atmosphere")
-        if existing then
-            AtmosphereObj = existing
-        else
-            AtmosphereObj = Instance.new("Atmosphere")
-            AtmosphereObj.Name = "NL_Atmosphere"
-            AtmosphereObj.Parent = Lighting
-        end
-    end
-    return AtmosphereObj
-end
 
 local function suppressOneAtmosphere(obj)
     if not obj or obj == AtmosphereObj then return end
@@ -917,7 +894,7 @@ local function suppressOneAtmosphere(obj)
 end
 
 local function suppressAllOtherAtmospheres()
-    for _, obj in ipairs(Lighting:GetDescendants()) do
+    for _, obj in ipairs(Lighting:GetChildren()) do
         if obj:IsA("Atmosphere") and obj ~= AtmosphereObj then
             suppressOneAtmosphere(obj)
         end
@@ -953,29 +930,26 @@ end)
 task.spawn(function()
     while task.wait(0.05) do
         if WorldConfig.AtmosphereEnabled then
-            ensureAtmosphereObj()
             suppressAllOtherAtmospheres()
         end
     end
 end)
 
 local function updateAtmosphere()
-    local obj = ensureAtmosphereObj()
-    if not obj then return end
+    if not AtmosphereObj then return end
     if WorldConfig.AtmosphereEnabled then
         suppressAllOtherAtmospheres()
-        obj.Density = WorldConfig.AtmosphereDensity
-        obj.Offset  = WorldConfig.AtmosphereOffset
-        obj.Color   = WorldConfig.AtmosphereColor
-        obj.Decay   = WorldConfig.AtmosphereDecay
-        obj.Glare   = WorldConfig.AtmosphereGlare
-        obj.Haze    = WorldConfig.AtmosphereHaze
-        obj.Parent  = Lighting
+        AtmosphereObj.Density = WorldConfig.AtmosphereDensity
+        AtmosphereObj.Offset  = WorldConfig.AtmosphereOffset
+        AtmosphereObj.Color   = WorldConfig.AtmosphereColor
+        AtmosphereObj.Decay   = WorldConfig.AtmosphereDecay
+        AtmosphereObj.Glare   = WorldConfig.AtmosphereGlare
+        AtmosphereObj.Haze    = WorldConfig.AtmosphereHaze
     else
-        obj.Density = 0
-        obj.Offset  = 0
-        obj.Haze    = 0
-        obj.Glare   = 0
+        AtmosphereObj.Density = 0
+        AtmosphereObj.Offset  = 0
+        AtmosphereObj.Haze    = 0
+        AtmosphereObj.Glare   = 0
     end
 end
 
@@ -985,12 +959,11 @@ if not CCObj then
     CCObj.Name = "NL_CC"
     CCObj.Parent = Lighting
 end
-CCObj.Enabled = false
 
 local otherCCs = {}
 local function scanOtherCCs()
     otherCCs = {}
-    for _, obj in ipairs(Lighting:GetDescendants()) do
+    for _, obj in ipairs(Lighting:GetChildren()) do
         if obj:IsA("ColorCorrectionEffect") and obj ~= CCObj then
             table.insert(otherCCs, obj)
         end
@@ -999,16 +972,6 @@ end
 scanOtherCCs()
 
 local function updateCC()
-    if not CCObj or not CCObj.Parent then
-        local existing = Lighting:FindFirstChild("NL_CC")
-        if existing then
-            CCObj = existing
-        else
-            CCObj = Instance.new("ColorCorrectionEffect")
-            CCObj.Name = "NL_CC"
-            CCObj.Parent = Lighting
-        end
-    end
     if not CCObj then return end
     if WorldConfig.ColorCorrectionEnabled then
         scanOtherCCs()
@@ -1382,7 +1345,7 @@ local function createPlayerESP(player)
         BoxOutline      = createDrawing("Square", {Thickness=3.5, Color=ESPConfig.OutlineColor, Filled=false, Visible=false}),
         Box             = createDrawing("Square", {Thickness=1.5, Color=ESPConfig.BoxColor, Filled=false, Visible=false}),
         HealthBarOutline= createDrawing("Square", {Thickness=1, Color=ESPConfig.OutlineColor, Filled=true, Visible=false}),
-        HealthBar       = createDrawing("Square", {Thickness=1, Color=ESPConfig.HealthBarColor, Filled=true, Visible=false}),
+        HealthBar       = createDrawing("Square", {Thickness=1, Color=Color3.fromRGB(0,255,100), Filled=true, Visible=false}),
         Skeletons       = {},
         SkeletonOutlines= {}
     }
@@ -1748,7 +1711,7 @@ local function canWallbangRage(targetPart)
 end
 
 -- =========================================================
--- MEMESENSE: hasVestDetails / isEnemyByVest
+-- ★ MEMESENSE: hasVestDetails / isEnemyByVest
 -- =========================================================
 local function hasVestDetails(character)
     if not character then return false end
@@ -1772,32 +1735,17 @@ local function isEnemyByVest(targetChar)
     end
 end
 
--- ★ FIX: Combine folder + Players service to always find characters
-local function collectAllCharacters()
+local function collectCharactersFromFolder()
     local list = {}
-    local seen = {}
-    local localChar = LocalPlayer.Character
-
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            local char = plr.Character
-            if char and not seen[char] then
-                seen[char] = true
-                table.insert(list, char)
-            end
-        end
-    end
-
     local folder = Workspace:FindFirstChild("Characters")
-    if folder then
-        for _, obj in ipairs(folder:GetDescendants()) do
-            if obj:IsA("Model") and not seen[obj] and obj ~= localChar then
-                local hasHead = obj:FindFirstChild("Head")
-                local hasRoot = obj:FindFirstChild("HumanoidRootPart")
-                if hasHead or hasRoot then
-                    seen[obj] = true
-                    table.insert(list, obj)
-                end
+    if not folder then return list end
+    local localChar = LocalPlayer.Character
+    for _, obj in ipairs(folder:GetDescendants()) do
+        if obj:IsA("Model") then
+            local hasHead = obj:FindFirstChild("Head")
+            local hasRoot = obj:FindFirstChild("HumanoidRootPart")
+            if (hasHead or hasRoot) and obj ~= localChar then
+                table.insert(list, obj)
             end
         end
     end
@@ -1805,7 +1753,7 @@ local function collectAllCharacters()
 end
 
 -- =========================================================
--- RAGEBOT TARGET SELECTION — MEMESENSE STYLE
+-- ★ RAGEBOT TARGET SELECTION — MEMESENSE STYLE
 -- =========================================================
 local function findRageTarget()
     local camPos      = Camera.CFrame.Position
@@ -1819,10 +1767,13 @@ local function findRageTarget()
     local best, bestPlr, bestDist = nil, nil, math.huge
     local priorityPart, priorityPlr = nil, nil
 
-    local allChars = collectAllCharacters()
+    local allChars = collectCharactersFromFolder()
 
     for _, char in ipairs(allChars) do
-        if not isRageTargetValid(char) then continue end
+        if char:GetAttribute("Dead") == true then continue end
+        if RagebotConfig.IgnoreInvincible and char:GetAttribute("Invincible") == true then continue end
+        local hp = char:GetAttribute("Health")
+        if hp ~= nil and hp <= 0 then continue end
 
         local plr = Players:GetPlayerFromCharacter(char)
 
@@ -2038,11 +1989,7 @@ RunService.RenderStepped:Connect(function()
                         end
                         objs.HealthBar.Size     = Vector2.new(1, barHeight)
                         objs.HealthBar.Position = barPos
-                        if ESPConfig.HealthBarUseGradient then
-                            objs.HealthBar.Color = Color3.fromRGB(255,0,0):Lerp(ESPConfig.HealthBarColor, healthPct)
-                        else
-                            objs.HealthBar.Color = ESPConfig.HealthBarColor
-                        end
+                        objs.HealthBar.Color    = Color3.fromRGB(255,0,0):Lerp(Color3.fromRGB(0,255,0), healthPct)
                         objs.HealthBar.Visible  = true
                     else
                         objs.HealthBarOutline.Visible = false
@@ -2342,7 +2289,7 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- =========================================================
--- UNITY: NO SMOKE / NO FLASH HOOKS
+-- ★ UNITY: NO SMOKE / NO FLASH HOOKS
 -- =========================================================
 task.spawn(function()
     if typeof(hookfunction) ~= "function" then return end
@@ -2373,7 +2320,7 @@ task.spawn(function()
 end)
 
 -- =========================================================
--- UNITY: ARM MATERIAL + NO GLOVE
+-- ★ UNITY: ARM MATERIAL + NO GLOVE
 -- =========================================================
 local lastArmUpdate = 0
 local ARM_UPDATE_RATE = 0.1
@@ -2414,6 +2361,7 @@ RunService.Heartbeat:Connect(function()
             return
         end
 
+        -- NO GLOVE
         for _, part in ipairs(vm:GetDescendants()) do
             if part:IsA("BasePart") and isGlovePart(part) then
                 if UnityConfig.NoGlove then
@@ -2423,6 +2371,7 @@ RunService.Heartbeat:Connect(function()
             end
         end
 
+        -- ARM MATERIAL
         if not UnityConfig.ArmMaterialEnabled then
             for _, h in pairs(activeArmHighlights) do
                 if h and h.Parent then h:Destroy() end
@@ -2571,7 +2520,6 @@ local function getCachedShootWeapon()
     return nil
 end
 
--- ★ FIXED SHOOTING LOOP
 task.spawn(function()
     local nextShotTime = 0
     local lastWallVisible = false
@@ -2582,7 +2530,6 @@ task.spawn(function()
         if not RagebotConfig.Enabled then
             nextShotTime = 0
             lastWallVisible = false
-            rageTargetForShot = nil
             continue
         end
 
@@ -2594,28 +2541,14 @@ task.spawn(function()
         end
 
         local targetChar = target.Parent
-        if not isRageTargetValid(targetChar) then
+        if targetChar:GetAttribute("Dead") == true
+            or (RagebotConfig.IgnoreInvincible and targetChar:GetAttribute("Invincible") == true)
+            or (targetChar:GetAttribute("Health") or 100) <= 0 then
             currentRageTargetPart = nil
             rageCache.part, rageCache.player = nil, nil
             lastTargetPart = nil
-            rageTargetForShot = nil
             nextShotTime = 0
             lastWallVisible = false
-            continue
-        end
-
-        local newTarget, newPlr = findRageTarget()
-        if newTarget and newTarget ~= target then
-            currentRageTargetPart = newTarget
-            rageCache.part, rageCache.player = newTarget, newPlr
-            rageCache.time = os.clock()
-            lastTargetPart = newTarget
-            target = newTarget
-            nextShotTime = 0
-        end
-
-        if not target then
-            nextShotTime = 0
             continue
         end
 
@@ -2632,13 +2565,14 @@ task.spawn(function()
         if RagebotConfig.WallCheck then
             local visibleNow = isVisibleRage(target)
             if not visibleNow then
-                local newP, newPl = findRageTarget()
-                if newP and newP ~= target then
-                    currentRageTargetPart = newP
-                    rageCache.part, rageCache.player = newP, newPl
+                local newPart, newPlr = findRageTarget()
+                if newPart then
+                    currentRageTargetPart = newPart
+                    rageCache.part, rageCache.player = newPart, newPlr
                     rageCache.time = os.clock()
-                    lastTargetPart = newP
-                    target = newP
+                    lastTargetPart = newPart
+                    target = newPart
+                    visibleNow = true
                     nextShotTime = 0
                 else
                     nextShotTime = 0
@@ -2646,19 +2580,16 @@ task.spawn(function()
                     continue
                 end
             end
-            if not lastWallVisible then
+            if visibleNow and not lastWallVisible then
                 nextShotTime = 0
             end
-            lastWallVisible = true
+            lastWallVisible = visibleNow
         else
             lastWallVisible = false
         end
 
         local now = os.clock()
         if now < nextShotTime then continue end
-
-        rageTargetForShot = target
-        rageTargetForShotTime = now
 
         local minInterval = math.max(RagebotConfig.Delay or 0.01, 0.0001)
         local minAllowed  = 1 / (RagebotConfig.MaxShotsPerSec or 100)
@@ -2672,14 +2603,10 @@ task.spawn(function()
 
             for _ = 1, canShoot do
                 pcall(weapon.shoot, weapon)
-                rageTargetForShot = target
-                rageTargetForShotTime = os.clock()
             end
             nextShotTime = now + (canShoot * minInterval)
         else
             pcall(weapon.shoot, weapon)
-            rageTargetForShot = target
-            rageTargetForShotTime = os.clock()
             nextShotTime = now + minInterval
         end
     end
@@ -2702,7 +2629,7 @@ local function buildHit(origin, part)
 end
 
 -- =========================================================
--- HIT NOTIFY
+-- ★ HIT NOTIFY
 -- =========================================================
 local hitWatchActive = {}
 
@@ -2751,7 +2678,7 @@ local function notifyHit(targetPart)
 end
 
 -- =========================================================
--- AUTO PRIORITY ON DAMAGE TAKEN
+-- ★ AUTO PRIORITY ON DAMAGE TAKEN
 -- =========================================================
 local lastLocalHealthValue = nil
 
@@ -2823,7 +2750,7 @@ end
 LocalPlayer.CharacterAdded:Connect(setupLocalDamageListener)
 
 -- =========================================================
--- REMOTE HOOK — RAGEBOT + IGNORE INVINCIBLE
+-- REMOTE HOOK — RAGEBOT ห้ามพลาด + IGNORE INVINCIBLE
 -- =========================================================
 local ok, Remotes = pcall(require, ReplicatedStorage:WaitForChild("Database", 5):WaitForChild("Security", 5):WaitForChild("Remotes", 5))
 local shootRemote = ok and Remotes and Remotes.Inventory and Remotes.Inventory.ShootWeapon
@@ -2834,30 +2761,6 @@ local function rollHitChance()
     if chance >= 100 then return true end
     if chance <= 0 then return false end
     return math.random() * 100 <= chance
-end
-
-local function resolveRageTarget()
-    local snap = rageTargetForShot
-    if snap and snap.Parent and (os.clock() - rageTargetForShotTime) <= RAGE_SHOT_SNAPSHOT_TTL then
-        if isRageTargetValid(snap.Parent) then
-            return snap
-        end
-    end
-    local cur = currentRageTargetPart
-    if cur and cur.Parent and isRageTargetValid(cur.Parent) then
-        return cur
-    end
-    if RagebotConfig.Enabled then
-        local p = findRageTarget()
-        if p then
-            currentRageTargetPart = p
-            rageCache.part, rageCache.time = p, os.clock()
-            rageTargetForShot = p
-            rageTargetForShotTime = os.clock()
-            return p
-        end
-    end
-    return nil
 end
 
 if shootRemote and shootRemote.Send then
@@ -2876,37 +2779,40 @@ if shootRemote and shootRemote.Send then
             for _, bullet in ipairs(packet.Bullets) do
                 local origin = bullet.Origin
                 if origin then
-                    local targetToHit = nil
-                    if RagebotConfig.Enabled then
-                        targetToHit = resolveRageTarget()
+                    local targetToHit = currentRageTargetPart
+                    if targetToHit and targetToHit.Parent then
+                        local tChar = targetToHit.Parent
+                        if tChar:GetAttribute("Dead") == true
+                            or (RagebotConfig.IgnoreInvincible and tChar:GetAttribute("Invincible") == true)
+                            or (tChar:GetAttribute("Health") or 100) <= 0 then
+                            targetToHit = nil
+                            currentRageTargetPart = nil
+                            rageCache.part, rageCache.player = nil, nil
+                            lastTargetPart = nil
+                        end
+                    end
+
+                    if not targetToHit and RagebotConfig.Enabled then
+                        local p = findRageTarget()
+                        if p then
+                            targetToHit = p
+                            currentRageTargetPart = p
+                            rageCache.part, rageCache.time = p, os.clock()
+                        end
                     end
                     if not targetToHit and SilentAim.Enabled then
                         targetToHit = getTarget(origin)
                     end
 
-                    if targetToHit and targetToHit.Parent and rollHitChance() then
-                        if isRageTargetValid(targetToHit.Parent) then
-                            bullet.Direction = (targetToHit.Position - origin).Unit
-                            bullet.Hits      = { buildHit(origin, targetToHit) }
-                            playHitSound()
-                            triggerHitOverlay()
-                            triggerHitEffect(targetToHit.Position)
-                            triggerHitChams(targetToHit.Parent)
-                            if BulletTracer.Enabled then drawBulletTracer(origin, targetToHit.Position) end
-                            notifyHit(targetToHit)
-                        else
-                            local dir         = bullet.Direction or Camera.CFrame.LookVector
-                            local maxDistance = 1000
-                            local rayParams   = RaycastParams.new()
-                            rayParams.FilterType = Enum.RaycastFilterType.Exclude
-                            local ignoreList = {}
-                            if LocalPlayer.Character then table.insert(ignoreList, LocalPlayer.Character) end
-                            if Camera:FindFirstChildOfClass("Model") then table.insert(ignoreList, Camera:FindFirstChildOfClass("Model")) end
-                            rayParams.FilterDescendantsInstances = ignoreList
-                            local rayRes = Workspace:Raycast(origin, dir * maxDistance, rayParams)
-                            local endPos = rayRes and rayRes.Position or (origin + (dir * maxDistance))
-                            if BulletTracer.Enabled then drawBulletTracer(origin, endPos) end
-                        end
+                    if targetToHit and rollHitChance() then
+                        bullet.Direction = (targetToHit.Position - origin).Unit
+                        bullet.Hits      = { buildHit(origin, targetToHit) }
+                        playHitSound()
+                        triggerHitOverlay()
+                        triggerHitEffect(targetToHit.Position)
+                        triggerHitChams(targetToHit.Parent)
+                        if BulletTracer.Enabled then drawBulletTracer(origin, targetToHit.Position) end
+                        notifyHit(targetToHit)
                     else
                         local dir         = bullet.Direction or Camera.CFrame.LookVector
                         local maxDistance = 1000
@@ -3068,65 +2974,14 @@ RageCheckBox:AddDropdown("rage_priority", {
         RagebotConfig.PriorityName = (v == "[ AUTO ]") and nil or v
     end,
 })
-
-local function tryRefreshDropdown(dropdownOption, newValues)
-    if not dropdownOption then return false end
-    if type(dropdownOption.SetValues) == "function" then
-        local ok = pcall(function() dropdownOption:SetValues(newValues, true) end)
-        if ok then return true end
-    end
-    if type(dropdownOption.Refresh) == "function" then
-        local ok = pcall(function() dropdownOption:Refresh(newValues, true) end)
-        if ok then return true end
-    end
-    if type(dropdownOption.UpdateValues) == "function" then
-        local ok = pcall(function() dropdownOption:UpdateValues(newValues) end)
-        if ok then return true end
-    end
-    if type(dropdownOption) == "table" then
-        local ok = pcall(function()
-            if dropdownOption.Values then
-                table.clear(dropdownOption.Values)
-                for _, v in ipairs(newValues) do
-                    table.insert(dropdownOption.Values, v)
-                end
-            end
-        end)
-        if ok then return true end
-    end
-    return false
-end
-
 RageCheckBox:AddButton({
     Text = "Refresh Priority List",
     Func = function()
-        local newValues = refreshPriorityList()
-        local dd = Options.rage_priority
-        local ok = tryRefreshDropdown(dd, newValues)
-        if ok then
-            Library:Notify("Priority list refreshed (" .. (#newValues - 1) .. " players)", 2.5)
-        else
-            Library:Notify("⚠ Refresh failed — try reopening menu", 3)
+        if Options.rage_priority and Options.rage_priority.Refresh then
+            pcall(function() Options.rage_priority:Refresh(refreshPriorityList(), true) end)
         end
     end,
 })
-
-Players.PlayerAdded:Connect(function()
-    task.delay(0.5, function()
-        local dd = Options.rage_priority
-        if dd then
-            tryRefreshDropdown(dd, refreshPriorityList())
-        end
-    end)
-end)
-Players.PlayerRemoving:Connect(function()
-    task.delay(0.5, function()
-        local dd = Options.rage_priority
-        if dd then
-            tryRefreshDropdown(dd, refreshPriorityList())
-        end
-    end)
-end)
 
 -- =========================================================
 -- TAB: HIT EFFECT
@@ -3245,23 +3100,6 @@ ESPMainBox:AddToggle("esp_outline",    { Text = "Black Outline",  Default = ESPC
 
 local ESPColorBox = Tabs.ESP:AddLeftGroupbox("ESP Colors", "palette")
 ESPColorBox:AddLabel("Box Color"):AddColorPicker("esp_box_color", { Default = ESPConfig.BoxColor, Title = "Box Color", Callback = function(v) ESPConfig.BoxColor = v; for _, objs in pairs(espObjects) do objs.Box.Color = v end end })
-
-ESPColorBox:AddToggle("esp_healthbar_gradient", {
-    Text = "Health Bar Gradient (Red → Color)",
-    Default = ESPConfig.HealthBarUseGradient,
-    Callback = function(v) ESPConfig.HealthBarUseGradient = v end,
-})
-ESPColorBox:AddLabel("Health Bar Color"):AddColorPicker("esp_healthbar_color", {
-    Default = ESPConfig.HealthBarColor,
-    Title = "Health Bar Color",
-    Callback = function(v)
-        ESPConfig.HealthBarColor = v
-        for _, objs in pairs(espObjects) do
-            if objs.HealthBar then objs.HealthBar.Color = v end
-        end
-    end,
-})
-
 ESPColorBox:AddLabel("Skeleton Color"):AddColorPicker("esp_skel_color", { Default = ESPConfig.SkeletonColor, Title = "Skeleton Color", Callback = function(v) ESPConfig.SkeletonColor = v; for _, objs in pairs(espObjects) do for _, line in ipairs(objs.Skeletons) do line.Color = v end end end })
 ESPColorBox:AddLabel("Outline Color"):AddColorPicker("esp_outline_color", { Default = ESPConfig.OutlineColor, Title = "Outline Color", Callback = function(v)
     ESPConfig.OutlineColor = v
@@ -3328,7 +3166,7 @@ NightBox:AddSlider("world_clocktime", { Text = "Time of Day", Default = WorldCon
 NightBox:AddSlider("world_brightness", { Text = "Brightness", Default = WorldConfig.Brightness, Min = 0, Max = 10, Rounding = 1, Callback = function(v) WorldConfig.Brightness = v end })
 NightBox:AddSlider("world_exposure", { Text = "Exposure", Default = WorldConfig.ExposureCompensation, Min = -3, Max = 3, Rounding = 2, Callback = function(v) WorldConfig.ExposureCompensation = v end })
 NightBox:AddToggle("world_shadows", { Text = "Global Shadows", Default = WorldConfig.GlobalShadows, Callback = function(v) WorldConfig.GlobalShadows = v end })
-NightBox:AddDropdown("world_skybox", { Text = "Skybox Preset", Values = { 'Default', 'Night', 'Cyberpunk', 'Sunset', 'Purple Nebula', 'Clear Daylight', 'Red Moon' }, Default = "Default", Callback = function(v) WorldConfig.SelectedSky = v; applySky(v) end })
+NightBox:AddDropdown("world_skybox", { Text = "Skybox Preset", Values = { 'Default', 'Night', 'Cyberpunk', 'Sunset', 'Purple Nebula', 'Clear Daylight', 'Red Moon' }, Default = "Night", Callback = function(v) WorldConfig.SelectedSky = v; applySky(v) end })
 
 local AmbientBox = Tabs.World:AddLeftGroupbox("Custom Ambient", "sun")
 AmbientBox:AddLabel("Ambient Color"):AddColorPicker("world_ambient_color", {
@@ -3438,7 +3276,7 @@ UnityArmBox:AddToggle("unity_noglove", {
 })
 
 -- =========================================================
--- TAB: SKIN CHANGES
+-- ★ TAB: SKIN CHANGES
 -- =========================================================
 local function loadSkinChanges()
     if not SkinConfig.Enabled then
@@ -3483,7 +3321,9 @@ SkinMainBox:AddDivider()
 
 SkinMainBox:AddButton({
     Text = "🎨 Load Skin Changes",
-    Func = function() loadSkinChanges() end,
+    Func = function()
+        loadSkinChanges()
+    end,
 })
 
 SkinMainBox:AddButton({
@@ -3522,7 +3362,6 @@ SkinInfoBox:AddInput("skin_url_input", {
         SkinConfig.URL = v
     end,
 })
-SkinInfoBox:AddLabel("don't delete url")
 
 -- =========================================================
 -- TAB: SETTINGS
@@ -3576,10 +3415,11 @@ Players.PlayerRemoving:Connect(function(p)
     end
 end)
 
+-- ★ Auto-load Skin Changes ถ้าเปิดไว้
 task.delay(2, function()
     if SkinConfig.AutoLoad then
         loadSkinChanges()
     end
 end)
 
-Library:Notify("Neverlose v1.8.1 — All features improve", 5)
+Library:Notify("Neverlose v1.8.0 — Skin Changes Tab Added 🎨", 5)
