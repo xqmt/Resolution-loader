@@ -32,7 +32,7 @@ Library.ShowCustomCursor          = true
 Library.NotifySide                = "Right"
 
 local Window = Library:CreateWindow({
-    Title           = '<font color="#ffffff"><b>larpsus</b></font><font color="#50C878"><b>.lol</b></font>',
+    Title           = '<font color="#ffffff"><b>Inertia</b></font><font color="#50C878"><b>.hook</b></font>',
     Footer          = "BloxStrike | v1.8.1",
     Center          = true,
     AutoShow        = true,
