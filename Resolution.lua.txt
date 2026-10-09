@@ -117,8 +117,8 @@ local HitOverlayImageId = "rbxassetid://116576519032094"
 local HitOverlayColor = Color3.fromRGB(255, 255, 255)
 local HitOverlayLifetime = 0.05
 local HitOverlayImages = {
-    ["Default"] = "rbxassetid://8983426791",
-    ["Neverlose"] = "rbxassetid://133733332813725"
+    ["juju"] = "rbxassetid://124282458427823",
+    ["neverlose"] = "rbxassetid://133733332813725"
 }
 
 local SelfHighlightEnabled = false
@@ -1335,7 +1335,7 @@ end)
 
 OverlayLeftBox:AddDropdown("HitOverlayImageDropdown", {
     Text = "Overlay Image",
-    Values = {"Default", "Neverlose"},
+    Values = {"juju", "neverlose"},
     Default = 1,
     Multi = false
 })
@@ -1351,7 +1351,7 @@ Options.HitOverlayColorPicker:OnChanged(function()
     HitOverlayColor = Options.HitOverlayColorPicker.Value
 end)
 
-OverlayLeftBox:AddSlider("HitOverlayLifetimeSlider", { Text = "Overlay Lifetime (s)", Default = 0.05, Min = 0, Max = 1, Rounding = 2 })
+OverlayLeftBox:AddSlider("HitOverlayLifetimeSlider", { Text = "Lifetime", Default = 0.05, Min = 0, Max = 1, Rounding = 2 })
 Options.HitOverlayLifetimeSlider:OnChanged(function()
     HitOverlayLifetime = Options.HitOverlayLifetimeSlider.Value
 end)
