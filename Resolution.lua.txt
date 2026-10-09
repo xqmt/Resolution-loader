@@ -2386,6 +2386,17 @@ BlacklistPlayersGroup:AddButton({ Text = "Primordial visual gui", Func = functio
     end
 end })
 
+BlacklistPlayersGroup:AddButton({ Text = "bullet tracer", Func = function()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/Swiftly%20add-on'))()
+    end)
+    if success then
+        Library:Notify("successfully!")
+    else
+        Library:Notify("Error loading script: " .. tostring(err))
+    end
+end })
+
 
 local function StopViewingPlayer()
     if ViewPlayerConnection then
