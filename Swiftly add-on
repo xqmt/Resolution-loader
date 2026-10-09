@@ -1,0 +1,335 @@
+--[[
+    ═══════════════════════════════════════════════════════
+      ✨  swiftly add-on | Bullet Tracers
+      ───────────────────────────────────────────────────────
+      • Combined Groupbox (Local + Enemy)
+      • ColorPickers on Toggles (2 colors each side)
+      • Shared Settings (Texture / Length / Glow / Speed / Size / Lifetime)
+      • Powered by LinoriaLib
+    ═══════════════════════════════════════════════════════
+]]
+
+--============================================================
+-- SERVICES
+--============================================================
+local Players   = game:GetService("Players")
+local RunService= game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer
+local LocalName   = LocalPlayer.Name
+
+--============================================================
+-- WAIT FOR GAME
+--============================================================
+repeat task.wait() until game:IsLoaded()
+repeat task.wait() until Workspace:FindFirstChild("Ignored")
+
+--============================================================
+-- UI LIBRARY
+--============================================================
+local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
+
+local Library        = loadstring(game:HttpGet(repo .. "Library.lua"))()
+local ThemeManager   = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
+local SaveManager    = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
+
+local Options = getgenv().Options
+local Toggles = getgenv().Toggles
+
+-- ปรับ Font face เป็น Enum.Font.Cartoon
+Library.Font = Enum.Font.Cartoon
+
+Library.ShowToggleFrameInKeybinds = true
+Library.ShowCustomCursor          = true
+Library.NotifySide                = "Left"
+
+local Window = Library:CreateWindow({
+    Title                = "swiftly add-on",
+    Center               = true,
+    AutoShow             = true,
+    Resizable            = true,
+    ShowCustomCursor     = true,
+    UnlockMouseWhileOpen = true,
+    NotifySide           = "Left",
+    TabPadding           = 8,
+    MenuFadeTime         = 0.2,
+})
+
+local Tabs = {
+    Tracer          = Window:AddTab("Bullet Tracer"),
+    ["UI Settings"] = Window:AddTab("UI Settings"),
+}
+
+--============================================================
+-- TEXTURE LIST (เหลือเฉพาะ Laser และ Flow)
+--============================================================
+local Textures = {
+    ["Laser"] = "rbxassetid://12781800668",
+    ["Flow"]  = "rbxassetid://12788927812",
+}
+
+local TextureKeys = {}
+for k in pairs(Textures) do TextureKeys[#TextureKeys + 1] = k end
+table.sort(TextureKeys)
+
+--============================================================
+-- UI | BULLET TRACER (SINGLE GROUPBOX)
+--============================================================
+local TracerGroup = Tabs.Tracer:AddLeftGroupbox("Bullet Tracer")
+
+-- Toggle Local Tracer + 2 ColorPickers ติดข้างๆ
+TracerGroup:AddToggle("LocalTracer", {
+    Text    = "Enable Local Tracer",
+    Default = false,
+    Tooltip = "เปิดใช้เส้น tracer กระสุนของตัวเอง",
+}):AddColorPicker("LocalColor1", {
+    Default = Color3.fromRGB(133, 220, 255),
+    Title   = "Local Color 1 (Start)",
+}):AddColorPicker("LocalColor2", {
+    Default = Color3.fromRGB(241, 133, 255),
+    Title   = "Local Color 2 (Gradient)",
+})
+
+-- Toggle Enemy Tracer + 2 ColorPickers ติดข้างๆ
+TracerGroup:AddToggle("EnemyTracer", {
+    Text    = "Enable Enemy Tracer",
+    Default = false,
+    Tooltip = "เปิดใช้เส้น tracer กระสุนศัตรู",
+}):AddColorPicker("EnemyColor1", {
+    Default = Color3.fromRGB(255, 90, 100),
+    Title   = "Enemy Color 1 (Start)",
+}):AddColorPicker("EnemyColor2", {
+    Default = Color3.fromRGB(255, 200, 100),
+    Title   = "Enemy Color 2 (Gradient)",
+})
+
+TracerGroup:AddDivider()
+
+-- Shared Settings (ใช้ร่วมกันทั้ง Local และ Enemy)
+TracerGroup:AddDropdown("TracerTexture", {
+    Text    = "Texture",
+    Values  = TextureKeys,
+    Default = 2,
+    Multi   = false,
+    Tooltip = "เลือกลาย texture ของ beam",
+})
+
+TracerGroup:AddSlider("TracerLength", {
+    Text = "Length", Default = 0.2, Min = 0.2, Max = 20, Rounding = 1,
+})
+
+TracerGroup:AddSlider("TracerGlow", {
+    Text = "Glow", Default = 3, Min = 0, Max = 10, Rounding = 1,
+})
+
+TracerGroup:AddSlider("TracerSpeed", {
+    Text = "Speed", Default = 0.6, Min = 0, Max = 10, Rounding = 1,
+})
+
+TracerGroup:AddSlider("TracerSize", {
+    Text = "Size", Default = 0.25, Min = 0.05, Max = 2, Rounding = 2,
+})
+
+TracerGroup:AddSlider("TracerLifetime", {
+    Text = "Lifetime", Default = 3, Min = 0.1, Max = 5, Rounding = 2, Suffix = "s",
+})
+
+--============================================================
+-- TRACER ENGINE
+--============================================================
+local activeBeams = {}
+
+local function getBeamConfig(isLocal)
+    local color1Key = isLocal and "LocalColor1" or "EnemyColor1"
+    local color2Key = isLocal and "LocalColor2" or "EnemyColor2"
+
+    return {
+        textureKey = Options.TracerTexture.Value,
+        color1     = Options[color1Key].Value,
+        color2     = Options[color2Key].Value,
+        length     = Options.TracerLength.Value,
+        glow       = Options.TracerGlow.Value,
+        speed      = Options.TracerSpeed.Value,
+        size       = Options.TracerSize.Value,
+        lifetime   = Options.TracerLifetime.Value,
+    }
+end
+
+local function spawnBeam(object, worldPosition, isLocal)
+    local cfg       = getBeamConfig(isLocal)
+    local textureId = Textures[cfg.textureKey] or Textures["Laser"]
+
+    -- Beam
+    local beam = Instance.new("Beam")
+    beam.FaceCamera     = true
+    beam.Texture        = textureId
+    beam.TextureSpeed   = cfg.speed
+    beam.TextureLength  = cfg.length
+    beam.Width0         = cfg.size
+    beam.Width1         = cfg.size
+    beam.LightEmission  = cfg.glow
+    beam.Brightness     = cfg.glow
+    beam.Transparency   = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(1, 0),
+    })
+    beam.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, cfg.color1),
+        ColorSequenceKeypoint.new(1, cfg.color2),
+    })
+
+    -- Attachments
+    local a0 = Instance.new("Attachment")
+    a0.WorldCFrame = object.CFrame
+    a0.Parent      = Workspace.Terrain
+
+    local a1 = Instance.new("Attachment")
+    a1.WorldCFrame = worldPosition
+    a1.Parent      = Workspace.Terrain
+
+    beam.Attachment0 = a0
+    beam.Attachment1 = a1
+    beam.Parent      = Workspace.Ignored
+
+    -- Clean up original bullet object
+    pcall(function() object:Destroy() end)
+
+    table.insert(activeBeams, {
+        beam  = beam,
+        a0    = a0,
+        a1    = a1,
+        start = tick(),
+        life  = cfg.lifetime,
+    })
+end
+
+--============================================================
+-- BEAM FADE LOOP
+--============================================================
+task.spawn(function()
+    while task.wait() do
+        local now = tick()
+        for i = #activeBeams, 1, -1 do
+            local e = activeBeams[i]
+            local elapsed = now - e.start
+            if elapsed >= e.life then
+                local fadeProg = math.clamp((elapsed - e.life) / 0.2, 0, 1)
+                pcall(function()
+                    e.beam.Transparency = NumberSequence.new({
+                        NumberSequenceKeypoint.new(0, fadeProg),
+                        NumberSequenceKeypoint.new(1, fadeProg),
+                    })
+                end)
+                if fadeProg >= 1 then
+                    pcall(function() e.beam:Destroy() end)
+                    pcall(function() e.a0:Destroy()   end)
+                    pcall(function() e.a1:Destroy()   end)
+                    table.remove(activeBeams, i)
+                end
+            end
+        end
+    end
+end)
+
+--============================================================
+-- BULLET DETECTION
+--============================================================
+local function findBeamChild(parent)
+    for _, c in ipairs(parent:GetChildren()) do
+        if c:IsA("Beam") then return c end
+    end
+    return nil
+end
+
+task.spawn(function()
+    local ignored = Workspace:WaitForChild("Ignored", 60)
+    if not ignored then return end
+    local siren = ignored:WaitForChild("Siren", 60)
+    if not siren then return end
+    local radius = siren:WaitForChild("Radius", 60)
+    if not radius then return end
+
+    radius.ChildAdded:Connect(function(obj)
+        if obj.Name ~= "BULLET_RAYS" then return end
+        task.wait()
+
+        local beam = findBeamChild(obj)
+        if not beam then return end
+        local attachment = beam.Attachment1
+        if not attachment then return end
+        local worldPos = attachment.WorldCFrame
+
+        local owner   = obj:GetAttribute("OwnerCharacter")
+        local isLocal = (owner == LocalName)
+
+        if isLocal then
+            if not Toggles.LocalTracer.Value then
+                pcall(function() obj:Destroy() end)
+                return
+            end
+        else
+            if not Toggles.EnemyTracer.Value then
+                pcall(function() obj:Destroy() end)
+                return
+            end
+        end
+
+        spawnBeam(obj, worldPos, isLocal)
+    end)
+end)
+
+--============================================================
+-- UI SETTINGS TAB
+--============================================================
+local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu")
+
+MenuGroup:AddToggle("KeybindMenuOpen", {
+    Default  = Library.KeybindFrame.Visible,
+    Text     = "Open Keybind Menu",
+    Callback = function(v) Library.KeybindFrame.Visible = v end,
+})
+
+MenuGroup:AddToggle("ShowCustomCursor", {
+    Text     = "Custom Cursor",
+    Default  = true,
+    Callback = function(v) Library.ShowCustomCursor = v end,
+})
+
+MenuGroup:AddDivider()
+
+MenuGroup:AddLabel("Menu bind"):AddKeyPicker("MenuKeybind", {
+    Default = "RightShift",
+    NoUI    = true,
+    Text    = "Menu keybind",
+})
+
+MenuGroup:AddButton("Unload", function() Library:Unload() end)
+
+Library.ToggleKeybind = Options.MenuKeybind
+
+--============================================================
+-- SAVE / THEME MANAGER
+--============================================================
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
+
+ThemeManager:SetFolder("swiftly-addon")
+SaveManager:SetFolder("swiftly-addon/tracers")
+
+SaveManager:BuildConfigSection(Tabs["UI Settings"])
+ThemeManager:ApplyToTab(Tabs["UI Settings"])
+
+SaveManager:LoadAutoloadConfig()
+
+--============================================================
+-- LAUNCH NOTIFY
+--============================================================
+task.delay(0.5, function()
+    Library:Notify("swiftly add-on | Bullet Tracers loaded!", 3)
+end)
+
+print("[swiftly add-on] loaded • Menu key: RightShift")
