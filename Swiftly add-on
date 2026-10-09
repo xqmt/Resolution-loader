@@ -24,7 +24,7 @@ Library.ShowCustomCursor          = true
 Library.NotifySide                = "Left"
 
 local Window = Library:CreateWindow({
-    Title                = "bullet tracer",
+    Title                = "Swiftly add-on",
     Center               = true,
     AutoShow             = true,
     Resizable            = true,
