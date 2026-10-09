@@ -7,12 +7,6 @@ task.spawn(function()
     end)
 end)
 
-task.spawn(function()
-    pcall(function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/SUUUUUS00000/MEGGD-Anti-kick/refs/heads/main/MEGGD%20Best%20Anti-kick.lua'))()
-    end)
-end)
-
 -- load ui
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
@@ -837,6 +831,53 @@ task.spawn(function()
     end
 end)
 
+-- ================================================================
+-- DAMAGE-DEALT TRACKING
+-- ยิง effect hit เฉพาะเมื่อ "เรา" เป็นคนทำดาเมจเท่านั้น
+-- ================================================================
+local LastShotTime = 0
+local ShotWindow = 0.6            -- วินาทีหลังยิง ที่นับว่าดาเมจเป็นของเรา
+local TargetHitCooldown = {}      -- ป้องกัน effect ยิงซ้ำใน hit เดียว
+local TargetCooldownTime = 0.15
+
+-- ตรวจจับการยิงผ่าน mouse / touch / gamepad
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch
+        or input.KeyCode == Enum.KeyCode.ButtonR2 then
+        LastShotTime = tick()
+    end
+end)
+
+-- ตรวจจับการยิงผ่าน Tool (สำหรับเกมที่ใช้ Tool.Activated)
+local function HookToolActivation(tool)
+    if not tool or tool:GetAttribute("hooksense_Hooked") then return end
+    tool:SetAttribute("hooksense_Hooked", true)
+    tool.Activated:Connect(function()
+        LastShotTime = tick()
+    end)
+end
+
+local function WatchCharacterTools(char)
+    if not char then return end
+    for _, child in ipairs(char:GetChildren()) do
+        if child:IsA("Tool") then HookToolActivation(child) end
+    end
+    char.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") then
+            task.wait(0.1)
+            HookToolActivation(child)
+        end
+    end)
+end
+
+if LocalPlayer.Character then WatchCharacterTools(LocalPlayer.Character) end
+LocalPlayer.CharacterAdded:Connect(WatchCharacterTools)
+
+-- ================================================================
+-- HEALTH TRACKER (ยิง effect เฉพาะเมื่อดาเมจเป็นของเรา)
+-- ================================================================
 local CurrentConnectedHumanoid = nil
 local HealthConnection = nil
 local function BindHealthTracker(targetPlayer)
@@ -846,28 +887,47 @@ local function BindHealthTracker(targetPlayer)
     if CurrentConnectedHumanoid == hum then return end
     if HealthConnection then HealthConnection:Disconnect() end
     CurrentConnectedHumanoid = hum
+
     local lastHealth = hum.Health
     HealthConnection = hum:GetPropertyChangedSignal("Health"):Connect(function()
-        if CurrentTargetPlayer == targetPlayer and hum.Health < lastHealth then
-            local damageCalculated = math.floor(lastHealth - hum.Health)
-            task.spawn(PlayHitSound)
-            task.spawn(TriggerHitOverlay) 
-            local hitPartName = TargetPartMode
-            if hitPartName == "Root to Head" then
-                hitPartName = "Body/Head"
-            elseif hitPartName == "HumanoidRootPart" then
-                hitPartName = "Torso"
-            end
-            
-            local weaponName = "Hands"
-            if LocalPlayer.Character then
-                local heldTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                if heldTool then
-                    weaponName = heldTool.Name
+        if hum.Health < lastHealth then
+            -- เงื่อนไข: ต้องเป็น target ที่เราเล็งอยู่ + เรายิงภายใน ShotWindow
+            local timeSinceShot = tick() - LastShotTime
+            local isOurTarget  = (CurrentTargetPlayer == targetPlayer)
+                              or (ManualLockedTarget == targetPlayer)
+            local weFired      = timeSinceShot <= ShotWindow
+
+            if isOurTarget and weFired then
+                local now = tick()
+                if not TargetHitCooldown[targetPlayer]
+                   or (now - TargetHitCooldown[targetPlayer]) > TargetCooldownTime then
+                    TargetHitCooldown[targetPlayer] = now
+
+                    -- reset timer ทันที กัน effect ยิงซ้ำสำหรับ hit เดียวกัน
+                    LastShotTime = 0
+
+                    local damageCalculated = math.floor(lastHealth - hum.Health)
+                    task.spawn(PlayHitSound)
+                    task.spawn(TriggerHitOverlay)
+
+                    local hitPartName = TargetPartMode
+                    if hitPartName == "Root to Head" then
+                        hitPartName = "Body/Head"
+                    elseif hitPartName == "HumanoidRootPart" then
+                        hitPartName = "Torso"
+                    end
+
+                    local weaponName = "Hands"
+                    if LocalPlayer.Character then
+                        local heldTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                        if heldTool then
+                            weaponName = heldTool.Name
+                        end
+                    end
+
+                    task.spawn(ShowCustomHitNotification, targetPlayer.Name, hitPartName, damageCalculated, weaponName)
                 end
             end
-            
-            task.spawn(ShowCustomHitNotification, targetPlayer.Name, hitPartName, damageCalculated, weaponName)
         end
         lastHealth = hum.Health
     end)
