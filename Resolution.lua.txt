@@ -40,7 +40,7 @@ Library.ShowCustomCursor = true
 Library.NotifySide = "Right" 
 
 local Window = Library:CreateWindow({
-    Title = "Swiftly.flyㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
+    Title = "swiftly.flyㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
     Center = true, 
     AutoShow = true,
     Resizable = true,
@@ -63,6 +63,7 @@ local LookAtEnabled = false
 local FOVSize = 100
 local FOVVisible = false
 local TracerEnabled = false
+local TracerFromMode = "Center"
 
 local VoidEnabled = false
 
@@ -948,14 +949,26 @@ RunService.RenderStepped:Connect(function()
     if SilentAimEnabled and TracerEnabled and CurrentAimTargetPosition then
         local TargetPos, OnScreen = Camera:WorldToViewportPoint(CurrentAimTargetPosition)
         if OnScreen then
+            -- คำนวณจุดเริ่มต้นของ tracer
+            local FromPos = RealCenter
+            if TracerFromMode == "Tool" then
+                local gunPos = getGunPosition()
+                if gunPos then
+                    local gunScreenPos, gunOnScreen = Camera:WorldToViewportPoint(gunPos)
+                    if gunOnScreen then
+                        FromPos = Vector2.new(gunScreenPos.X, gunScreenPos.Y)
+                    end
+                end
+            end
+
             local ToPos = Vector2.new(TargetPos.X, TargetPos.Y)
-            TracerLineOutline.From = RealCenter
+            TracerLineOutline.From = FromPos
             TracerLineOutline.To = ToPos
             TracerLineOutline.Visible = true
             TracerLineOutline.Color = TracerLineOutlineColor
             TracerLineOutline.Thickness = TracerOutlineThickness
 
-            TracerLine.From = RealCenter
+            TracerLine.From = FromPos
             TracerLine.To = ToPos
             TracerLine.Visible = true
             TracerLine.Color = TracerLineColor
@@ -1180,6 +1193,11 @@ end)
 local TracerVisibleToggle = TracerGroupBox:AddToggle("TracerVisibleToggle", { Text = "Enable Tracer Line", Default = true })
 TracerVisibleToggle:AddColorPicker("TracerLineColorPicker", { Default = Color3.fromRGB(255, 0, 0), Title = "Tracer Color" })
 TracerVisibleToggle:AddColorPicker("TracerLineOutlineColorPicker", { Default = Color3.fromRGB(0, 0, 0), Title = "Tracer Outline Color" })
+
+TracerGroupBox:AddDropdown("TracerFromDropdown", { Text = "Tracer From", Values = {"Center", "Tool"}, Default = 1, Multi = false })
+Options.TracerFromDropdown:OnChanged(function()
+    TracerFromMode = Options.TracerFromDropdown.Value
+end)
 
 Toggles.TracerVisibleToggle:OnChanged(function()
     TracerEnabled = Toggles.TracerVisibleToggle.Value
