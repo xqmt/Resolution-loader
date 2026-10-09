@@ -162,7 +162,7 @@ end
 
 TweenService:Create(loadingOverlay, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 1}):Play()
 
-task.wait(3)
+task.wait(0.8)
 if rotationConnection then rotationConnection:Disconnect() end
 if loadingWaveConn then loadingWaveConn:Disconnect() end
 gui:Destroy()
