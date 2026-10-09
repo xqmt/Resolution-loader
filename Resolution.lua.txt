@@ -113,9 +113,9 @@ local HitOverlayColor = Color3.fromRGB(255, 255, 255)
 local HitOverlayLifetime = 0.05
 local HitOverlayImages = {
     ["swiftly"] = "rbxassetid://8983426791",
-    ["neverlose"] = "rbxassetid://133733332813725"
-    ["gamesense"] = "rbxassetid://91887164859368"
-    ["hurt overlay"] = "rbxassetid://127684638975340"
+    ["neverlose"] = "rbxassetid://133733332813725",
+    ["gamesense"] = "rbxassetid://91887164859368",
+    ["hurt overlay"] = "rbxassetid://127684638975340",
 }
 
 local SelfHighlightEnabled = false
