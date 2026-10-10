@@ -1,0 +1,213 @@
+
+if _G.a then
+	for _, v in pairs(_G.a) do
+		v:Disconnect()
+	end
+	_G.a = nil
+end
+
+repeat task.wait() until game.Players.LocalPlayer
+
+local LocalPlayer = game.Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local Humanoid = nil
+local HumanoidRootPart = nil
+local isEnabled = false
+
+-- สีสไตล์ Neverlose
+local Colors = {
+	Background = Color3.fromRGB(0, 0, 0),
+	Border = Color3.fromRGB(0, 0, 0),
+	SwitchOff = Color3.fromRGB(18, 24, 35),
+	SwitchOn = Color3.fromRGB(255, 0, 0),
+	KnobOff = Color3.fromRGB(120, 130, 150),
+	KnobOn = Color3.fromRGB(255, 255, 255),
+	Text = Color3.fromRGB(220, 225, 235),
+	Glow = Color3.fromRGB(0, 180, 255)
+}
+
+local function initCharacter()
+	local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	Humanoid = char:WaitForChild("Humanoid")
+	HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
+end
+
+local function createGUI()
+	local existingGui = LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("ToggleGui")
+	if existingGui then existingGui:Destroy() end
+
+	local ScreenGui = Instance.new("ScreenGui")
+	ScreenGui.Name = "ToggleGui"
+	ScreenGui.ResetOnSpawn = false
+	ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+	-- กรอบหลัก (Neverlose Dark Panel)
+	local Frame = Instance.new("Frame")
+	Frame.Size = UDim2.new(0, 180, 0, 48)
+	Frame.Position = UDim2.new(0.5, -90, 0.1, 0)
+	Frame.BackgroundColor3 = Colors.Background
+	Frame.BorderSizePixel = 0
+	Frame.Parent = ScreenGui
+
+	local FrameCorner = Instance.new("UICorner")
+	FrameCorner.CornerRadius = UDim.new(0, 8)
+	FrameCorner.Parent = Frame
+
+	local FrameStroke = Instance.new("UIStroke")
+	FrameStroke.Color = Colors.Border
+	FrameStroke.Thickness = 1
+	FrameStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	FrameStroke.Parent = Frame
+
+	-- ข้อความระบุชื่อ
+	local TextLabel = Instance.new("TextLabel")
+	TextLabel.Size = UDim2.new(0.55, 0, 1, 0)
+	TextLabel.Position = UDim2.new(0.08, 0, 0, 0)
+	TextLabel.BackgroundTransparency = 1
+	TextLabel.Text = "Desync"
+	TextLabel.TextColor3 = Colors.Text
+	TextLabel.TextSize = 14
+	TextLabel.Font = Enum.Font.GothamBold
+	TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+	TextLabel.Parent = Frame
+
+	-- ปุ่ม Switch Background
+	local SwitchBg = Instance.new("TextButton")
+	SwitchBg.Size = UDim2.new(0, 40, 0, 20)
+	SwitchBg.Position = UDim2.new(1, -52, 0.5, -10)
+	SwitchBg.BackgroundColor3 = Colors.SwitchOff
+	SwitchBg.AutoButtonColor = false
+	SwitchBg.Text = ""
+	SwitchBg.Parent = Frame
+
+	local SwitchCorner = Instance.new("UICorner")
+	SwitchCorner.CornerRadius = UDim.new(1, 0)
+	SwitchCorner.Parent = SwitchBg
+
+	local SwitchStroke = Instance.new("UIStroke")
+	SwitchStroke.Color = Colors.Border
+	SwitchStroke.Thickness = 1
+	SwitchStroke.Parent = SwitchBg
+
+	-- วงกลมบน Switch Toggle (Knob)
+	local Knob = Instance.new("Frame")
+	Knob.Size = UDim2.new(0, 14, 0, 14)
+	Knob.Position = UDim2.new(0, 3, 0.5, -7)
+	Knob.BackgroundColor3 = Colors.KnobOff
+	Knob.BorderSizePixel = 0
+	Knob.Parent = SwitchBg
+
+	local KnobCorner = Instance.new("UICorner")
+	KnobCorner.CornerRadius = UDim.new(1, 0)
+	KnobCorner.Parent = Knob
+
+	-- ระบบ Switch Toggle Action & Animation Style (Neverlose)
+	local function setToggleState(state)
+		isEnabled = state
+		local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+
+		if isEnabled then
+			TweenService:Create(Knob, tweenInfo, {
+				Position = UDim2.new(1, -17, 0.5, -7),
+				BackgroundColor3 = Colors.KnobOn
+			}):Play()
+			
+			TweenService:Create(SwitchBg, tweenInfo, {
+				BackgroundColor3 = Colors.SwitchOn
+			}):Play()
+			
+			TweenService:Create(SwitchStroke, tweenInfo, {
+				Color = Colors.Glow
+			}):Play()
+		else
+			TweenService:Create(Knob, tweenInfo, {
+				Position = UDim2.new(0, 3, 0.5, -7),
+				BackgroundColor3 = Colors.KnobOff
+			}):Play()
+			
+			TweenService:Create(SwitchBg, tweenInfo, {
+				BackgroundColor3 = Colors.SwitchOff
+			}):Play()
+			
+			TweenService:Create(SwitchStroke, tweenInfo, {
+				Color = Colors.Border
+			}):Play()
+		end
+	end
+
+	SwitchBg.MouseButton1Click:Connect(function()
+		setToggleState(not isEnabled)
+	end)
+
+	-- ระบบ Drag GUI
+	local dragging, dragInput, dragStart, startPos
+
+	Frame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = Frame.Position
+
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	Frame.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			dragInput = input
+		end
+	end)
+
+	game:GetService("UserInputService").InputChanged:Connect(function(input)
+		if input == dragInput and dragging then
+			local delta = input.Position - dragStart
+			Frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+
+	return setToggleState
+end
+
+initCharacter()
+local updateToggleUI = createGUI()
+
+local t2 = {
+	LocalPlayer:GetMouse().KeyDown:Connect(function(key)
+		if key == "g" then
+			isEnabled = not isEnabled
+			updateToggleUI(isEnabled)
+		end
+	end),
+
+	game:GetService("RunService").Heartbeat:Connect(function()
+		if isEnabled and HumanoidRootPart and Humanoid then
+			local HumanoidRootPartCFrame = HumanoidRootPart.CFrame
+			local CameraOffset = Humanoid.CameraOffset
+
+			local randomX = math.random(-400000, 400000)
+			local randomZ = math.random(-400000, 400000)
+
+			local v24 = HumanoidRootPartCFrame * CFrame.new(randomX, -200000, randomZ)
+			local Position = v24:ToObjectSpace(CFrame.new(HumanoidRootPartCFrame.Position)).Position
+
+			HumanoidRootPart.CFrame = v24
+			Humanoid.CameraOffset = Position
+			game:GetService("RunService").RenderStepped:Wait()
+
+			HumanoidRootPart.CFrame = HumanoidRootPartCFrame
+			Humanoid.CameraOffset = CameraOffset
+		end
+	end)
+}
+
+LocalPlayer.CharacterAdded:Connect(function()
+	isEnabled = false
+	initCharacter()
+	updateToggleUI = createGUI()
+end)
+
+_G.a = t2
