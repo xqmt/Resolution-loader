@@ -2342,71 +2342,53 @@ end)
 local BlacklistPlayersGroup = Tabs.Addons:AddRightGroupbox("Loaders Scripts")
 local ViewPlayerGroup = Tabs.Addons:AddLeftGroupbox("View Player")
 
-BlacklistPlayersGroup:AddButton({ Text = "walkspeed", Func = function()
-    local success, err = pcall(function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/19mdSkibidi/19sMooze-Mobile-Rework/refs/heads/main/Mooze%20Mob'))()
-    end)
-    if success then
-        Library:Notify("successfully!")
-    else
-        Library:Notify("Error loading script: " .. tostring(err))
-    end
-end })
+-- Table เก็บตาราง Script และ Link URL
+local ScriptsTable = {
+    ["Walkspeed"] = "https://raw.githubusercontent.com/19mdSkibidi/19sMooze-Mobile-Rework/refs/heads/main/Mooze%20Mob",
+    ["Minecraft Texture"]        = "https://raw.githubusercontent.com/xqmt/hooksense-loader/refs/heads/main/Minecraft%20texture",
+    ["Desync Void"]             = "https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/Desync",
+    ["Rapid Fire"]              = "https://raw.githubusercontent.com/xqmt/hooksense-loader/refs/heads/main/rapid%20fire",
+    ["Visual gui"]  = "https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/gamesense%20China%20hat",
+    ["Bullet Tracer"]           = "https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/Swiftly%20add-on"
+}
 
-BlacklistPlayersGroup:AddButton({ Text = "Minecraft texture", Func = function()
-    local success, err = pcall(function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/xqmt/hooksense-loader/refs/heads/main/Minecraft%20texture'))()
-    end)
-    if success then
-        Library:Notify("successfully!")
-    else
-        Library:Notify("Error loading script: " .. tostring(err))
-    end
-end })
+-- ดึงรายชื่อตัวเลือกใส่อาร์เรย์ Dropdown
+local ScriptNames = {}
+for name, _ in pairs(ScriptsTable) do
+    table.insert(ScriptNames, name)
+end
+table.sort(ScriptNames)
 
-BlacklistPlayersGroup:AddButton({ Text = "desync void", Func = function()
-    local success, err = pcall(function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/Desync'))()
-    end)
-    if success then
-        Library:Notify("successfully!")
-    else
-        Library:Notify("Error loading script: " .. tostring(err))
-    end
-end })
+-- สร้าง Dropdown
+BlacklistPlayersGroup:AddDropdown("SelectedScriptDropdown", {
+    Text = "Select Script",
+    Values = ScriptNames,
+    Default = 1,
+    Multi = false
+})
 
-BlacklistPlayersGroup:AddButton({ Text = "rapid fire", Func = function()
-    local success, err = pcall(function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/xqmt/hooksense-loader/refs/heads/main/rapid%20fire'))()
-    end)
-    if success then
-        Library:Notify("successfully!")
-    else
-        Library:Notify("Error loading script: " .. tostring(err))
-    end
-end })
+-- สร้าง ปุ่มสำหรับกด Load
+BlacklistPlayersGroup:AddButton({
+    Text = "Loader Selected",
+    Func = function()
+        local selectedName = Options.SelectedScriptDropdown.Value
+        local scriptUrl = ScriptsTable[selectedName]
 
-BlacklistPlayersGroup:AddButton({ Text = "visual gui", Func = function()
-    local success, err = pcall(function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/gamesense%20China%20hat'))()
-    end)
-    if success then
-        Library:Notify("successfully!")
-    else
-        Library:Notify("Error loading script: " .. tostring(err))
-    end
-end })
+        if scriptUrl then
+            local success, err = pcall(function()
+                loadstring(game:HttpGet(scriptUrl))()
+            end)
 
-BlacklistPlayersGroup:AddButton({ Text = "bullet tracer", Func = function()
-    local success, err = pcall(function()
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/Swiftly%20add-on'))()
-    end)
-    if success then
-        Library:Notify("successfully!")
-    else
-        Library:Notify("Error loading script: " .. tostring(err))
+            if success then
+                Library:Notify("Successfully loaded: " .. tostring(selectedName), 3)
+            else
+                Library:Notify("Error loading script: " .. tostring(err), 4)
+            end
+        else
+            Library:Notify("Please select a valid script!", 3)
+        end
     end
-end })
+})
 
 
 local function StopViewingPlayer()
