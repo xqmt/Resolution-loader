@@ -9,15 +9,15 @@ local material_service = cloneref(game:GetService("MaterialService"))
 
 local texture_packs = {
     ["minecraft"] = {
-        ["Slate"] = "http://www.roblox.com/asset/?id=8676746437",
-        ["Grass"] = "http://www.roblox.com/asset/?id=9267183930",
-        ["Sand"] = "http://www.roblox.com/asset/?id=12624140843",
-        ["Wood"] = "http://www.roblox.com/asset/?id=3258599312",
-        ["Brick"] = "http://www.roblox.com/asset/?id=10777285622",
-        ["Concrete"] = "http://www.roblox.com/asset/?id=15622710576",
-        ["CorrodedMetal"] = "rbxassetid://78612695839404",
-        ["Metal"] = "http://www.roblox.com/asset/?id=121650613091353",
-        ["WoodPlanks"] = "http://www.roblox.com/asset/?id=867681022"
+        ["Slate"]        = "http://www.roblox.com/asset/?id=8676746437",
+        ["Grass"]        = "http://www.roblox.com/asset/?id=9267183930",
+        ["Sand"]         = "http://www.roblox.com/asset/?id=12624140843",
+        ["Wood"]         = "http://www.roblox.com/asset/?id=3258599312",
+        ["Brick"]        = "http://www.roblox.com/asset/?id=10777285622",
+        ["Concrete"]     = "http://www.roblox.com/asset/?id=15622710576",
+        ["CorrodedMetal"]= "rbxassetid://78612695839404",
+        ["Metal"]        = "http://www.roblox.com/asset/?id=121650613091353",
+        ["WoodPlanks"]   = "http://www.roblox.com/asset/?id=8676581022", -- ✅ แก้จาก 867681022
     },
 }
 
@@ -54,13 +54,13 @@ local apply_textures = LPH_NO_VIRTUALIZE(function()
             if success and enum_material then
                 local material = create_instance("MaterialVariant")
                 material.MetalnessMap = id
-                material.NormalMap = id
+                material.NormalMap    = id
                 material.BaseMaterial = enum_material
-                material.Name = name
+                material.Name         = name
                 material.StudsPerTile = 5
                 material.RoughnessMap = id
-                material.ColorMap = id
-                material.Parent = material_service
+                material.ColorMap     = id
+                material.Parent       = material_service
 
                 variants[#variants + 1] = material
             end
