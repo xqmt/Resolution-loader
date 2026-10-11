@@ -86,7 +86,7 @@ TracerGroup:AddDropdown("TracerTexture", {
 })
 
 TracerGroup:AddSlider("TracerLength", {
-    Text = "Length", Default = 0.2, Min = 0.2, Max = 20, Rounding = 1,
+    Text = "Length", Default = 0, Min = 0, Max = 20, Rounding = 1,
 })
 
 TracerGroup:AddSlider("TracerGlow", {
@@ -98,7 +98,7 @@ TracerGroup:AddSlider("TracerSpeed", {
 })
 
 TracerGroup:AddSlider("TracerSize", {
-    Text = "Size", Default = 0.25, Min = 0.05, Max = 2, Rounding = 2,
+    Text = "Size", Default = 0.4, Min = 0.05, Max = 2, Rounding = 2,
 })
 
 TracerGroup:AddSlider("TracerLifetime", {
