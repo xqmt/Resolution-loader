@@ -188,8 +188,8 @@ local t2 = {
 			local HumanoidRootPartCFrame = HumanoidRootPart.CFrame
 			local CameraOffset = Humanoid.CameraOffset
 
-			local randomX = math.random(-400000, 400000)
-			local randomZ = math.random(-400000, 400000)
+			local randomX = math.random(-300000, 300000)
+			local randomZ = math.random(-300000, 300000)
 
 			local v24 = HumanoidRootPartCFrame * CFrame.new(randomX, -200000, randomZ)
 			local Position = v24:ToObjectSpace(CFrame.new(HumanoidRootPartCFrame.Position)).Position
