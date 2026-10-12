@@ -115,10 +115,10 @@ local HitOverlayImageId = "rbxassetid://116576519032094"
 local HitOverlayColor = Color3.fromRGB(255, 255, 255)
 local HitOverlayLifetime = 0.05
 local HitOverlayImages = {
-    ["swiftly"] = "rbxassetid://8983426791",
-    ["neverlose"] = "rbxassetid://133733332813725",
-    ["gamesense"] = "rbxassetid://91887164859368",
-    ["hurt overlay"] = "rbxassetid://127684638975340",
+    ["1"] = "rbxassetid://8983426791",
+    ["2"] = "rbxassetid://133733332813725",
+    ["3"] = "rbxassetid://91887164859368",
+    ["4"] = "rbxassetid://127684638975340",
 }
 
 local SelfHighlightEnabled = false
@@ -1387,7 +1387,7 @@ end)
 
 OverlayLeftBox:AddDropdown("HitOverlayImageDropdown", {
     Text = "Overlay Image",
-    Values = {"swiftly", "neverlose", "gamesense", "hurt overlay"},
+    Values = {"1", "2", "3", "4"},
     Default = 1,
     Multi = false
 })
