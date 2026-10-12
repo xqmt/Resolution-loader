@@ -40,7 +40,8 @@ Library.ShowCustomCursor = true
 Library.NotifySide = "Right" 
 
 local Window = Library:CreateWindow({
-    Title = "Swiftly.flyㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ",
+    Title = "Swiftly.fly x dahood copiesㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤㅤ
+",
     Center = true, 
     AutoShow = true,
     Resizable = true,
@@ -53,12 +54,14 @@ local Window = Library:CreateWindow({
 
 -- local
 local SilentAimEnabled = false
+local AutoShootEnabled = false
 local ResolverEnabled = false
 local BulletTPEnabled = false
 local WallCheckEnabled = false
 local TeamCheckEnabled = false
 local DieCheckEnabled = true
-local KnockCheckEnabled = false
+local KnockCheckEnabled = true
+local GrabCheckEnabled = true
 local LookAtEnabled = false
 local FOVSize = 100
 local FOVVisible = false
@@ -156,7 +159,6 @@ local ParticleAuras = {
 }
 local AuraOptions = {"starlight", "Heart", "heavenly", "ribbon", "sakura", "angel", "wind", "flow", "star", "Fire"}
 
-
 local FOVCircleColor = Color3.fromRGB(255, 255, 255)
 local FOVCircleOutlineColor = Color3.fromRGB(0, 0, 0)
 local FOVThickness = 1.0
@@ -235,7 +237,6 @@ local SkeletonConnections = {
     {"Torso", "Left Leg"},
     {"Torso", "Right Leg"}
 }
-
 
 local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
 
@@ -444,7 +445,6 @@ if LocalPlayer.Character then
 	end
 end
 
-
 -- other
 local DeltaGradientGui = Instance.new("ScreenGui")
 DeltaGradientGui.Name = "hooksense_DeltaGradientGui"
@@ -539,6 +539,7 @@ local function isBehindWall(targetPart)
     return raycastResult ~= nil
 end
 
+-- Check status for Da Hood (Knocked / Grabbed)
 local function isKnocked(char)
     if not KnockCheckEnabled or not char then return false end
     local koValue = char:FindFirstChild("KO") or char:FindFirstChild("K.O")
@@ -551,6 +552,22 @@ local function isKnocked(char)
         if ko and ko:IsA("BoolValue") and ko.Value then
             return true
         end
+    end
+    return false
+end
+
+local function isGrabbed(char)
+    if not GrabCheckEnabled or not char then return false end
+    local bodyEffects = char:FindFirstChild("BodyEffects")
+    if bodyEffects then
+        local grabbed = bodyEffects:FindFirstChild("GRABBED") or bodyEffects:FindFirstChild("Grabbed")
+        if grabbed and (grabbed:IsA("ObjectValue") or grabbed:IsA("BoolValue")) then
+            if grabbed:IsA("BoolValue") and grabbed.Value then return true end
+            if grabbed:IsA("ObjectValue") and grabbed.Value ~= nil then return true end
+        end
+    end
+    if char:FindFirstChild("GRAB_WELD") or char:FindFirstChild("GrabWeld") then
+        return true
     end
     return false
 end
@@ -577,6 +594,7 @@ local function GetTargetInFOV()
             if rootPart and humanoid then
                 if isDead(humanoid, char) then continue end
                 if isKnocked(char) then continue end
+                if isGrabbed(char) then continue end
                 if MyRoot and (rootPart.Position - MyRoot.Position).Magnitude > MaxTargetDistance then continue end
                 if WallCheckEnabled and isBehindWall(rootPart) then continue end
                 if TeamCheckEnabled and player.Team == LocalPlayer.Team then continue end
@@ -749,7 +767,7 @@ task.spawn(function()
                     local char = ManualLockedTarget.Character
                     local rootPart = char:FindFirstChild("HumanoidRootPart")
                     local humanoid = char:FindFirstChildOfClass("Humanoid")
-                    if rootPart and humanoid and not isDead(humanoid, char) and not isKnocked(char) then
+                    if rootPart and humanoid and not isDead(humanoid, char) and not isKnocked(char) and not isGrabbed(char) then
                         TempTargetChar = char
                     end
                 end
@@ -878,6 +896,16 @@ local jitterToggle = false
 local LastCameraRotation = Camera.CFrame.LookVector
 
 RunService.RenderStepped:Connect(function()
+    -- Auto Shoot Logic
+    if AutoShootEnabled and SilentAimEnabled and CurrentAimTargetPosition then
+        if LocalPlayer.Character then
+            local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+            if tool then
+                tool:Activate()
+            end
+        end
+    end
+
     if VoidEnabled and LocalPlayer.Character then
         local Root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if Root then
@@ -952,7 +980,6 @@ RunService.RenderStepped:Connect(function()
     if SilentAimEnabled and TracerEnabled and CurrentAimTargetPosition then
         local TargetPos, OnScreen = Camera:WorldToViewportPoint(CurrentAimTargetPosition)
         if OnScreen then
-            -- คำนวณจุดเริ่มต้นของ tracer
             local FromPos = RealCenter
             if TracerFromMode == "Tool" then
                 local gunPos = getGunPosition()
@@ -1139,6 +1166,13 @@ Toggles.SilentAimToggle:OnChanged(function()
     SilentAimEnabled = Toggles.SilentAimToggle.Value
 end)
 
+LeftGroupBox:AddToggle("AutoShootToggle", { Text = "Enable Auto Shoot", Default = false })
+    :AddKeyPicker("AutoShootKeybind", { Default = "None", SyncToggleState = true, Mode = "Toggle", Text = "Auto Shoot Bind" })
+
+Toggles.AutoShootToggle:OnChanged(function()
+    AutoShootEnabled = Toggles.AutoShootToggle.Value
+end)
+
 LeftGroupBox:AddToggle("ShowLockButtonToggle", { Text = "Show Lock Target Button", Default = false })
 Toggles.ShowLockButtonToggle:OnChanged(function()
     LockButtonGui.Enabled = Toggles.ShowLockButtonToggle.Value
@@ -1173,9 +1207,14 @@ Toggles.TeamCheckToggle:OnChanged(function()
     TeamCheckEnabled = Toggles.TeamCheckToggle.Value
 end)
 
-LeftGroupBox:AddToggle("KnockCheckToggle", { Text = "Enable Knock Check", Default = false })
+LeftGroupBox:AddToggle("KnockCheckToggle", { Text = "Ignore Knocked", Default = true })
 Toggles.KnockCheckToggle:OnChanged(function()
     KnockCheckEnabled = Toggles.KnockCheckToggle.Value
+end)
+
+LeftGroupBox:AddToggle("GrabCheckToggle", { Text = "Ignore Grabbed", Default = true })
+Toggles.GrabCheckToggle:OnChanged(function()
+    GrabCheckEnabled = Toggles.GrabCheckToggle.Value
 end)
 
 TargetGroupBox:AddDropdown("TargetPartDropdown", { Text = "Hitbox", Values = {"Head", "HumanoidRootPart", "Root", "Closet"}, Default = 1, Multi = false })
@@ -1342,7 +1381,6 @@ SoundLeftBox:AddButton({
     end
 })
 
-
 OverlayLeftBox:AddToggle("HitOverlayToggle", { Text = "Enable Hit Overlay", Default = false })
 Toggles.HitOverlayToggle:OnChanged(function()
     HitOverlayEnabled = Toggles.HitOverlayToggle.Value
@@ -1383,7 +1421,6 @@ OverlayLeftBox:AddButton({
         end)
     end
 })
-
 
 NotifyRightBox:AddToggle("HitNotifyToggle", { Text = "Enable Hit Notification", Default = false })
 Toggles.HitNotifyToggle:OnChanged(function()
@@ -1436,7 +1473,6 @@ Options.AuraSelectionDropdown:OnChanged(function()
     SelectedAuras = Options.AuraSelectionDropdown.Value
     UpdateAuraSystem()
 end)
-
 
 local LastCameraCFrame = workspace.CurrentCamera.CFrame
 
@@ -2343,7 +2379,6 @@ end)
 local BlacklistPlayersGroup = Tabs.Addons:AddRightGroupbox("Loaders Scripts")
 local ViewPlayerGroup = Tabs.Addons:AddLeftGroupbox("View Player")
 
--- Table เก็บตาราง Script และ Link URL
 local ScriptsTable = {
     ["Walkspeed"] = "https://raw.githubusercontent.com/19mdSkibidi/19sMooze-Mobile-Rework/refs/heads/main/Mooze%20Mob",
     ["Minecraft Texture"]        = "https://raw.githubusercontent.com/xqmt/hooksense-loader/refs/heads/main/Minecraft%20texture",
@@ -2353,14 +2388,12 @@ local ScriptsTable = {
     ["Bullet Tracer"]           = "https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/Swiftly%20add-on"
 }
 
--- ดึงรายชื่อตัวเลือกใส่อาร์เรย์ Dropdown
 local ScriptNames = {}
 for name, _ in pairs(ScriptsTable) do
     table.insert(ScriptNames, name)
 end
 table.sort(ScriptNames)
 
--- สร้าง Dropdown
 BlacklistPlayersGroup:AddDropdown("SelectedScriptDropdown", {
     Text = "Select Script",
     Values = ScriptNames,
@@ -2368,7 +2401,6 @@ BlacklistPlayersGroup:AddDropdown("SelectedScriptDropdown", {
     Multi = false
 })
 
--- สร้าง ปุ่มสำหรับกด Load
 BlacklistPlayersGroup:AddButton({
     Text = "Loader Selected",
     Func = function()
@@ -2390,7 +2422,6 @@ BlacklistPlayersGroup:AddButton({
         end
     end
 })
-
 
 local function StopViewingPlayer()
     if ViewPlayerConnection then
