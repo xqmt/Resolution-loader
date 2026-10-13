@@ -681,7 +681,7 @@ local EnvironmentTabbox = EnvironmentBox:AddTabbox()
 local EnvironmentNetworkTab = EnvironmentTabbox:AddTab("Network", "globe")
 local EnvironmentCloudTab = EnvironmentTabbox:AddTab("Cloud", "cloud")
 
--- ============ LIGHTING GRADIENT ============
+-- ============ WORLD GRADIENT ============
 local WorldGradientEnabled = false
 local DefaultAmbient = game:GetService("Lighting").Ambient
 local DefaultOutdoorAmbient = game:GetService("Lighting").OutdoorAmbient
@@ -689,8 +689,8 @@ local CurrentGradientColor = Color3.fromRGB(255, 255, 255)
 local CurrentOutdoorGradient = Color3.fromRGB(255, 255, 255)
 
 EnvironmentNetworkTab:AddCheckbox("WorldGradient", {
-    Text = "Lighting Gradient",
-    Tooltip = "Enables custom Lighting Ambient colors",
+    Text = "World Gradient",
+    Tooltip = "Enables custom world gradient colors",
     Default = false,
     Callback = function(v)
         WorldGradientEnabled = v
@@ -704,11 +704,11 @@ EnvironmentNetworkTab:AddCheckbox("WorldGradient", {
     end,
 })
 
-EnvironmentNetworkTab:AddLabel("Ambient Color"):AddColorPicker("GradientColor", {
+EnvironmentNetworkTab:AddLabel("Gradient Color"):AddColorPicker("GradientColor", {
     Default = Color3.fromRGB(255, 255, 255),
-    Title = "Ambient Color",
-    Text = "Ambient Color",
-    Tooltip = "Sets the Lighting ambient color",
+    Title = "Gradient Color",
+    Text = "Gradient Color",
+    Tooltip = "Sets the world gradient color",
     Callback = function(Value)
         CurrentGradientColor = Value
         if WorldGradientEnabled then
@@ -717,81 +717,15 @@ EnvironmentNetworkTab:AddLabel("Ambient Color"):AddColorPicker("GradientColor", 
     end,
 })
 
-EnvironmentNetworkTab:AddLabel("Outdoor Ambient"):AddColorPicker("OutdoorGradient", {
+EnvironmentNetworkTab:AddLabel("Outdoor Gradient"):AddColorPicker("OutdoorGradient", {
     Default = Color3.fromRGB(255, 255, 255),
-    Title = "Outdoor Ambient",
-    Text = "Outdoor Ambient",
-    Tooltip = "Sets the Lighting outdoor ambient color",
+    Title = "Outdoor Gradient",
+    Text = "Outdoor Gradient",
+    Tooltip = "Sets the outdoor gradient color",
     Callback = function(Value)
         CurrentOutdoorGradient = Value
         if WorldGradientEnabled then
             game:GetService("Lighting").OutdoorAmbient = Value
-        end
-    end,
-})
-
-EnvironmentNetworkTab:AddDivider()
-
--- ============ WORLD OVERLAY GRADIENT (screen overlay) ============
-EnvironmentNetworkTab:AddLabel("Screen Overlay Gradient")
-
-EnvironmentNetworkTab:AddCheckbox("WorldOverlayGradient", {
-    Text = "World Overlay Gradient",
-    Tooltip = "Overlays a moving gradient across the entire screen",
-    Default = false,
-    Callback = function(v)
-        if getgenv().SetWorldGradientEnabled then
-            getgenv().SetWorldGradientEnabled(v)
-        end
-    end,
-})
-
-EnvironmentNetworkTab:AddLabel("Overlay Color 1"):AddColorPicker("OverlayGradientColor1", {
-    Default = Color3.fromRGB(255, 0, 100),
-    Title = "Overlay Color 1",
-    Text = "Overlay Color 1",
-    Tooltip = "First color of the overlay gradient",
-    Callback = function(Value)
-        if getgenv().SetWorldGradientColor1 then
-            getgenv().SetWorldGradientColor1(Value)
-        end
-    end,
-})
-
-EnvironmentNetworkTab:AddLabel("Overlay Color 2"):AddColorPicker("OverlayGradientColor2", {
-    Default = Color3.fromRGB(0, 100, 255),
-    Title = "Overlay Color 2",
-    Text = "Overlay Color 2",
-    Tooltip = "Second color of the overlay gradient",
-    Callback = function(Value)
-        if getgenv().SetWorldGradientColor2 then
-            getgenv().SetWorldGradientColor2(Value)
-        end
-    end,
-})
-
-EnvironmentNetworkTab:AddSlider("OverlayGradientSpeed", {
-    Text = "Overlay Speed",
-    Default = 1,
-    Min = 0,
-    Max = 10,
-    Rounding = 2,
-    Callback = function(Value)
-        if getgenv().SetWorldGradientSpeed then
-            getgenv().SetWorldGradientSpeed(Value)
-        end
-    end,
-})
-
-EnvironmentNetworkTab:AddSlider("OverlayGradientTransparency", {
-    Text = "Overlay Transparency",
-    Default = 0.85,
-    Min = 0,
-    Max = 1,
-    Rounding = 2,
-    Callback = function(Value)
-        if getgenv().SetWorldGradientTransparency then
-            getgenv().SetWorldGradientTransparency(Value)
         end
     end,
 })
@@ -1424,7 +1358,7 @@ local SoundTab = WeaponModsTabbox:AddTab("", "volume-2")
 local NotifyTab = WeaponModsTabbox:AddTab("", "bell")
 local FxTab = WeaponModsTabbox:AddTab("", "sparkles")
 
--- ============ HIT EFFECTS TAB ============
+-- ============ HIT EFFECTS TAB (UPDATED) ============
 FxTab:AddLabel("Hit Particles")
 
 FxTab:AddCheckbox("HitParticleEnabled", {
@@ -1465,7 +1399,7 @@ FxTab:AddSlider("HitParticleCount", {
 
 FxTab:AddDivider()
 
--- ============ PARTICLE COLOR / RAINBOW ============
+-- ============ PARTICLE COLOR / RAINBOW (NEW) ============
 FxTab:AddLabel("Particle Color")
 
 FxTab:AddCheckbox("HitParticleColorEnabled", {
@@ -1514,168 +1448,6 @@ FxTab:AddSlider("HitParticleRainbowSpeed", {
 })
 
 FxTab:AddDivider()
-
--- ============ BULLET TRACER (NEW) ============
-FxTab:AddLabel("Bullet Tracer")
-
-FxTab:AddCheckbox("BulletTracerEnabled", {
-    Text = "Bullet Tracer",
-    Tooltip = "Shows a custom tracer beam for every bullet fired",
-    Default = true,
-    Callback = function(v)
-        if getgenv().SetBulletTracerEnabled then
-            getgenv().SetBulletTracerEnabled(v)
-        end
-    end,
-})
-
-FxTab:AddSlider("BulletTracerLifetime", {
-    Text = "Tracer Lifetime",
-    Default = 0.15,
-    Min = 0.01,
-    Max = 2,
-    Rounding = 2,
-    Callback = function(Value)
-        if getgenv().SetBulletTracerLifetime then
-            getgenv().SetBulletTracerLifetime(Value)
-        end
-    end,
-})
-
-FxTab:AddSlider("BulletTracerFadeTime", {
-    Text = "Tracer Fade Time",
-    Default = 0.2,
-    Min = 0.01,
-    Max = 2,
-    Rounding = 2,
-    Callback = function(Value)
-        if getgenv().SetBulletTracerFadeTime then
-            getgenv().SetBulletTracerFadeTime(Value)
-        end
-    end,
-})
-
-FxTab:AddSlider("BulletTracerWidth", {
-    Text = "Tracer Width",
-    Default = 0.4,
-    Min = 0.05,
-    Max = 5,
-    Rounding = 2,
-    Callback = function(Value)
-        if getgenv().SetBulletTracerWidth then
-            getgenv().SetBulletTracerWidth(Value)
-        end
-    end,
-})
-
-FxTab:AddInput("BulletTracerTexture", {
-    Text = "rbxassetid://10221879694",
-    Placeholder = "rbxassetid://...",
-    ClearTextOnFocus = false,
-    Finished = false,
-})
-
-do
-    local holder = Options.BulletTracerTexture.Holder
-    local box = holder and holder:FindFirstChildOfClass("TextBox")
-    if box then
-        box:GetPropertyChangedSignal("Text"):Connect(function()
-            if box.Text and box.Text ~= "" and getgenv().SetBulletTracerTexture then
-                getgenv().SetBulletTracerTexture(box.Text)
-            end
-        end)
-        if getgenv().SetBulletTracerTexture then
-            getgenv().SetBulletTracerTexture(box.Text)
-        end
-    end
-end
-
-FxTab:AddCheckbox("BulletTracerColorEnabled", {
-    Text = "Custom Tracer Color",
-    Default = false,
-    Callback = function(v)
-        if getgenv().SetBulletTracerColorEnabled then
-            getgenv().SetBulletTracerColorEnabled(v)
-        end
-    end,
-}):AddColorPicker("BulletTracerColor", {
-    Default = Color3.fromRGB(255, 220, 100),
-    Title = "Tracer Color",
-    Text = "Tracer Color",
-    Tooltip = "Color applied to bullet tracers",
-    Callback = function(Value)
-        if getgenv().SetBulletTracerColor then
-            getgenv().SetBulletTracerColor(Value)
-        end
-    end,
-})
-
-FxTab:AddCheckbox("BulletTracerRainbow", {
-    Text = "Rainbow Tracer",
-    Tooltip = "Cycles through color spectrum on bullet tracers",
-    Default = false,
-    Callback = function(v)
-        if getgenv().SetBulletTracerRainbow then
-            getgenv().SetBulletTracerRainbow(v)
-        end
-    end,
-})
-
-FxTab:AddSlider("BulletTracerRainbowSpeed", {
-    Text = "Tracer Rainbow Speed",
-    Default = 1,
-    Min = 0.1,
-    Max = 10,
-    Rounding = 2,
-    Callback = function(Value)
-        if getgenv().SetBulletTracerRainbowSpeed then
-            getgenv().SetBulletTracerRainbowSpeed(Value)
-        end
-    end,
-})
-
-FxTab:AddDivider()
-
-FxTab:AddLabel("Tracer Lighting")
-
-FxTab:AddSlider("BulletTracerLightEmission", {
-    Text = "Light Emission",
-    Default = 1,
-    Min = 0,
-    Max = 1,
-    Rounding = 2,
-    Callback = function(Value)
-        if getgenv().SetBulletTracerLightEmission then
-            getgenv().SetBulletTracerLightEmission(Value)
-        end
-    end,
-})
-
-FxTab:AddSlider("BulletTracerBrightness", {
-    Text = "Light Brightness",
-    Default = 5,
-    Min = 0,
-    Max = 20,
-    Rounding = 1,
-    Callback = function(Value)
-        if getgenv().SetBulletTracerBrightness then
-            getgenv().SetBulletTracerBrightness(Value)
-        end
-    end,
-})
-
-FxTab:AddSlider("BulletTracerLightRange", {
-    Text = "Light Range",
-    Default = 8,
-    Min = 0,
-    Max = 50,
-    Rounding = 1,
-    Callback = function(Value)
-        if getgenv().SetBulletTracerLightRange then
-            getgenv().SetBulletTracerLightRange(Value)
-        end
-    end,
-})
 
 -- ============ SOUND TAB ============
 SoundTab:AddDropdown("WeaponSoundPack", {
@@ -2401,9 +2173,6 @@ ClampColorPickerToScreen("ColorScreenKillEffectColor")
 ClampColorPickerToScreen("ESPTextColor")
 ClampColorPickerToScreen("ESPTargetTextColor")
 ClampColorPickerToScreen("HitParticleColor")
-ClampColorPickerToScreen("BulletTracerColor")
-ClampColorPickerToScreen("OverlayGradientColor1")
-ClampColorPickerToScreen("OverlayGradientColor2")
 ClampColorPickerToScreen("HitChamColor")
 
 -- ============================================================
