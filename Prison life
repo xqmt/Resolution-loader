@@ -3216,6 +3216,7 @@ local HitSounds = {
     ["TF2 Hit"] = 137392628136734,
     ["Metal Bat Hit"] = 114303603199822,
     ["Neverlose"] = 82938206376993,
+    ["Break"] = 103059835203534,
     ["Minecraft Hit 1"] = 135478009117226,
     ["Minecraft Hit 2"] = 4018616850,
     ["MLG Hit"] = 109817519733426,
@@ -3230,6 +3231,7 @@ local HitSounds = {
 
 local KillSounds = {
     ["Fahhh"] = 93458245768554,
+    ["Manbo"] = 102257186883445,
     ["Epic Kill 1"] = 87039942244697,
     ["Epic Kill 2"] = 75248488088600,
     ["Laugh"] = 87825295777427,
