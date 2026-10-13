@@ -41,9 +41,9 @@ local Tabs = {
     Main    = Window:AddTab("Main",    "crosshair",       "Core features"),
     World   = Window:AddTab("World",   "globe",           "World appearance settings"),
     Visual  = Window:AddTab("Visual",  "eye",             "ESP and Visual Customization"),
-    Gun     = Window:AddTab("Gun",     "Flame", "Weapons and Gun Mods"),
-    Mods    = Window:AddTab("Mods",    "UserRoundStar",          "Player and Vehicle Modifications"),
-    Misc    = Window:AddTab("Misc",    "ServerPlus",            "Info, Updates and Feedback"),
+    Gun     = Window:AddTab("Gun",     "shopping-basket", "Weapons and Gun Mods"),
+    Mods    = Window:AddTab("Mods",    "wrench",          "Player and Vehicle Modifications"),
+    Misc    = Window:AddTab("Misc",    "info",            "Info, Updates and Feedback"),
     Setting = Window:AddTab("Setting", "settings",        "Customize the UI behavior and appearance"),
 }
 
