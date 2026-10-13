@@ -487,24 +487,28 @@ UtilTab:Button({
         end
 
         game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "Auto Eating",
+            Title = "Auto Eating (Fast)",
             Text = "Using: " .. tool.Name .. " ok",
             Duration = 4
         })
 
         local Name = tool.Name
         task.spawn(function()
-            while task.wait(0) do
-                local charTool = LocalPlayer.Character:FindFirstChild(Name)
+            while true do
+                task.wait(0.001)
+                local char = LocalPlayer.Character
+                local charTool = char and char:FindFirstChild(Name)
                 if charTool then
-                    local args = {{
-                        CheesePull = false,
-                        FoodType = "DrumStick",
-                        Action = "Bite",
-                        Tool = charTool,
-                        Bite = 1
-                    }}
-                    ReplicatedStorage:WaitForChild("DrumstickEvent"):FireServer(unpack(args))
+                    for i = 1, 10 do
+                        local args = {{
+                            CheesePull = false,
+                            FoodType = "DrumStick",
+                            Action = "Bite",
+                            Tool = charTool,
+                            Bite = 1
+                        }}
+                        ReplicatedStorage:WaitForChild("DrumstickEvent"):FireServer(unpack(args))
+                    end
                 end
             end
         end)
