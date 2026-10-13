@@ -216,7 +216,9 @@ UpdatesBox:AddLabel(
     "- Added Enrique Killsound\n" ..
     "- Added Fatality 2 Killsound\n" ..
     "- Added Weapon Textures\n" ..
-    "  Credits to OnlyAdrian for sending every Texture",
+    "  Credits to OnlyAdrian for sending every Texture\n" ..
+    "- Added Hit Particles\n" ..
+    "- Added Hit Cham (Neon)",
     true
 )
 
@@ -1367,7 +1369,110 @@ PaintTab:AddLabel("Credits to OnlyAdrian", true)
 
 local SoundTab = WeaponModsTabbox:AddTab(nil, "volume-2")
 local NotifyTab = WeaponModsTabbox:AddTab(nil, "bell")
+local FxTab = WeaponModsTabbox:AddTab(nil, "sparkles")
 
+-- ============ HIT EFFECTS TAB (NEW) ============
+FxTab:AddLabel("Hit Particles")
+
+FxTab:AddCheckbox("HitParticleEnabled", {
+    Text = "Hit Particles",
+    Tooltip = "Shows particles on the target when your bullet hits them",
+    Default = true,
+    Callback = function(v)
+        if getgenv().SetHitParticleEnabled then
+            getgenv().SetHitParticleEnabled(v)
+        end
+    end,
+})
+
+FxTab:AddDropdown("HitParticleType", {
+    Values = {"Sparks"},
+    Default = "Sparks",
+    Text = "Particle Type",
+    Tooltip = "Select which particle effect plays on hit",
+    Callback = function(Value)
+        if getgenv().SetHitParticleType then
+            getgenv().SetHitParticleType(Value)
+        end
+    end,
+})
+
+FxTab:AddSlider("HitParticleCount", {
+    Text = "Particle Count",
+    Default = 30,
+    Min = 1,
+    Max = 100,
+    Rounding = 0,
+    Callback = function(Value)
+        if getgenv().SetHitParticleCount then
+            getgenv().SetHitParticleCount(Value)
+        end
+    end,
+})
+
+FxTab:AddDivider()
+
+FxTab:AddLabel("Hit Cham (Neon)")
+
+FxTab:AddCheckbox("HitChamEnabled", {
+    Text = "Hit Cham",
+    Tooltip = "Briefly paints the target with a neon color when you hit them",
+    Default = true,
+    Callback = function(v)
+        if getgenv().SetHitChamEnabled then
+            getgenv().SetHitChamEnabled(v)
+        end
+    end,
+}):AddColorPicker("HitChamColor", {
+    Default = Color3.fromRGB(0, 255, 120),
+    Title = "Hit Cham Color",
+    Text = "Hit Cham Color",
+    Tooltip = "Sets the neon color used for the hit cham",
+    Callback = function(Value)
+        if getgenv().SetHitChamColor then
+            getgenv().SetHitChamColor(Value)
+        end
+    end,
+})
+
+FxTab:AddSlider("HitChamDuration", {
+    Text = "Hit Cham Duration",
+    Default = 0.15,
+    Min = 0.05,
+    Max = 2,
+    Rounding = 2,
+    Callback = function(Value)
+        if getgenv().SetHitChamDuration then
+            getgenv().SetHitChamDuration(Value)
+        end
+    end,
+})
+
+FxTab:AddSlider("HitChamTransparency", {
+    Text = "Hit Cham Transparency",
+    Default = 0.35,
+    Min = 0,
+    Max = 1,
+    Rounding = 2,
+    Callback = function(Value)
+        if getgenv().SetHitChamTransparency then
+            getgenv().SetHitChamTransparency(Value)
+        end
+    end,
+})
+
+FxTab:AddDivider()
+
+FxTab:AddCheckbox("HitChamUseHighlight", {
+    Text = "Use Highlight (On Top)",
+    Tooltip = "Also shows a Highlight outline above everything on hit",
+    Default = true,
+    Callback = function(v)
+        getgenv().SilentAimSettings.HitChamUseHighlight = v == true
+    end,
+})
+
+-- ============ SOUND TAB ============
 SoundTab:AddDropdown("WeaponSoundPack", {
     Values = {"None", "Silenced Shot", "Bubble Shot", "Laser Shot", "Dart Gun", "Energy Shot", "Neverlose"},
     Default = "None",
@@ -1452,6 +1557,7 @@ SoundTab:AddDropdown("HitSound", {
     end,
 })
 
+-- ============ NOTIFY TAB ============
 NotifyTab:AddLabel("Effects")
 
 NotifyTab:AddCheckbox("ColorScreenKillEffect", {
@@ -2087,6 +2193,7 @@ ClampColorPickerToScreen("WeaponColor")
 ClampColorPickerToScreen("ColorScreenKillEffectColor")
 ClampColorPickerToScreen("ESPTextColor")
 ClampColorPickerToScreen("ESPTargetTextColor")
+ClampColorPickerToScreen("HitChamColor")
 
 -- ============================================================
 -- ====================== SETTING TAB =========================
