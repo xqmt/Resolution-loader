@@ -20,11 +20,11 @@ Library.Scheme.DarkColor = Color3.fromRGB(4, 5, 8)
 
 -- ============ WINDOW SETUP ============
 local Window = Library:CreateWindow({
-    Title = "",
-    Footer = "Swiftly.uc",
-    FooterLeft = "0.6.8",
+    Title = "Swiftly",
+    Footer = "",
+    FooterLeft = "",
     FooterRight = "",
-    Icon = 74169651953690,
+    Icon = 74752193530219,
     NotifySide = "Right",
     ShowCustomCursor = true,
     Size = UDim2.fromOffset(700, 750),
@@ -32,8 +32,8 @@ local Window = Library:CreateWindow({
     Resizable = true,
     SidebarCompacted = true,
     ShowMobileButtons = false,
-    CornerRadius = 10,
-    Font = Enum.Font.Gotham,
+    CornerRadius = 12,
+    Font = Enum.Font.Cartoon,
 })
 
 -- ============ TABS ============
@@ -188,36 +188,23 @@ local UpdatesBox = Tabs.Misc:AddLeftGroupbox("Updates", "bell")
 
 UpdatesBox:AddLabel("Prison Life", true)
 UpdatesBox:AddLabel(
+    "- Added Hit Particles Color Picker\n" ..
+    "- Added Rainbow Particles Mode\n" ..
+    "- Added Rainbow Speed Control\n" ..
+    "- Added Custom Particle Color Toggle\n" ..
+    "- Improved Particle Rendering\n" ..
     "- Added Invisible\n" ..
     "  Credits to A2Flacko\n" ..
     "- Added Anti-invisible\n" ..
     "  Credits to A2Flacko\n" ..
-    "- Some Bugs Fixed\n" ..
-    "- Added new Teleport Criminal Base\n" ..
-    "- Added new Teleport Frontwall\n" ..
-    "- Improved Get Weapons System\n" ..
     "- Added Anti Sit\n" ..
     "  to prevent kick exploits\n" ..
     "- Added Korblox\n" ..
     "  Visual\n" ..
     "- Added Headless\n" ..
     "  Visual\n" ..
-    "- Added CoD Kaboom Hitsound\n" ..
-    "- Added Creepy Bell Hitsound\n" ..
-    "- Added You are a Idiot Killsound\n" ..
-    "- Added Creepy Bell Killsound\n" ..
-    "- Added Vine Boom Killsound\n" ..
-    "- Added RDR2 Low Honor Killsound\n" ..
-    "- Added Get Out Killsound\n" ..
-    "- Added Diahrrea Sound Killsound\n" ..
-    "- Added Goku Prowler Killsound\n" ..
-    "- Added iPhone Ding Killsound\n" ..
-    "- Added Bark Fart Killsound\n" ..
-    "- Added Enrique Killsound\n" ..
-    "- Added Fatality 2 Killsound\n" ..
     "- Added Weapon Textures\n" ..
-    "  Credits to OnlyAdrian for sending every Texture\n" ..
-    "- Added Hit Particles\n" ..
+    "  Credits to OnlyAdrian\n" ..
     "- Added Hit Cham (Neon)",
     true
 )
@@ -1371,7 +1358,7 @@ local SoundTab = WeaponModsTabbox:AddTab(nil, "volume-2")
 local NotifyTab = WeaponModsTabbox:AddTab(nil, "bell")
 local FxTab = WeaponModsTabbox:AddTab(nil, "sparkles")
 
--- ============ HIT EFFECTS TAB (NEW) ============
+-- ============ HIT EFFECTS TAB (UPDATED) ============
 FxTab:AddLabel("Hit Particles")
 
 FxTab:AddCheckbox("HitParticleEnabled", {
@@ -1412,6 +1399,57 @@ FxTab:AddSlider("HitParticleCount", {
 
 FxTab:AddDivider()
 
+-- ============ PARTICLE COLOR / RAINBOW (NEW) ============
+FxTab:AddLabel("Particle Color")
+
+FxTab:AddCheckbox("HitParticleColorEnabled", {
+    Text = "Custom Particle Color",
+    Tooltip = "Use a custom solid color for hit particles (overrides default)",
+    Default = false,
+    Callback = function(v)
+        if getgenv().SetHitParticleColorEnabled then
+            getgenv().SetHitParticleColorEnabled(v)
+        end
+    end,
+}):AddColorPicker("HitParticleColor", {
+    Default = Color3.fromRGB(255, 255, 255),
+    Title = "Particle Color",
+    Text = "Particle Color",
+    Tooltip = "Color applied to hit particles when enabled",
+    Callback = function(Value)
+        if getgenv().SetHitParticleColor then
+            getgenv().SetHitParticleColor(Value)
+        end
+    end,
+})
+
+FxTab:AddCheckbox("HitParticleRainbow", {
+    Text = "Rainbow Particles",
+    Tooltip = "Cycles through the color spectrum on hit particles (overrides custom color)",
+    Default = false,
+    Callback = function(v)
+        if getgenv().SetHitParticleRainbow then
+            getgenv().SetHitParticleRainbow(v)
+        end
+    end,
+})
+
+FxTab:AddSlider("HitParticleRainbowSpeed", {
+    Text = "Rainbow Speed",
+    Default = 1,
+    Min = 0.1,
+    Max = 5,
+    Rounding = 2,
+    Callback = function(Value)
+        if getgenv().SetHitParticleRainbowSpeed then
+            getgenv().SetHitParticleRainbowSpeed(Value)
+        end
+    end,
+})
+
+FxTab:AddDivider()
+
+-- ============ HIT CHAM (NEON) ============
 FxTab:AddLabel("Hit Cham (Neon)")
 
 FxTab:AddCheckbox("HitChamEnabled", {
@@ -2193,6 +2231,7 @@ ClampColorPickerToScreen("WeaponColor")
 ClampColorPickerToScreen("ColorScreenKillEffectColor")
 ClampColorPickerToScreen("ESPTextColor")
 ClampColorPickerToScreen("ESPTargetTextColor")
+ClampColorPickerToScreen("HitParticleColor")
 ClampColorPickerToScreen("HitChamColor")
 
 -- ============================================================
