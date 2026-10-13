@@ -20,10 +20,10 @@ Library.Scheme.DarkColor = Color3.fromRGB(4, 5, 8)
 
 -- ============ WINDOW SETUP ============
 local Window = Library:CreateWindow({
-    Title = "Swiftly | Prison Life",
-    Footer = "Prison Life",
-    FooterLeft = "v1.0",
-    FooterRight = "",
+    Title = "Swiftly",
+    Footer = "",
+    FooterLeft = "",
+    FooterRight = "Prison life",
     Icon = 82757754657789,
     NotifySide = "Right",
     ShowCustomCursor = true,
@@ -1209,7 +1209,7 @@ end)
 local WeaponModBox = Tabs.Gun:AddRightGroupbox("Weapon Mod", "sword")
 local WeaponModsTabbox = WeaponModBox:AddTabbox()
 
-local GunModTab = WeaponModsTabbox:AddTab("Gun", "wrench")
+local GunModTab = WeaponModsTabbox:AddTab("", "wrench")
 
 GunModTab:AddCheckbox("WeaponMod", {
     Text = "Weapon Mod",
@@ -1259,7 +1259,7 @@ GunModTab:AddSlider("FireRateValue", {
     end,
 })
 
-local ChainTab = WeaponModsTabbox:AddTab("Bullet", "cable")
+local ChainTab = WeaponModsTabbox:AddTab("", "cable")
 
 ChainTab:AddCheckbox("CustomBulletColor", {
     Text = "Custom Bullet Color",
@@ -1282,7 +1282,7 @@ ChainTab:AddLabel("Bullet Color"):AddColorPicker("BulletColor", {
     end,
 })
 
-local PaintTab = WeaponModsTabbox:AddTab("Paint", "paintbrush")
+local PaintTab = WeaponModsTabbox:AddTab("", "paintbrush")
 PaintTab:AddCheckbox("EnableWeaponColor", {
     Text = "Enable Weapon Color",
     Default = false,
@@ -1354,9 +1354,9 @@ PaintTab:AddDropdown("WeaponTexture", {
 
 PaintTab:AddLabel("Credits to OnlyAdrian", true)
 
-local SoundTab = WeaponModsTabbox:AddTab("Sound", "volume-2")
-local NotifyTab = WeaponModsTabbox:AddTab("Notify", "bell")
-local FxTab = WeaponModsTabbox:AddTab("FX", "sparkles")
+local SoundTab = WeaponModsTabbox:AddTab("", "volume-2")
+local NotifyTab = WeaponModsTabbox:AddTab("", "bell")
+local FxTab = WeaponModsTabbox:AddTab("", "sparkles")
 
 -- ============ HIT EFFECTS TAB (UPDATED) ============
 FxTab:AddLabel("Hit Particles")
