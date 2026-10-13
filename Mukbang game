@@ -20,11 +20,10 @@ WindUI:AddTheme({
 -- Create Window
 local Window = WindUI:CreateWindow({
     Title   = "Swiftly",
-    Author  = "A script for MuBang (tests)",
     Folder  = "Swiftly_MuBangConfig.json",
     Icon    = "github",
     Theme   = "Dark",
-    Acrylic = true,
+    Acrylic = false,
     Transparent = true,
     Background = "rbxassetid://7224215094",
     Size    = UDim2.fromOffset(680, 460),
@@ -35,7 +34,7 @@ local Window = WindUI:CreateWindow({
     AutoScale  = true,
     NewElements = true,
     BackgroundImageTransparency = 0.65,
-    HideSearchBar = true,
+    HideSearchBar = false,
     ScrollBarEnabled = false,
     SideBarWidth = 200,
     Topbar = {
@@ -52,8 +51,8 @@ local Window = WindUI:CreateWindow({
         OnlyMobile = false,
         Scale = 1,
         Color = ColorSequence.new(
-            Color3.fromHex("#000000"),
-            Color3.fromHex("#000000")
+            Color3.fromHex("#FDE2E4"),
+            Color3.fromHex("#ffffff")
         ),
     },
     User = {
