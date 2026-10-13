@@ -30,6 +30,9 @@ getgenv().SilentAimSettings = {
     FOVThickness = 1,
     FriendCheck = true,
     SpinbotSpeed = 0,
+    FaceTargetEnabled = false,
+    FaceTargetSmooth = true,
+    FaceTargetSpeed = 15,
     ESPEnabled = false,
     ESPNamesEnabled = true,
     ESPTargetColor = Color3.fromRGB(255, 182, 255),
@@ -1061,6 +1064,80 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
+-- ============ FACE TARGET ============
+local faceTargetRotation = nil
+
+local function getFaceTargetPart()
+    if not Settings.FaceTargetEnabled then return nil end
+    if not currentTarget or not currentTarget.Parent then return nil end
+    local char = player.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return nil end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum or hum.Health <= 0 then return nil end
+
+    local targetChar = currentTarget:FindFirstAncestorOfClass("Model")
+    local targetPart = currentTarget
+    if targetChar then
+        local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+        if targetHRP then targetPart = targetHRP end
+    end
+    return hrp, targetPart
+end
+
+RunService.RenderStepped:Connect(function(deltaTime)
+    if not Settings.FaceTargetEnabled then
+        faceTargetRotation = nil
+        return
+    end
+
+    local hrp, targetPart = getFaceTargetPart()
+    if not hrp or not targetPart then
+        faceTargetRotation = nil
+        return
+    end
+
+    local myPos = hrp.Position
+    local dir = targetPart.Position - myPos
+    local flatDir = Vector3.new(dir.X, 0, dir.Z)
+
+    if flatDir.Magnitude < 0.05 then return end
+
+    local lookAt = CFrame.lookAt(myPos, myPos + flatDir)
+    local targetCFrame = CFrame.new(myPos) * (lookAt - lookAt.Position)
+
+    if Settings.FaceTargetSmooth then
+        local curCF = hrp.CFrame
+        local _, curY, _ = curCF:ToEulerAnglesYXZ()
+        local _, tgtY, _ = targetCFrame:ToEulerAnglesYXZ()
+
+        local diff = math.atan2(math.sin(tgtY - curY), math.cos(tgtY - curY))
+        local speed = math.clamp((Settings.FaceTargetSpeed or 15) * deltaTime, 0, 1)
+        local newY = curY + diff * speed
+
+        faceTargetRotation = CFrame.new(myPos) * CFrame.Angles(0, newY, 0)
+    else
+        faceTargetRotation = targetCFrame
+    end
+
+    hrp.CFrame = faceTargetRotation
+end)
+
+getgenv().SetFaceTargetEnabled = function(v)
+    Settings.FaceTargetEnabled = v == true
+    if not Settings.FaceTargetEnabled then
+        faceTargetRotation = nil
+    end
+end
+
+getgenv().SetFaceTargetSmooth = function(v)
+    Settings.FaceTargetSmooth = v == true
+end
+
+getgenv().SetFaceTargetSpeed = function(v)
+    Settings.FaceTargetSpeed = tonumber(v) or 15
+end
 
 -- ============ NOCLIP ============
 pcall(function()
@@ -2380,6 +2457,18 @@ UserInputService.InputBegan:Connect(function(input, processed)
     end
     if Settings.VehicleFlyKeyCode and input.KeyCode == Settings.VehicleFlyKeyCode then
         Settings.VehicleFlyEnabled = not Settings.VehicleFlyEnabled
+        return
+    end
+    if input.KeyCode == Enum.KeyCode.F then
+        Settings.FaceTargetEnabled = not Settings.FaceTargetEnabled
+        if not Settings.FaceTargetEnabled then
+            faceTargetRotation = nil
+        end
+        Library:Notify({
+            Title = "Face Target",
+            Description = Settings.FaceTargetEnabled and "Enabled" or "Disabled",
+            Time = 2,
+        })
         return
     end
     if input.KeyCode == Enum.KeyCode.E or input.KeyCode == Enum.KeyCode.LeftControl then
