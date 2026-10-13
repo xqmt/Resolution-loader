@@ -587,7 +587,7 @@ FaceTargetBox:AddCheckbox("FaceTargetEnabled", {
 FaceTargetBox:AddCheckbox("FaceTargetSmooth", {
     Text = "Smooth Rotation",
     Tooltip = "Smoothly interpolate rotation instead of snapping instantly",
-    Default = true,
+    Default = false,
     Callback = function(v)
         getgenv().SetFaceTargetSmooth(v)
     end,
