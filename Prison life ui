@@ -1,4 +1,4 @@
--- UI Script Precision | Prison Life (Updated for new main script)
+-- UI Script Precision | Prison Life
 local repo = "https://raw.githubusercontent.com/majeskooooo/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
@@ -20,8 +20,8 @@ Library.Scheme.DarkColor = Color3.fromRGB(4, 5, 8)
 
 -- ============ WINDOW SETUP ============
 local Window = Library:CreateWindow({
-    Title = "Swiftly",
-    Footer = "hi everyone",
+    Title = "",
+    Footer = "Swiftly.uc",
     FooterLeft = "0.6.8",
     FooterRight = "",
     Icon = 74169651953690,
@@ -216,10 +216,7 @@ UpdatesBox:AddLabel(
     "- Added Enrique Killsound\n" ..
     "- Added Fatality 2 Killsound\n" ..
     "- Added Weapon Textures\n" ..
-    "  Credits to OnlyAdrian for sending every Texture\n" ..
-    "- NEW: Custom Bullet Tracer Texture\n" ..
-    "  (Lifetime / Glow / FadeTime)\n" ..
-    "- NEW: FOV Thickness Slider",
+    "  Credits to OnlyAdrian for sending every Texture",
     true
 )
 
@@ -614,19 +611,6 @@ FOVEyeTab:AddSlider("FOVSize", {
     Rounding = 0,
     Callback = function(Value)
         getgenv().SilentAimSettings.FOVRadius = Value
-    end,
-})
-
--- NEW: FOV Thickness slider
-FOVEyeTab:AddSlider("FOVThickness", {
-    Text = "FOV Circle Thickness",
-    Tooltip = "Thickness of the FOV circle border",
-    Default = 1,
-    Min = 0.5,
-    Max = 10,
-    Rounding = 1,
-    Callback = function(Value)
-        getgenv().SilentAimSettings.FOVThickness = Value
     end,
 })
 
@@ -1286,103 +1270,29 @@ GunModTab:AddSlider("FireRateValue", {
     end,
 })
 
--- ============================================================
--- ============== BULLET TRACER TAB (UPDATED) =================
--- ============================================================
 local ChainTab = WeaponModsTabbox:AddTab(nil, "cable")
 
-ChainTab:AddCheckbox("CustomBulletTracer", {
-    Text = "Custom Bullet Tracer",
-    Tooltip = "Applies a custom texture to all bullets (current & future weapons)",
+ChainTab:AddCheckbox("CustomBulletColor", {
+    Text = "Custom Bullet Color",
+    Tooltip = "Applies a custom color to all bullets, current and future weapons",
     Default = false,
     Callback = function(v)
-        getgenv().setCustomBulletTracerEnabled(v)
+        setCustomBulletColorEnabled(v)
     end,
 })
 
-ChainTab:AddDivider("Texture")
+ChainTab:AddDivider()
 
-ChainTab:AddInput("BulletTextureID", {
-    Text = "",
-    Placeholder = "rbxassetid://446111271",
-    ClearTextOnFocus = false,
-    Finished = false,
-})
-
-do
-    local holder = Options.BulletTextureID.Holder
-    local box = holder and holder:FindFirstChildOfClass("TextBox")
-    if box then
-        box:GetPropertyChangedSignal("Text"):Connect(function()
-            Options.BulletTextureID.Value = box.Text
-        end)
-    end
-end
-
-ChainTab:AddButton({
-    Text = "Apply Texture",
-    Func = function()
-        local id = Options.BulletTextureID.Value
-        if id and id ~= "" then
-            getgenv().setBulletTexture(id)
-            Library:Notify({ Title = "Bullet Tracer", Text = "Texture applied successfully!" })
-        else
-            Library:Notify({ Title = "Bullet Tracer", Text = "Please enter a valid texture ID." })
-        end
-    end,
-})
-
-ChainTab:AddButton({
-    Text = "Reset to Default",
-    Func = function()
-        Options.BulletTextureID:SetValue("")
-        getgenv().setBulletTexture("rbxassetid://446111271")
-    end,
-})
-
-ChainTab:AddDivider("Appearance")
-
-ChainTab:AddSlider("BulletTracerLifetime", {
-    Text = "Tracer Lifetime (s)",
-    Tooltip = "ระยะเวลาที่ tracer อยู่บนหน้าจอ (วินาที)",
-    Default = 0.5,
-    Min = 0.05,
-    Max = 5,
-    Rounding = 2,
+ChainTab:AddLabel("Bullet Color"):AddColorPicker("BulletColor", {
+    Default = Color3.fromRGB(255, 255, 0),
+    Title = "Bullet Color",
+    Text = "Bullet Color",
+    Tooltip = "Sets the color of all bullets when enabled",
     Callback = function(Value)
-        getgenv().setBulletTracerLifetime(Value)
+        setBulletColorRGB(Value)
     end,
 })
 
-ChainTab:AddSlider("BulletTracerGlow", {
-    Text = "Tracer Glow",
-    Tooltip = "ความสว่างของแสง (SurfaceLight Brightness)",
-    Default = 5,
-    Min = 0,
-    Max = 20,
-    Rounding = 0,
-    Callback = function(Value)
-        getgenv().setBulletTracerGlow(Value)
-    end,
-})
-
-ChainTab:AddSlider("BulletTracerFadeTime", {
-    Text = "Tracer Fade Time (s)",
-    Tooltip = "เวลาที่ค่อยๆ จางหายก่อนที่ tracer จะหายไป",
-    Default = 0.3,
-    Min = 0.05,
-    Max = 3,
-    Rounding = 2,
-    Callback = function(Value)
-        getgenv().setBulletTracerFadeTime(Value)
-    end,
-})
-
-ChainTab:AddLabel("Note: Uncheck 'Custom Bullet Tracer' to use the game's default bullet style.", true)
-
--- ============================================================
--- ==================== WEAPON SKIN TAB =======================
--- ============================================================
 local PaintTab = WeaponModsTabbox:AddTab(nil, "paintbrush")
 PaintTab:AddCheckbox("EnableWeaponColor", {
     Text = "Enable Weapon Color",
@@ -1455,9 +1365,6 @@ PaintTab:AddDropdown("WeaponTexture", {
 
 PaintTab:AddLabel("Credits to OnlyAdrian", true)
 
--- ============================================================
--- ================== SOUND / NOTIFY TAB ======================
--- ============================================================
 local SoundTab = WeaponModsTabbox:AddTab(nil, "volume-2")
 local NotifyTab = WeaponModsTabbox:AddTab(nil, "bell")
 
@@ -2175,6 +2082,7 @@ ClampColorPickerToScreen("FOVColor")
 ClampColorPickerToScreen("ESPTargetColor")
 ClampColorPickerToScreen("FogColor")
 ClampColorPickerToScreen("TracerColor")
+ClampColorPickerToScreen("BulletColor")
 ClampColorPickerToScreen("WeaponColor")
 ClampColorPickerToScreen("ColorScreenKillEffectColor")
 ClampColorPickerToScreen("ESPTextColor")
