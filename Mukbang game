@@ -1,0 +1,832 @@
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Theme Configuration
+WindUI:AddTheme({
+    Name = "Dark",
+    Accent = Color3.fromHex("#18181b"),
+    Background = Color3.fromHex("#101010"),
+    Outline = Color3.fromHex("#FFFFFF"),
+    Text = Color3.fromHex("#FFFFFF"),
+    Placeholder = Color3.fromHex("#7a7a7a"),
+    Button = Color3.fromHex("#52525b"),
+    Icon = Color3.fromHex("#a1a1aa"),
+})
+
+-- Create Window (คงค่า Title, Logo, Background อันเดิมของ WindUI ไว้)
+local Window = WindUI:CreateWindow({
+    Title   = "Swiftly",
+    Author  = "A script for MuBang (tests)",
+    Folder  = "Soilares_MuBangConfig.json",
+    Icon    = "rbxassetid://125286116928351", -- Logo เดิม
+    Theme   = "Dark",
+    Acrylic = true,
+    Transparent = true,
+    Background = "rbxassetid://125286116928351", -- Background เดิม
+    Size    = UDim2.fromOffset(680, 460),
+    MinSize = Vector2.new(560, 350),
+    MaxSize = Vector2.new(850, 560),
+    ToggleKey  = Enum.KeyCode.RightShift,
+    Resizable  = true,
+    AutoScale  = true,
+    NewElements = true,
+    BackgroundImageTransparency = 0.65,
+    HideSearchBar = true,
+    ScrollBarEnabled = false,
+    SideBarWidth = 200,
+    Topbar = {
+        Height      = 44,
+        ButtonsType = "Default",
+    },
+    OpenButton = {
+        Title = "Soilares",
+        Icon = "zap",
+        CornerRadius = UDim.new(1, 0),
+        StrokeThickness = 3,
+        Enabled = true,
+        Draggable = true,
+        OnlyMobile = false,
+        Scale = 1,
+        Color = ColorSequence.new(
+            Color3.fromHex("#000000"),
+            Color3.fromHex("#000000")
+        ),
+    },
+    User = {
+        Enabled  = true,
+        Anonymous = false,
+        Callback = function()
+            print("User panel clicked")
+        end,
+    },
+})
+
+---------------------------------------------------------
+-- TABS
+---------------------------------------------------------
+
+-- 1. Info Tab
+local InfoTab = Window:Tab({ Name = "Info ℹ️", Title = "Info ℹ️", Icon = "info" })
+InfoTab:Paragraph({
+    Title = "Name: Soilares Hub",
+    Desc = "Version: 1.1 (May contain bugs, etc.)\nGame: Mubang Game\nMade with: Solarar v3"
+})
+
+-- 2. Food Tab
+local FoodTab = Window:Tab({ Name = "Food 🎂", Title = "Food 🎂", Icon = "cake" })
+FoodTab:Paragraph({
+    Title = "Free Food",
+    Desc = "Get all the food in the game for free!"
+})
+FoodTab:Button({
+    Title = "Unlock all foods on Tablet (OP)",
+    Callback = function()
+        if LocalPlayer then
+            print("Iniciando a criação de pacotes de atributos no LocalPlayer...")
+            for _, v in ipairs({
+                "CookiesFacesSetOwned", "CookieTinsSetOwned", "2xSpicyBurritoOwned",
+                "BeautifulFruitsSetOwned", "PremiumChocolateSetOwned", "DumplingSoupSetOwned"
+            }) do
+                LocalPlayer:SetAttribute(v, true)
+                print("-> Atributo '" .. v .. "' configurado como:", tostring(LocalPlayer:GetAttribute(v)))
+            end
+            print("Sucesso! Todos os atributos foram criados dentro de Players." .. LocalPlayer.Name)
+        else
+            warn("Erro: LocalPlayer não foi encontrado para registrar os atributos.")
+        end
+
+        for _, v in ipairs({
+            "BigIceCreamTraysOwned", "BurgerSetCashOwned", "Has2XBytes",
+            "Has2xCash", "HearOthers", "RainbowChipsSetOwned"
+        }) do
+            LocalPlayer:SetAttribute(v, true)
+        end
+
+        print("🎯 SIMULADOR: Injetando Hook global para forçar retornos em TRUE...")
+        local v27 = getrawmetatable(game)
+        local __namecall = v27.__namecall
+        setreadonly(v27, false)
+        v27.__namecall = newcclosure(function(p1, ...)
+            if getnamecallmethod() == "InvokeServer" and p1:IsA("RemoteFunction") then
+                print("⚡ HOOK SIMULADO: Interceptando pedido de " .. p1.Name .. ". Forçando retorno TRUE!")
+                return true
+            end
+            return __namecall(p1, ...)
+        end)
+        setreadonly(v27, true)
+        print("✅ SUCESSO: Simulador de Hook ativo.")
+    end
+})
+
+-- 3. Funny Things Tab
+local FunnyTab = Window:Tab({ Name = "Funny Things 😀", Title = "Funny Things 😀", Icon = "smile" })
+
+FunnyTab:Button({
+    Title = "Break invisible walls and etc.",
+    Callback = function()
+        local v119, v120 = false, false
+        local Build = workspace:FindFirstChild("Build") or workspace:FindFirstChild("build")
+        if Build then
+            for _, v125 in pairs(Build:GetDescendants()) do
+                if v125.Name == "Part" and v125.Parent and v125.Parent.Name == "BLOCKER" then
+                    v125:Destroy()
+                    v119 = true
+                end
+                if v125.Name == "Blocker" and v125.Parent and v125.Parent.Name == "ConvenienceS" then
+                    v125:Destroy()
+                    v120 = true
+                end
+            end
+        end
+        if v119 or v120 then
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Cleanup Completed",
+                Text = "The blockers were successfully removed!",
+                Duration = 3
+            })
+        end
+    end
+})
+
+FunnyTab:Button({
+    Title = "Turn object into food (Uses 1st Inventory Item)",
+    Callback = function()
+        local Mouse = LocalPlayer:GetMouse()
+        local Character = LocalPlayer.Character
+        local Backpack = LocalPlayer:FindFirstChild("Backpack")
+        local u34 = (Character and Character:FindFirstChildWhichIsA("Tool")) or (Backpack and Backpack:FindFirstChildWhichIsA("Tool"))
+        
+        if not u34 then
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Error",
+                Text = "Get or buy any food first!",
+                Duration = 3
+            })
+            return
+        end
+
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Universal Transmutation",
+            Text = "Using: " .. u34.Name .. ".\nClick an object on the map!",
+            Duration = 4
+        })
+
+        local connection
+        connection = Mouse.Button1Down:Connect(function()
+            local MouseTarget = Mouse.Target
+            if MouseTarget and MouseTarget:IsA("BasePart") and MouseTarget.Name ~= "Terrain" then
+                connection:Disconnect()
+                local Handle = u34:FindFirstChild("Handle")
+                local Sound = Handle and Handle:FindFirstChildWhichIsA("Sound") or u34:FindFirstChildWhichIsA("Sound")
+                
+                if Handle then Handle:Destroy() end
+                
+                local clone = MouseTarget:Clone()
+                clone.Name = "Handle"
+                clone.CanCollide = false
+                clone.Anchored = false
+                clone.CFrame = CFrame.new(0, 0, 0)
+                clone.Parent = u34
+                if Sound then Sound.Parent = clone end
+
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Success! 🍽️",
+                    Text = "Object injected into: " .. u34.Name .. "! Re-equip the item.",
+                    Duration = 3
+                })
+            end
+        end)
+    end
+})
+
+FunnyTab:Button({
+    Title = "Open Cat Army GUI",
+    Callback = function()
+        -- รัน Gui กองทัพแมวตามเดิม
+        local ScreenGui = Instance.new("ScreenGui")
+        local Frame = Instance.new("Frame")
+        local TextLabel = Instance.new("TextLabel")
+        local TextButton = Instance.new("TextButton")
+        local Frame2 = Instance.new("Frame")
+        local TextButton2 = Instance.new("TextButton")
+        local TextButton3 = Instance.new("TextButton")
+        local TextLabel2 = Instance.new("TextLabel")
+        local Frame3 = Instance.new("Frame")
+        local TextLabel3 = Instance.new("TextLabel")
+        local TextButton4, TextButton5, TextButton6, TextButton7 = Instance.new("TextButton"), Instance.new("TextButton"), Instance.new("TextButton"), Instance.new("TextButton")
+        local Frame4 = Instance.new("Frame")
+        local TextLabel4 = Instance.new("TextLabel")
+        local TextButton8, TextButton9, TextButton10 = Instance.new("TextButton"), Instance.new("TextButton"), Instance.new("TextButton")
+
+        ScreenGui.Name = "CatArmyGuiV2"
+        ScreenGui.Parent = game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
+        ScreenGui.ResetOnSpawn = false
+
+        Frame.Name = "MainFrame"
+        Frame.Parent = ScreenGui
+        Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+        Frame.BorderSizePixel = 0
+        Frame.Position = UDim2.new(0.05, 0, 0.3, 0)
+        Frame.Size = UDim2.new(0, 240, 0, 420)
+        Frame.Active = true
+        Frame.Draggable = true
+        Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
+
+        TextLabel.Name = "TitleLabel"
+        TextLabel.Parent = Frame
+        TextLabel.BackgroundTransparency = 1
+        TextLabel.Position = UDim2.new(0, 10, 0, 0)
+        TextLabel.Size = UDim2.new(1, -50, 0, 40)
+        TextLabel.Font = Enum.Font.GothamBold
+        TextLabel.Text = "CAT ARMY"
+        TextLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+        TextLabel.TextSize = 14
+        TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+        TextButton.Name = "BtnClose"
+        TextButton.Parent = Frame
+        TextButton.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+        TextButton.Position = UDim2.new(1, -35, 0, 8)
+        TextButton.Size = UDim2.new(0, 25, 0, 25)
+        TextButton.Font = Enum.Font.GothamBold
+        TextButton.Text = "X"
+        TextButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TextButton.TextSize = 14
+        Instance.new("UICorner", TextButton).CornerRadius = UDim.new(0, 5)
+        TextButton.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+
+        Frame2.Name = "ControlFrame"
+        Frame2.Parent = Frame
+        Frame2.BackgroundTransparency = 1
+        Frame2.Position = UDim2.new(0, 10, 0, 45)
+        Frame2.Size = UDim2.new(1, -20, 0, 45)
+
+        TextButton2.Parent = Frame2
+        TextButton2.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        TextButton2.Size = UDim2.new(0, 35, 0, 35)
+        TextButton2.Font = Enum.Font.GothamBold
+        TextButton2.Text = "-"
+        TextButton2.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TextButton2.TextSize = 20
+        Instance.new("UICorner", TextButton2).CornerRadius = UDim.new(0, 5)
+
+        TextLabel2.Parent = Frame2
+        TextLabel2.BackgroundTransparency = 1
+        TextLabel2.Position = UDim2.new(0, 45, 0, 0)
+        TextLabel2.Size = UDim2.new(1, -90, 0, 35)
+        TextLabel2.Font = Enum.Font.GothamBold
+        TextLabel2.Text = "Cats: 3"
+        TextLabel2.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TextLabel2.TextSize = 16
+
+        TextButton3.Parent = Frame2
+        TextButton3.BackgroundColor3 = Color3.fromRGB(50, 160, 50)
+        TextButton3.Position = UDim2.new(1, -35, 0, 0)
+        TextButton3.Size = UDim2.new(0, 35, 0, 35)
+        TextButton3.Font = Enum.Font.GothamBold
+        TextButton3.Text = "+"
+        TextButton3.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TextButton3.TextSize = 20
+        Instance.new("UICorner", TextButton3).CornerRadius = UDim.new(0, 5)
+
+        Frame3.Name = "CatListFrame"
+        Frame3.Parent = Frame
+        Frame3.BackgroundTransparency = 1
+        Frame3.Position = UDim2.new(0, 10, 0, 95)
+        Frame3.Size = UDim2.new(1, -20, 0, 140)
+
+        TextLabel3.Parent = Frame3
+        TextLabel3.BackgroundTransparency = 1
+        TextLabel3.Size = UDim2.new(1, 0, 0, 20)
+        TextLabel3.Font = Enum.Font.GothamSemibold
+        TextLabel3.Text = "Choose Species:"
+        TextLabel3.TextColor3 = Color3.fromRGB(200, 200, 200)
+        TextLabel3.TextSize = 13
+        TextLabel3.TextXAlignment = Enum.TextXAlignment.Left
+
+        local function v58(p2, p3, p4)
+            p2.Parent = Frame3
+            p2.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+            p2.Position = p4
+            p2.Size = UDim2.new(1, 0, 0, 24)
+            p2.Font = Enum.Font.Gotham
+            p2.Text = p3
+            p2.TextColor3 = Color3.fromRGB(180, 180, 180)
+            p2.TextSize = 13
+            Instance.new("UICorner", p2).CornerRadius = UDim.new(0, 4)
+        end
+
+        v58(TextButton4, "Butter Cat", UDim2.new(0, 0, 0, 25))
+        v58(TextButton5, "Bred Cat", UDim2.new(0, 0, 0, 53))
+        v58(TextButton6, "Cheese Cat", UDim2.new(0, 0, 0, 81))
+        v58(TextButton7, "White Cat", UDim2.new(0, 0, 0, 109))
+
+        Frame4.Name = "ModeFrame"
+        Frame4.Parent = Frame
+        Frame4.BackgroundTransparency = 1
+        Frame4.Position = UDim2.new(0, 10, 0, 245)
+        Frame4.Size = UDim2.new(1, -20, 0, 90)
+
+        TextLabel4.Parent = Frame4
+        TextLabel4.BackgroundTransparency = 1
+        TextLabel4.Size = UDim2.new(1, 0, 0, 20)
+        TextLabel4.Font = Enum.Font.GothamSemibold
+        TextLabel4.Text = "Line Formation:"
+        TextLabel4.TextColor3 = Color3.fromRGB(200, 200, 200)
+        TextLabel4.TextSize = 13
+        TextLabel4.TextXAlignment = Enum.TextXAlignment.Left
+
+        TextButton9.Parent = Frame4
+        TextButton9.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        TextButton9.Position = UDim2.new(0, 0, 0, 25)
+        TextButton9.Size = UDim2.new(1, 0, 0, 26)
+        TextButton9.Font = Enum.Font.Gotham
+        TextButton9.Text = "Vertical Line"
+        TextButton9.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TextButton9.TextSize = 13
+        Instance.new("UICorner", TextButton9).CornerRadius = UDim.new(0, 4)
+
+        TextButton8.Parent = Frame4
+        TextButton8.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+        TextButton8.Position = UDim2.new(0, 0, 0, 55)
+        TextButton8.Size = UDim2.new(1, 0, 0, 26)
+        TextButton8.Font = Enum.Font.Gotham
+        TextButton8.Text = "Horizontal Line (Lying Down)"
+        TextButton8.TextColor3 = Color3.fromRGB(180, 180, 180)
+        TextButton8.TextSize = 13
+        Instance.new("UICorner", TextButton8).CornerRadius = UDim.new(0, 4)
+
+        TextButton10.Parent = Frame
+        TextButton10.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
+        TextButton10.Position = UDim2.new(0, 10, 1, -45)
+        TextButton10.Size = UDim2.new(1, -20, 0, 35)
+        TextButton10.Font = Enum.Font.GothamBold
+        TextButton10.Text = "START ARMY"
+        TextButton10.TextColor3 = Color3.fromRGB(35, 35, 45)
+        TextButton10.TextSize = 14
+        Instance.new("UICorner", TextButton10).CornerRadius = UDim.new(0, 6)
+
+        local n1 = 3
+        local s1 = "Vertical"
+        local s2 = "Butter Cat"
+
+        local function v62()
+            local c1 = Color3.fromRGB(50, 50, 60)
+            local c2 = Color3.fromRGB(180, 180, 180)
+            TextButton4.BackgroundColor3, TextButton4.TextColor3 = c1, c2
+            TextButton5.BackgroundColor3, TextButton5.TextColor3 = c1, c2
+            TextButton6.BackgroundColor3, TextButton6.TextColor3 = c1, c2
+            TextButton7.BackgroundColor3, TextButton7.TextColor3 = c1, c2
+        end
+
+        local function v63(p5, p6)
+            s2 = p6
+            v62()
+            p5.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+            p5.TextColor3 = Color3.fromRGB(255, 255, 255)
+        end
+
+        TextButton4.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        TextButton4.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TextButton4.MouseButton1Click:Connect(function() v63(TextButton4, "Butter Cat") end)
+        TextButton5.MouseButton1Click:Connect(function() v63(TextButton5, "Bred Cat") end)
+        TextButton6.MouseButton1Click:Connect(function() v63(TextButton6, "Cheese Cat") end)
+        TextButton7.MouseButton1Click:Connect(function() v63(TextButton7, "White Cat") end)
+
+        TextButton3.MouseButton1Click:Connect(function() n1 += 1 TextLabel2.Text = "Cats: " .. n1 end)
+        TextButton2.MouseButton1Click:Connect(function() if n1 > 1 then n1 -= 1 TextLabel2.Text = "Cats: " .. n1 end end)
+
+        TextButton9.MouseButton1Click:Connect(function()
+            s1 = "Vertical"
+            TextButton9.BackgroundColor3, TextButton9.TextColor3 = Color3.fromRGB(0, 120, 255), Color3.fromRGB(255, 255, 255)
+            TextButton8.BackgroundColor3, TextButton8.TextColor3 = Color3.fromRGB(50, 50, 60), Color3.fromRGB(180, 180, 180)
+        end)
+
+        TextButton8.MouseButton1Click:Connect(function()
+            s1 = "Horizontal"
+            TextButton8.BackgroundColor3, TextButton8.TextColor3 = Color3.fromRGB(0, 120, 255), Color3.fromRGB(255, 255, 255)
+            TextButton9.BackgroundColor3, TextButton9.TextColor3 = Color3.fromRGB(50, 50, 60), Color3.fromRGB(180, 180, 180)
+        end)
+
+        TextButton10.MouseButton1Click:Connect(function()
+            local HRP = (LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()):WaitForChild("HumanoidRootPart")
+            for _, v in ipairs(Workspace:GetChildren()) do
+                if v.Name == "Cat_Army_GUI" then v:Destroy() end
+            end
+
+            local build = Workspace:FindFirstChild("build")
+            if build then build = build:FindFirstChild("private rooms") end
+            if not build then return end
+
+            local catModel = build:FindFirstChild(s2)
+            if not catModel then warn("The cat '" .. s2 .. "' was not found!") return end
+
+            for i = 0, n1 - 1 do
+                local clone = catModel:Clone()
+                clone.Name = "Cat_Army_GUI"
+                local basePart = clone:IsA("Model") and (clone.PrimaryPart or clone:FindFirstChildWhichIsA("BasePart")) or clone
+                if basePart then
+                    local offsetX, offsetZ
+                    if s1 == "Vertical" then
+                        offsetX = (i % 3) * 2.5
+                        offsetZ = 3 + math.floor(i / 3) * 3
+                    else
+                        offsetX = ((i % 3) - 1) * 2.5
+                        offsetZ = 3 + math.floor(i / 3) * 3
+                    end
+
+                    basePart.CFrame = HRP.CFrame * CFrame.new(offsetX, 0, offsetZ)
+                    clone.Parent = Workspace
+
+                    for _, part in ipairs(clone:GetDescendants()) do
+                        if part:IsA("BasePart") then part.CanCollide = false end
+                    end
+
+                    local att0 = Instance.new("Attachment", basePart)
+                    local att1 = Instance.new("Attachment", HRP)
+                    att1.Position = Vector3.new(offsetX, -1, offsetZ)
+
+                    local alignPos = Instance.new("AlignPosition")
+                    alignPos.MaxForce = 50000
+                    alignPos.Responsiveness = 15
+                    alignPos.Attachment0 = att0
+                    alignPos.Attachment1 = att1
+                    alignPos.Parent = basePart
+
+                    local alignOrient = Instance.new("AlignOrientation")
+                    alignOrient.MaxTorque = 50000
+                    alignOrient.Responsiveness = 15
+                    alignOrient.Attachment0 = att0
+                    alignOrient.Attachment1 = att1
+                    alignOrient.Parent = basePart
+                end
+            end
+        end)
+    end
+})
+
+local NumberBites = 0
+FunnyTab:Input({
+    Title = "Write how many foods you will have (VISUAL)",
+    Placeholder = "Amount",
+    Callback = function(text) NumberBites = text end
+})
+FunnyTab:Button({
+    Title = "Get bites (VISUAL)",
+    Callback = function()
+        LocalPlayer:WaitForChild("leaderstats"):WaitForChild("Bites").Value = NumberBites
+    end
+})
+
+local NumberMoney = 0
+FunnyTab:Input({
+    Title = "Write how much money you will have (VISUAL)",
+    Placeholder = "Amount",
+    Callback = function(text) NumberMoney = text end
+})
+FunnyTab:Button({
+    Title = "Get money (VISUAL)",
+    Callback = function()
+        LocalPlayer:WaitForChild("leaderstats"):WaitForChild("Cash").Value = NumberMoney
+    end
+})
+
+-- 4. Utilities Tab
+local UtilTab = Window:Tab({ Name = "⚙️ Utilities", Title = "⚙️ Utilities", Icon = "settings" })
+
+UtilTab:Button({
+    Title = "Eat your first food from inventory (To reach global top)",
+    Callback = function()
+        local Character = LocalPlayer.Character
+        local Backpack = LocalPlayer:FindFirstChild("Backpack")
+        local tool = (Character and Character:FindFirstChildWhichIsA("Tool")) or (Backpack and Backpack:FindFirstChildWhichIsA("Tool"))
+        
+        if not tool then
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Error",
+                Text = "Get or buy any food first!",
+                Duration = 3
+            })
+            return
+        end
+
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Auto Eating",
+            Text = "Using: " .. tool.Name .. " ok",
+            Duration = 4
+        })
+
+        local Name = tool.Name
+        task.spawn(function()
+            while task.wait(0) do
+                local charTool = LocalPlayer.Character:FindFirstChild(Name)
+                if charTool then
+                    local args = {{
+                        CheesePull = false,
+                        FoodType = "DrumStick",
+                        Action = "Bite",
+                        Tool = charTool,
+                        Bite = 1
+                    }}
+                    ReplicatedStorage:WaitForChild("DrumstickEvent"):FireServer(unpack(args))
+                end
+            end
+        end)
+    end
+})
+
+local WalkSpeedVal = 16
+UtilTab:Input({
+    Title = "Write your speed",
+    Placeholder = "Default: 16",
+    Callback = function(val) WalkSpeedVal = tonumber(val) or 16 end
+})
+UtilTab:Button({
+    Title = "Set Walk Speed",
+    Callback = function()
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = WalkSpeedVal
+        end
+    end
+})
+
+local JumpPowerVal = 50
+UtilTab:Input({
+    Title = "Write your jump power",
+    Placeholder = "Default: 50",
+    Callback = function(val) JumpPowerVal = tonumber(val) or 50 end
+})
+UtilTab:Button({
+    Title = "Set Jump Power",
+    Callback = function()
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpHeight = JumpPowerVal
+        end
+    end
+})
+
+local GravityVal = 196.2
+UtilTab:Input({
+    Title = "Write your gravity",
+    Placeholder = "Default: 196.2",
+    Callback = function(val) GravityVal = tonumber(val) or 196.2 end
+})
+UtilTab:Button({
+    Title = "Set Gravity",
+    Callback = function()
+        Workspace.Gravity = GravityVal
+    end
+})
+
+UtilTab:Button({
+    Title = "Enable ESP",
+    Callback = function()
+        _G.ESP_Active = true
+        local function createHighlight(char)
+            if not char:FindFirstChild("ESPHighlight") then
+                local Highlight = Instance.new("Highlight")
+                Highlight.Name = "ESPHighlight"
+                Highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                Highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                Highlight.FillTransparency = 0.5
+                Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                Highlight.Parent = char
+            end
+        end
+
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character then
+                createHighlight(plr.Character)
+            end
+        end
+
+        if not _G.ESP_Connected then
+            _G.ESP_Connected = true
+            Players.PlayerAdded:Connect(function(player)
+                player.CharacterAdded:Connect(function(character)
+                    task.wait(1)
+                    if _G.ESP_Active and player ~= LocalPlayer then createHighlight(character) end
+                end)
+            end)
+        end
+    end
+})
+
+UtilTab:Button({
+    Title = "Disable ESP",
+    Callback = function()
+        _G.ESP_Active = false
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player.Character and player.Character:FindFirstChild("ESPHighlight") then
+                player.Character.ESPHighlight:Destroy()
+            end
+        end
+    end
+})
+
+-- Player Dropdown
+local function getPlayerList()
+    local t = {}
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then table.insert(t, player.Name) end
+    end
+    return t
+end
+
+local SelectedPlayer = ""
+local PlayerDropdown = UtilTab:Dropdown({
+    Title = "Player List",
+    Values = getPlayerList(),
+    Value = "",
+    Callback = function(val) SelectedPlayer = val end
+})
+
+UtilTab:Button({
+    Title = "🔄 Refresh Player List",
+    Callback = function()
+        PlayerDropdown:SetValues(getPlayerList())
+    end
+})
+
+UtilTab:Button({
+    Title = "Shaders",
+    Callback = function()
+        local Lighting = game:GetService("Lighting")
+        local RunService = game:GetService("RunService")
+        Lighting.Technology = Enum.Technology.Future
+        Lighting.ShadowSoftness = 0.1
+        Lighting.EnvironmentDiffuseScale = 1
+        Lighting.EnvironmentSpecularScale = 1
+        Lighting.GlobalShadows = true
+
+        for _, v in pairs(Lighting:GetChildren()) do
+            if v:IsA("PostEffect") or v:IsA("Atmosphere") or v:IsA("Sky") then
+                v:Destroy()
+            end
+        end
+
+        local Atmosphere = Instance.new("Atmosphere", Lighting)
+        Atmosphere.Density = 0.25
+        Atmosphere.Offset = 0.15
+        Atmosphere.Color = Color3.fromRGB(240, 220, 190)
+        Atmosphere.Decay = Color3.fromRGB(230, 170, 120)
+        Atmosphere.Glare = 0.35
+        Atmosphere.Haze = 1.1
+
+        local ColorCorrection = Instance.new("ColorCorrectionEffect", Lighting)
+        ColorCorrection.Brightness = 0.05
+        ColorCorrection.Contrast = 0.15
+        ColorCorrection.Saturation = 0.15
+
+        local Bloom = Instance.new("BloomEffect", Lighting)
+        Bloom.Intensity = 0.8
+        Bloom.Size = 24
+        Bloom.Threshold = 0.75
+
+        local SunRays = Instance.new("SunRaysEffect", Lighting)
+        SunRays.Intensity = 0.2
+        SunRays.Spread = 0.6
+
+        local DepthOfField = Instance.new("DepthOfFieldEffect", Lighting)
+        DepthOfField.FarIntensity = 0.3
+        DepthOfField.FocusDistance = 40
+        DepthOfField.InFocusRadius = 50
+        DepthOfField.NearIntensity = 0.05
+
+        RunService.RenderStepped:Connect(function()
+            Lighting.Brightness = 2.8
+            Lighting.ExposureCompensation = 0.2
+            Lighting.OutdoorAmbient = Color3.fromRGB(130, 140, 150)
+            Lighting.Ambient = Color3.fromRGB(45, 45, 50)
+        end)
+    end
+})
+
+local espectando = false
+local conexaoEspectar
+UtilTab:Toggle({
+    Title = "Player Camera View",
+    Value = false,
+    Callback = function(state)
+        espectando = state
+        local Camera = Workspace.CurrentCamera
+        if espectando then
+            local targetPlr = Players:FindFirstChild(SelectedPlayer)
+            if targetPlr and targetPlr.Character and targetPlr.Character:FindFirstChild("Humanoid") then
+                Camera.CameraSubject = targetPlr.Character.Humanoid
+                conexaoEspectar = targetPlr.CharacterAdded:Connect(function(char)
+                    local hum = char:WaitForChild("Humanoid", 5)
+                    if hum and espectando then Camera.CameraSubject = hum end
+                end)
+            else
+                print("Select a valid player from the list before activating.")
+            end
+        else
+            if conexaoEspectar then conexaoEspectar:Disconnect() conexaoEspectar = nil end
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                Camera.CameraSubject = LocalPlayer.Character.Humanoid
+            end
+        end
+    end
+})
+
+UtilTab:Toggle({
+    Title = "Teleport to Players",
+    Value = false,
+    Callback = function(state)
+        if state then
+            local targetPlr = Players:FindFirstChild(SelectedPlayer)
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and targetPlr and targetPlr.Character and targetPlr.Character:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = targetPlr.Character.HumanoidRootPart.CFrame * CFrame.new(0, 2, 0)
+            end
+        end
+    end
+})
+
+local infJumpEnabled = false
+UtilTab:Toggle({
+    Title = "Infinite Jump",
+    Value = false,
+    Callback = function(state)
+        infJumpEnabled = state
+    end
+})
+
+UserInputService.JumpRequest:Connect(function()
+    if infJumpEnabled and LocalPlayer.Character then
+        local Hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if Hum then Hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+    end
+end)
+
+-- 5. Updates Tab
+local UpdatesTab = Window:Tab({ Name = "✉️ Updates", Title = "✉️ Updates", Icon = "file-text" })
+UpdatesTab:Paragraph({
+    Title = "Changelog",
+    Desc = "- Many Food Dropdowns\n  Remembering that these dropdowns were necessary because the game changed some files.\n\nThat's it for today, more coming soon."
+})
+
+-- 6. Credits Tab
+local CreditsTab = Window:Tab({ Name = "✉️ Credits", Title = "✉️ Credits", Icon = "user" })
+CreditsTab:Paragraph({ Title = "Creator", Desc = "Juan" })
+CreditsTab:Paragraph({ Title = "Tools Used", Desc = "Dex, Infinite Yield, Pastefy, WeAreDevs, Solarar V3 and Simple Spy" })
+CreditsTab:Paragraph({ Title = "Language", Desc = "English" })
+CreditsTab:Paragraph({ Title = "Note", Desc = "I hope you enjoy the Hub :)" })
+
+-- 7. Settings Tab (UI Theme Config)
+local ThemeTab = Window:Tab({ Name = "Settings", Title = "Settings", Icon = "settings" })
+
+ThemeTab:Dropdown({
+    Title  = "Theme",
+    Values = (function()
+        local names = {}
+        for name in pairs(WindUI:GetThemes()) do
+            table.insert(names, name)
+        end
+        table.sort(names)
+        return names
+    end)(),
+    Value    = WindUI:GetCurrentTheme(),
+    Callback = function(selected)
+        WindUI:SetTheme(selected)
+    end,
+})
+
+ThemeTab:Toggle({
+    Title = "Acrylic",
+    Value = Window.Acrylic,
+    Callback = function()
+        local isOn = Window.Acrylic
+        WindUI:ToggleAcrylic(not isOn)
+    end,
+})
+
+ThemeTab:Toggle({
+    Title = "Transparent",
+    Value = WindUI:GetTransparency(),
+    Callback = function(state)
+        Window:ToggleTransparency(state)
+    end
+})
+
+local currentKey = Enum.KeyCode.RightShift
+ThemeTab:Keybind({
+    Title = "Toggle UI Key",
+    Value = currentKey,
+    Callback = function(v)
+        currentKey = (typeof(v) == "EnumItem") and v or Enum.KeyCode[v]
+        Window:SetToggleKey(currentKey)
+    end,
+})
+
+-- Notify On Loaded
+WindUI:Notify({
+    Title = "Soilares Hub",
+    Content = "Welcome to Soilares Hub!",
+})
+
+WindUI:SetNotificationLower(true)
