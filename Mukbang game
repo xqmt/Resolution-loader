@@ -34,7 +34,7 @@ local Window = WindUI:CreateWindow({
     AutoScale  = true,
     NewElements = true,
     BackgroundImageTransparency = 0.65,
-    HideSearchBar = false,
+    HideSearchBar = true,
     ScrollBarEnabled = false,
     SideBarWidth = 200,
     Topbar = {
@@ -45,14 +45,14 @@ local Window = WindUI:CreateWindow({
         Title = "Swiftly",
         Icon = "github",
         CornerRadius = UDim.new(1, 0),
-        StrokeThickness = 3,
+        StrokeThickness = 1,
         Enabled = true,
         Draggable = true,
         OnlyMobile = false,
         Scale = 1,
         Color = ColorSequence.new(
             Color3.fromHex("#FDE2E4"),
-            Color3.fromHex("#ffffff")
+            Color3.fromHex("#E8B4B8")
         ),
     },
     User = {
