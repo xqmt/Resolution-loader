@@ -20,7 +20,7 @@ Library.Scheme.DarkColor = Color3.fromRGB(4, 5, 8)
 
 -- ============ WINDOW SETUP ============
 local Window = Library:CreateWindow({
-    Title = "Swiftly.su",
+    Title = "Swiftlyㅤㅤㅤㅤㅤ",
     Footer = "",
     FooterLeft = "",
     FooterRight = "Prison life",
