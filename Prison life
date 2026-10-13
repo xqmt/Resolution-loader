@@ -80,6 +80,15 @@ getgenv().SilentAimSettings = {
     TargetCustomText = "Target",
     ESPNameTextSize = 12,
     ESPTargetNameTextSize = 12,
+
+    -- ===== HIT EFFECTS =====
+    HitParticleEnabled        = true,
+    HitParticleType           = "Sparks",
+    HitParticleCount          = 30,
+    HitParticleColor          = Color3.fromRGB(255, 255, 255),
+    HitParticleColorEnabled   = false,
+    HitParticleRainbow        = false,
+    HitParticleRainbowSpeed   = 1,
 }
 
 local Settings = getgenv().SilentAimSettings
@@ -551,24 +560,150 @@ local function getRedirectedDirection(Origin, OriginalDirection)
     return nil
 end
 
+-- ============ HIT PARTICLE ============
+local hit_particle_part = Instance.new("Part")
+hit_particle_part.Name         = "HitEffectParticleContainer"
+hit_particle_part.Size         = Vector3.new(0.1, 0.1, 0.1)
+hit_particle_part.Transparency = 1
+hit_particle_part.Anchored     = true
+hit_particle_part.CanCollide   = false
+hit_particle_part.CanQuery     = false
+hit_particle_part.CanTouch     = false
+hit_particle_part.Parent       = workspace
+
+local hit_particles = {
+    ["Sparks"] = {{
+        (function()
+            local pe = Instance.new("ParticleEmitter")
+            pe.Acceleration = Vector3.new(0, -50, 0)
+            pe.Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0, Color3.new(1,1,1)),
+                ColorSequenceKeypoint.new(0.25, Color3.new(0.33,1,0)),
+                ColorSequenceKeypoint.new(1, Color3.new(0.33,1,0.5))
+            }
+            pe.Lifetime      = NumberRange.new(0.5, 1)
+            pe.LightEmission = 1
+            pe.Enabled       = false
+            pe.Orientation   = Enum.ParticleOrientation.VelocityParallel
+            pe.Rate          = 0
+            pe.Size = NumberSequence.new{
+                NumberSequenceKeypoint.new(0, 0.6, 0),
+                NumberSequenceKeypoint.new(0.5, 0.6, 0),
+                NumberSequenceKeypoint.new(1, 0, 0)
+            }
+            pe.Speed      = NumberRange.new(15, 15)
+            pe.SpreadAngle= Vector2.new(50, -50)
+            pe.Texture    = "http://www.roblox.com/asset/?id=18540695516"
+            pe.Transparency = NumberSequence.new{
+                NumberSequenceKeypoint.new(0, 0, 0),
+                NumberSequenceKeypoint.new(0.5, 0, 0),
+                NumberSequenceKeypoint.new(1, 1, 0)
+            }
+            pe.Parent = hit_particle_part
+            return pe
+        end)(),
+        30
+    }},
+}
+
+local DEFAULT_HIT_PARTICLE_COLOR = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.new(1,1,1)),
+    ColorSequenceKeypoint.new(0.25, Color3.new(0.33,1,0)),
+    ColorSequenceKeypoint.new(1, Color3.new(0.33,1,0.5))
+}
+
+local function playHitParticle(position)
+    if not Settings.HitParticleEnabled then return end
+    if not position then return end
+
+    local particleData = hit_particles[Settings.HitParticleType or "Sparks"]
+    if not particleData then return end
+
+    hit_particle_part.CFrame = CFrame.new(position)
+
+    -- ===== APPLY CUSTOM COLOR / RAINBOW =====
+    for _, data in ipairs(particleData) do
+        local emitter = data[1]
+        if emitter and emitter.Parent then
+            if Settings.HitParticleRainbow then
+                local hue = (tick() * (Settings.HitParticleRainbowSpeed or 1)) % 1
+                local rainbowColor = Color3.fromHSV(hue, 1, 1)
+                emitter.Color = ColorSequence.new(rainbowColor)
+            elseif Settings.HitParticleColorEnabled then
+                local c = Settings.HitParticleColor or Color3.fromRGB(255, 255, 255)
+                emitter.Color = ColorSequence.new(c)
+            else
+                emitter.Color = DEFAULT_HIT_PARTICLE_COLOR
+            end
+        end
+    end
+
+    for _, data in ipairs(particleData) do
+        local emitter = data[1]
+        local defaultCount = data[2] or 10
+        if emitter and emitter.Parent then
+            emitter:Emit(Settings.HitParticleCount or defaultCount)
+        end
+    end
+end
+
+getgenv().SetHitParticleEnabled = function(v)
+    Settings.HitParticleEnabled = v == true
+end
+
+getgenv().SetHitParticleType = function(name)
+    if hit_particles[name] then
+        Settings.HitParticleType = name
+    end
+end
+
+getgenv().SetHitParticleCount = function(count)
+    Settings.HitParticleCount = tonumber(count) or 30
+end
+
+getgenv().SetHitParticleColorEnabled = function(v)
+    Settings.HitParticleColorEnabled = v == true
+end
+
+getgenv().SetHitParticleColor = function(color)
+    if typeof(color) == "Color3" then
+        Settings.HitParticleColor = color
+    end
+end
+
+getgenv().SetHitParticleRainbow = function(v)
+    Settings.HitParticleRainbow = v == true
+end
+
+getgenv().SetHitParticleRainbowSpeed = function(speed)
+    Settings.HitParticleRainbowSpeed = tonumber(speed) or 1
+end
+
 -- ============ HIT LOGS ============
 local function registerHit(result)
     if not result then return end
 
     local hitPart
+    local hitPos
     if typeof(result) == "Instance" then
         hitPart = result
+        hitPos  = result.Position
     elseif typeof(result) == "table" and result.Instance then
         hitPart = result.Instance
+        hitPos  = result.Position or (hitPart and hitPart.Position)
     end
 
     if not hitPart or not hitPart:IsA("BasePart") then return end
+    if not hitPos then hitPos = hitPart.Position end
 
-local char = hitPart:FindFirstAncestorOfClass("Model")
-if not char then return end
+    local char = hitPart:FindFirstAncestorOfClass("Model")
+    if not char then return end
 
-local hitPlayer = Players:GetPlayerFromCharacter(char)
+    local hitPlayer = Players:GetPlayerFromCharacter(char)
     if not hitPlayer or hitPlayer == player then return end
+
+    -- ===== HIT PARTICLE =====
+    pcall(playHitParticle, hitPos)
 
     if Settings.HitLogsEnabled then
         Library:Notify({
