@@ -3180,7 +3180,7 @@ end
 
 local function loadUI()
     local uiUrls = {
-        "https://raw.githubusercontent.com/ludicious-claw/precisionlol/refs/heads/main/UI%20Test",
+        "https://raw.githubusercontent.com/xqmt/Resolution-loader/refs/heads/main/Prison%20life%20ui",
         "https://cdn.jsdelivr.net/gh/ludicious-claw/precisionlol@main/UI%20Test",
     }
 
