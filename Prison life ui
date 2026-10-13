@@ -193,6 +193,8 @@ UpdatesBox:AddLabel(
     "- Added Rainbow Speed Control\n" ..
     "- Added Custom Particle Color Toggle\n" ..
     "- Improved Particle Rendering\n" ..
+    "- Added Face Target Controls\n" ..
+    "- Added FOV Thickness Slider\n" ..
     "- Added Invisible\n" ..
     "  Credits to A2Flacko\n" ..
     "- Added Anti-invisible\n" ..
@@ -537,7 +539,7 @@ local AimbotMidBox = Tabs.Main:AddLeftGroupbox("Smoothing & Accuracy", "target")
 
 AimbotMidBox:AddSlider("SilentAimRange", {
     Text = "Silent Aim Range",
-    Tooltip = "Color of the highlight when a player is your target",
+    Tooltip = "Maximum distance to lock onto a target",
     Default = 500,
     Min = 30,
     Max = 2000,
@@ -566,6 +568,39 @@ AimbotMidBox:AddSlider("HitChance", {
     Rounding = 1,
     Callback = function(Value)
         getgenv().SilentAimSettings.HitChance = Value
+    end,
+})
+
+-- ============ FACE TARGET GROUPBOX (NEW) ============
+local FaceTargetBox = Tabs.Main:AddRightGroupbox("Face Target", "smile")
+FaceTargetBox:SetDescription("Forces your character to look at the current target")
+
+FaceTargetBox:AddCheckbox("FaceTargetEnabled", {
+    Text = "Enable Face Target",
+    Tooltip = "Rotates your character to face the current Silent Aim target (Keybind: F)",
+    Default = false,
+    Callback = function(v)
+        getgenv().SetFaceTargetEnabled(v)
+    end,
+})
+
+FaceTargetBox:AddCheckbox("FaceTargetSmooth", {
+    Text = "Smooth Rotation",
+    Tooltip = "Smoothly interpolate rotation instead of snapping instantly",
+    Default = true,
+    Callback = function(v)
+        getgenv().SetFaceTargetSmooth(v)
+    end,
+})
+
+FaceTargetBox:AddSlider("FaceTargetSpeed", {
+    Text = "Rotation Speed",
+    Default = 15,
+    Min = 1,
+    Max = 50,
+    Rounding = 0,
+    Callback = function(Value)
+        getgenv().SetFaceTargetSpeed(Value)
     end,
 })
 
@@ -600,6 +635,19 @@ FOVEyeTab:AddSlider("FOVSize", {
     Rounding = 0,
     Callback = function(Value)
         getgenv().SilentAimSettings.FOVRadius = Value
+    end,
+})
+
+-- ============ FOV THICKNESS (NEW) ============
+FOVEyeTab:AddSlider("FOVThickness", {
+    Text = "FOV Circle Thickness",
+    Default = 1,
+    Min = 1,
+    Max = 10,
+    Rounding = 0,
+    Tooltip = "Thickness of the FOV circle outline",
+    Callback = function(Value)
+        getgenv().SilentAimSettings.FOVThickness = Value
     end,
 })
 
@@ -929,7 +977,7 @@ TracerBox:AddCheckbox("TracerESP", {
 TracerBox:AddSlider("TracerThickness", {
     Text = "Tracer Thickness",
     Tooltip = "Thickness of the tracer line",
-    Default = 0.2,
+    Default = 0.1,
     Min = 0.1,
     Max = 1.5,
     Rounding = 1,
@@ -2173,7 +2221,6 @@ ClampColorPickerToScreen("ColorScreenKillEffectColor")
 ClampColorPickerToScreen("ESPTextColor")
 ClampColorPickerToScreen("ESPTargetTextColor")
 ClampColorPickerToScreen("HitParticleColor")
-ClampColorPickerToScreen("HitChamColor")
 
 -- ============================================================
 -- ====================== SETTING TAB =========================
