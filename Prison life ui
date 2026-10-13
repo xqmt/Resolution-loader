@@ -20,9 +20,9 @@ Library.Scheme.DarkColor = Color3.fromRGB(4, 5, 8)
 
 -- ============ WINDOW SETUP ============
 local Window = Library:CreateWindow({
-    Title = "Swiftly",
-    Footer = "",
-    FooterLeft = "",
+    Title = "Swiftly | Prison Life",
+    Footer = "Prison Life",
+    FooterLeft = "v1.0",
     FooterRight = "",
     Icon = 82757754657789,
     NotifySide = "Right",
@@ -30,7 +30,7 @@ local Window = Library:CreateWindow({
     Size = UDim2.fromOffset(700, 750),
     Center = true,
     Resizable = true,
-    SidebarCompacted = true,
+    SidebarCompacted = false,
     ShowMobileButtons = false,
     CornerRadius = 12,
     Font = Enum.Font.Cartoon,
@@ -573,8 +573,8 @@ AimbotMidBox:AddSlider("HitChance", {
 local FOVBox = Tabs.Main:AddRightGroupbox("FOV / Targeting", "settings")
 
 local FOVIconTabbox = FOVBox:AddTabbox()
-local FOVEyeTab = FOVIconTabbox:AddTab(nil, "scan-eye")
-local FOVUsersTab = FOVIconTabbox:AddTab(nil, "users")
+local FOVEyeTab = FOVIconTabbox:AddTab("FOV", "scan-eye")
+local FOVUsersTab = FOVIconTabbox:AddTab("Users", "users")
 
 FOVEyeTab:AddCheckbox("HideFOV", {
     Text = "Show FOV Circle",
@@ -678,8 +678,8 @@ local EnvironmentBox = Tabs.World:AddLeftGroupbox("Environment", "trees")
 EnvironmentBox:AddLabel("World appearance settings", true)
 
 local EnvironmentTabbox = EnvironmentBox:AddTabbox()
-local EnvironmentNetworkTab = EnvironmentTabbox:AddTab(nil, "globe")
-local EnvironmentCloudTab = EnvironmentTabbox:AddTab(nil, "cloud")
+local EnvironmentNetworkTab = EnvironmentTabbox:AddTab("Network", "globe")
+local EnvironmentCloudTab = EnvironmentTabbox:AddTab("Cloud", "cloud")
 
 -- ============ WORLD GRADIENT ============
 local WorldGradientEnabled = false
@@ -1209,7 +1209,7 @@ end)
 local WeaponModBox = Tabs.Gun:AddRightGroupbox("Weapon Mod", "sword")
 local WeaponModsTabbox = WeaponModBox:AddTabbox()
 
-local GunModTab = WeaponModsTabbox:AddTab(nil, "wrench")
+local GunModTab = WeaponModsTabbox:AddTab("Gun", "wrench")
 
 GunModTab:AddCheckbox("WeaponMod", {
     Text = "Weapon Mod",
@@ -1259,7 +1259,7 @@ GunModTab:AddSlider("FireRateValue", {
     end,
 })
 
-local ChainTab = WeaponModsTabbox:AddTab(nil, "cable")
+local ChainTab = WeaponModsTabbox:AddTab("Bullet", "cable")
 
 ChainTab:AddCheckbox("CustomBulletColor", {
     Text = "Custom Bullet Color",
@@ -1282,7 +1282,7 @@ ChainTab:AddLabel("Bullet Color"):AddColorPicker("BulletColor", {
     end,
 })
 
-local PaintTab = WeaponModsTabbox:AddTab(nil, "paintbrush")
+local PaintTab = WeaponModsTabbox:AddTab("Paint", "paintbrush")
 PaintTab:AddCheckbox("EnableWeaponColor", {
     Text = "Enable Weapon Color",
     Default = false,
@@ -1354,9 +1354,9 @@ PaintTab:AddDropdown("WeaponTexture", {
 
 PaintTab:AddLabel("Credits to OnlyAdrian", true)
 
-local SoundTab = WeaponModsTabbox:AddTab(nil, "volume-2")
-local NotifyTab = WeaponModsTabbox:AddTab(nil, "bell")
-local FxTab = WeaponModsTabbox:AddTab(nil, "sparkles")
+local SoundTab = WeaponModsTabbox:AddTab("Sound", "volume-2")
+local NotifyTab = WeaponModsTabbox:AddTab("Notify", "bell")
+local FxTab = WeaponModsTabbox:AddTab("FX", "sparkles")
 
 -- ============ HIT EFFECTS TAB (UPDATED) ============
 FxTab:AddLabel("Hit Particles")
@@ -1834,9 +1834,9 @@ local VehicleModBox = Tabs.Mods:AddLeftGroupbox("Vehicle Mod", "car")
 VehicleModBox:SetDescription("Vehicle Modifications")
 local VehicleModsTabbox = VehicleModBox:AddTabbox()
 
-local VehicleFlyTab = VehicleModsTabbox:AddTab(nil, "wind")
-local VehicleSpeedTab = VehicleModsTabbox:AddTab(nil, "zap")
-local VehicleCustomTab = VehicleModsTabbox:AddTab(nil, "car")
+local VehicleFlyTab = VehicleModsTabbox:AddTab("Fly", "wind")
+local VehicleSpeedTab = VehicleModsTabbox:AddTab("Speed", "zap")
+local VehicleCustomTab = VehicleModsTabbox:AddTab("Car", "car")
 
 VehicleFlyTab:AddCheckbox("EnableVehicleFly", {
     Text = "Enable Vehicle Fly",
@@ -2029,8 +2029,8 @@ end
 -- ============ TELEPORTS ============
 local TeleportsBox = Tabs.Mods:AddRightGroupbox("Teleports", "map-pin")
 local TeleportsTabbox = TeleportsBox:AddTabbox()
-local LocationsTab = TeleportsTabbox:AddTab(nil, "map-pin")
-local TeleportPlayerTab = TeleportsTabbox:AddTab(nil, "users")
+local LocationsTab = TeleportsTabbox:AddTab("Locations", "map-pin")
+local TeleportPlayerTab = TeleportsTabbox:AddTab("Players", "users")
 
 local teleports = {
     {"Cafeteria", Vector3.new(868, 100, 2263)},
