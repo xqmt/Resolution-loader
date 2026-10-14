@@ -726,8 +726,7 @@ local EnvironmentBox = Tabs.World:AddLeftGroupbox("Environment", "trees")
 EnvironmentBox:AddLabel("World appearance settings", true)
 
 local EnvironmentTabbox = EnvironmentBox:AddTabbox()
-local EnvironmentNetworkTab = EnvironmentTabbox:AddTab("Network", "globe")
-local EnvironmentCloudTab = EnvironmentTabbox:AddTab("Sky", "cloud")
+local EnvironmentNetworkTab = EnvironmentTabbox:AddTab("", "globe")
 
 -- ============ WORLD GRADIENT ============
 local WorldGradientEnabled = false
@@ -804,7 +803,7 @@ EnvironmentNetworkTab:AddCheckbox("RemoveFog", {
 })
 
 -- ============ CUSTOM SKYBOX (FIXED) ============
-local SkyboxTab = EnvironmentTabbox:AddTab("Skybox", "sun")
+local SkyboxTab = EnvironmentTabbox:AddTab("", "cloud")
 
 SkyboxTab:AddCheckbox("SkyboxEnabled", {
     Text = "Enable Custom Skybox",
@@ -832,7 +831,7 @@ SkyboxTab:AddDropdown("Skyboxes", {
 SkyboxTab:AddLabel("Note: If the skybox does not appear, the selected asset may be broken.", true)
 
 -- ============ ATMOSPHERE (NEW) ============
-local AtmosphereTab = EnvironmentTabbox:AddTab("Atmosphere", "cloud-sun")
+local AtmosphereTab = EnvironmentTabbox:AddTab("", "cloud-sun")
 
 AtmosphereTab:AddCheckbox("AtmosphereEnabled", {
     Text = "Enable Atmosphere",
