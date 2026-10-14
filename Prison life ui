@@ -1,4 +1,3 @@
-
 -- UI Script Precision | Prison Life
 local repo = "https://raw.githubusercontent.com/majeskooooo/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
@@ -1335,6 +1334,157 @@ WeatherBox:AddSlider("WeatherSpeed", {
 })
 
 WeatherBox:AddLabel("Note: weather follows camera position in real time", true)
+
+-- ============================================================
+-- ==================== TIME CONTROL ==========================
+-- ============================================================
+
+local TimeControlBox = Tabs.World:AddLeftGroupbox("Time Control", "clock")
+TimeControlBox:SetDescription("Custom clock time with bypass")
+
+local ClockState = {
+    enabled        = false,
+    clockTime      = 12,
+    savedClockTime = Lighting.ClockTime,
+    signalConn     = nil,
+    heartbeatConn  = nil,
+}
+
+-- บังคับค่า ClockTime ให้ตรงกับที่ตั้งไว้
+local function applyClockTime()
+    if math.abs(Lighting.ClockTime - ClockState.clockTime) > 0.001 then
+        pcall(function()
+            Lighting.ClockTime = ClockState.clockTime
+        end)
+    end
+end
+
+-- ระบบ Bypass: ดักจับการเปลี่ยนแปลง ClockTime จาก Server
+-- Prison Life จะส่ง ClockTime ผ่าน Replication ทุกครั้งที่ Server อัปเดต
+-- เราจับ Signal แล้วเขียนทับทันที + Heartbeat เป็น Backup
+local function startClockBypass()
+    ClockState.savedClockTime = Lighting.ClockTime
+
+    if ClockState.signalConn then
+        ClockState.signalConn:Disconnect()
+    end
+    if ClockState.heartbeatConn then
+        ClockState.heartbeatConn:Disconnect()
+    end
+
+    -- Primary: ดัก Property Changed
+    ClockState.signalConn = Lighting:GetPropertyChangedSignal("ClockTime"):Connect(function()
+        if ClockState.enabled then
+            applyClockTime()
+        end
+    end)
+
+    -- Backup: กัน Server Replication ที่รัวๆ
+    ClockState.heartbeatConn = RunService.Heartbeat:Connect(function()
+        if ClockState.enabled then
+            applyClockTime()
+        end
+    end)
+
+    applyClockTime()
+end
+
+local function stopClockBypass()
+    if ClockState.signalConn then
+        ClockState.signalConn:Disconnect()
+        ClockState.signalConn = nil
+    end
+    if ClockState.heartbeatConn then
+        ClockState.heartbeatConn:Disconnect()
+        ClockState.heartbeatConn = nil
+    end
+end
+
+-- ============ TOGGLE ============
+TimeControlBox:AddCheckbox("CustomClockEnabled", {
+    Text    = "Enable Custom Clock Time",
+    Tooltip = "Overrides Prison Life's server-side day/night cycle with a fixed time",
+    Default = false,
+    Callback = function(v)
+        ClockState.enabled = v
+        if v then
+            startClockBypass()
+            Library:Notify({ Title = "Time Control", Text = "Clock bypass enabled" })
+        else
+            stopClockBypass()
+            pcall(function()
+                Lighting.ClockTime = ClockState.savedClockTime
+            end)
+            Library:Notify({ Title = "Time Control", Text = "Clock bypass disabled" })
+        end
+    end,
+})
+
+-- ============ SLIDER ============
+TimeControlBox:AddSlider("ClockTimeSlider", {
+    Text     = "Clock Time",
+    Tooltip  = "0 = Midnight, 6 = Dawn, 12 = Noon, 18 = Sunset",
+    Default  = 12,
+    Min      = 0,
+    Max      = 24,
+    Rounding = 2,
+    Callback = function(Value)
+        ClockState.clockTime = Value
+        if ClockState.enabled then
+            applyClockTime()
+        end
+    end,
+})
+
+TimeControlBox:AddDivider()
+
+-- ============ PRESETS ============
+TimeControlBox:AddDropdown("TimePreset", {
+    Values  = {"Midnight", "Dawn", "Morning", "Noon", "Afternoon", "Sunset", "Evening", "Night"},
+    Default = "Noon",
+    Text    = "Time Preset",
+    Tooltip = "Quickly set a time of day",
+    Callback = function(Value)
+        local presets = {
+            ["Midnight"]  = 0,
+            ["Dawn"]      = 5,
+            ["Morning"]   = 8,
+            ["Noon"]      = 12,
+            ["Afternoon"] = 15,
+            ["Sunset"]    = 18,
+            ["Evening"]   = 20,
+            ["Night"]     = 22,
+        }
+        local t = presets[Value]
+        if t then
+            ClockState.clockTime = t
+            Options.ClockTimeSlider:SetValue(t)
+            if ClockState.enabled then
+                applyClockTime()
+            end
+        end
+    end,
+})
+
+-- ============ APPLY BUTTON ============
+TimeControlBox:AddButton({
+    Text = "Apply Now",
+    Func = function()
+        if not ClockState.enabled then
+            ClockState.enabled = true
+            Options.CustomClockEnabled:SetValue(true)
+            startClockBypass()
+        else
+            applyClockTime()
+        end
+        Library:Notify({
+            Title = "Time Control",
+            Text  = string.format("Time locked to %.2fh", ClockState.clockTime),
+        })
+    end,
+})
+
+TimeControlBox:AddLabel("Note: Bypasses day/night cycle by intercepting replicated ClockTime changes", true)
 
 -- ============================================================
 -- ======================= VISUAL TAB =========================
