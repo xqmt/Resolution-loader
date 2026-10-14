@@ -242,7 +242,8 @@ UpdatesBox:AddLabel(
     "  to prevent kick exploits\n" ..
     "- Added Korblox / Headless\n" ..
     "- Added Weapon Textures\n" ..
-    "  Credits to OnlyAdrian",
+    "  Credits to OnlyAdrian\n" ..
+    "- Added Wind Aura Particles",
     true
 )
 
@@ -1350,7 +1351,6 @@ local ClockState = {
     heartbeatConn  = nil,
 }
 
--- บังคับค่า ClockTime ให้ตรงกับที่ตั้งไว้
 local function applyClockTime()
     if math.abs(Lighting.ClockTime - ClockState.clockTime) > 0.001 then
         pcall(function()
@@ -1359,9 +1359,6 @@ local function applyClockTime()
     end
 end
 
--- ระบบ Bypass: ดักจับการเปลี่ยนแปลง ClockTime จาก Server
--- Prison Life จะส่ง ClockTime ผ่าน Replication ทุกครั้งที่ Server อัปเดต
--- เราจับ Signal แล้วเขียนทับทันที + Heartbeat เป็น Backup
 local function startClockBypass()
     ClockState.savedClockTime = Lighting.ClockTime
 
@@ -1372,14 +1369,12 @@ local function startClockBypass()
         ClockState.heartbeatConn:Disconnect()
     end
 
-    -- Primary: ดัก Property Changed
     ClockState.signalConn = Lighting:GetPropertyChangedSignal("ClockTime"):Connect(function()
         if ClockState.enabled then
             applyClockTime()
         end
     end)
 
-    -- Backup: กัน Server Replication ที่รัวๆ
     ClockState.heartbeatConn = RunService.Heartbeat:Connect(function()
         if ClockState.enabled then
             applyClockTime()
@@ -1400,7 +1395,6 @@ local function stopClockBypass()
     end
 end
 
--- ============ TOGGLE ============
 TimeControlBox:AddCheckbox("CustomClockEnabled", {
     Text    = "Enable Custom Clock Time",
     Tooltip = "Overrides Prison Life's server-side day/night cycle with a fixed time",
@@ -1420,7 +1414,6 @@ TimeControlBox:AddCheckbox("CustomClockEnabled", {
     end,
 })
 
--- ============ SLIDER ============
 TimeControlBox:AddSlider("ClockTimeSlider", {
     Text     = "Clock Time",
     Tooltip  = "0 = Midnight, 6 = Dawn, 12 = Noon, 18 = Sunset",
@@ -1438,7 +1431,6 @@ TimeControlBox:AddSlider("ClockTimeSlider", {
 
 TimeControlBox:AddDivider()
 
--- ============ PRESETS ============
 TimeControlBox:AddDropdown("TimePreset", {
     Values  = {"Midnight", "Dawn", "Morning", "Noon", "Afternoon", "Sunset", "Evening", "Night"},
     Default = "Noon",
@@ -1466,7 +1458,6 @@ TimeControlBox:AddDropdown("TimePreset", {
     end,
 })
 
--- ============ APPLY BUTTON ============
 TimeControlBox:AddButton({
     Text = "Apply Now",
     Func = function()
@@ -1654,6 +1645,195 @@ TracerBox:AddLabel("Target Tracer Color"):AddColorPicker("TracerColor", {
     Tooltip = "Color of the tracer for your current target only (other players use their team color)",
     Callback = function(Value)
         setTracerColorRGB(Value)
+    end,
+})
+
+-- ============================================================
+-- ==================== WIND AURA PARTICLES ===================
+-- ============================================================
+
+local AuraBox = Tabs.Visual:AddRightGroupbox("Wind Aura", "wind")
+AuraBox:SetDescription("Wind particle aura attached to your HumanoidRootPart")
+
+local AuraState = {
+    Enabled        = false,
+    Rainbow        = false,
+    RainbowSpeed   = 1,
+    Color          = Color3.fromRGB(255, 156, 228),
+    CurrentHue     = 0,
+    ActiveParticles = {},
+    Template       = nil,
+    LoadFailed     = false,
+}
+
+-- ============ LOAD WIND TEMPLATE ============
+local function LoadAuraTemplate()
+    if AuraState.Template then return AuraState.Template end
+    if AuraState.LoadFailed then return nil end
+
+    local ok, objs = pcall(function()
+        return game:GetObjects("rbxassetid://80694081850877")
+    end)
+
+    if not ok or not objs or #objs == 0 then
+        AuraState.LoadFailed = true
+        return nil
+    end
+
+    AuraState.Template = objs[1]
+    return AuraState.Template
+end
+
+-- ============ CLEAR / APPLY COLOR ============
+local function ClearAuraParticles()
+    for i = #AuraState.ActiveParticles, 1, -1 do
+        local p = AuraState.ActiveParticles[i]
+        if p then
+            pcall(function() p:Destroy() end)
+        end
+        table.remove(AuraState.ActiveParticles, i)
+    end
+end
+
+local function ApplyColorToInstance(inst, col)
+    if not inst or not inst.Parent then return end
+    pcall(function()
+        if inst:IsA("PointLight") then
+            inst.Color = col
+        elseif inst:IsA("ParticleEmitter") or inst:IsA("Beam") or inst:IsA("Trail") then
+            inst.Color = ColorSequence.new(col)
+        end
+    end)
+end
+
+local function ApplyAuraColorToAll(col)
+    for _, p in ipairs(AuraState.ActiveParticles) do
+        ApplyColorToInstance(p, col)
+    end
+end
+
+-- ============ BUILD AURA ON HRP ============
+local function UpdateAuraSystem()
+    ClearAuraParticles()
+    if not AuraState.Enabled then return end
+
+    local char = player.Character
+    if not char then return end
+
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    local template = LoadAuraTemplate()
+    if not template then
+        Library:Notify({ Title = "Wind Aura", Text = "Failed to load aura template" })
+        return
+    end
+
+    local cloned = template:Clone()
+
+    -- Move every particle / beam / trail / light directly onto HumanoidRootPart
+    for _, descendant in ipairs(cloned:GetDescendants()) do
+        if descendant:IsA("ParticleEmitter")
+            or descendant:IsA("Beam")
+            or descendant:IsA("Trail")
+            or descendant:IsA("PointLight") then
+
+            local copy = descendant:Clone()
+            copy.Name = "\0"
+            copy.Parent = hrp
+            table.insert(AuraState.ActiveParticles, copy)
+        end
+    end
+
+    cloned:Destroy()
+
+    if AuraState.Rainbow then
+        ApplyAuraColorToAll(Color3.fromHSV(AuraState.CurrentHue, 1, 1))
+    else
+        ApplyAuraColorToAll(AuraState.Color)
+    end
+end
+
+-- ============ RAINBOW LOOP ============
+RunService.Heartbeat:Connect(function(dt)
+    if not AuraState.Enabled or not AuraState.Rainbow then return end
+    AuraState.CurrentHue = (AuraState.CurrentHue + dt * AuraState.RainbowSpeed * 0.15) % 1
+    local col = Color3.fromHSV(AuraState.CurrentHue, 1, 1)
+    ApplyAuraColorToAll(col)
+end)
+
+-- ============ RESPAWN HANDLING ============
+player.CharacterAdded:Connect(function(newChar)
+    ClearAuraParticles()
+    local hum = newChar:WaitForChild("Humanoid", 5)
+    if hum then
+        hum.Died:Connect(function()
+            ClearAuraParticles()
+        end)
+    end
+    task.wait(0.5)
+    if AuraState.Enabled then
+        UpdateAuraSystem()
+    end
+end)
+
+if player.Character then
+    local hum = player.Character:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.Died:Connect(function()
+            ClearAuraParticles()
+        end)
+    end
+end
+
+-- ============ AURA UI ============
+AuraBox:AddCheckbox("AuraEnabled", {
+    Text = "Enable Wind Aura",
+    Tooltip = "Attaches wind particles to your HumanoidRootPart",
+    Default = false,
+    Callback = function(v)
+        AuraState.Enabled = v
+        UpdateAuraSystem()
+    end,
+})
+
+AuraBox:AddDivider()
+
+AuraBox:AddLabel("Aura Color"):AddColorPicker("AuraColor", {
+    Default = Color3.fromRGB(255, 156, 228),
+    Title = "Aura Color",
+    Text = "Aura Color",
+    Tooltip = "Color applied to aura particles (ignored in Rainbow mode)",
+    Callback = function(Value)
+        AuraState.Color = Value
+        if not AuraState.Rainbow then
+            ApplyAuraColorToAll(Value)
+        end
+    end,
+})
+
+AuraBox:AddCheckbox("AuraRainbow", {
+    Text = "Rainbow Mode",
+    Tooltip = "Cycles through the color spectrum (overrides color picker)",
+    Default = false,
+    Callback = function(v)
+        AuraState.Rainbow = v
+        if v then
+            AuraState.CurrentHue = 0
+        else
+            ApplyAuraColorToAll(AuraState.Color)
+        end
+    end,
+})
+
+AuraBox:AddSlider("AuraRainbowSpeed", {
+    Text = "Rainbow Speed",
+    Default = 1,
+    Min = 0.1,
+    Max = 5,
+    Rounding = 2,
+    Callback = function(Value)
+        AuraState.RainbowSpeed = Value
     end,
 })
 
@@ -2844,6 +3024,7 @@ ClampColorPickerToScreen("OutdoorGradient")
 ClampColorPickerToScreen("AtmosphereColor")
 ClampColorPickerToScreen("AtmosphereDecay")
 ClampColorPickerToScreen("WeatherColor")
+ClampColorPickerToScreen("AuraColor")
 
 -- ============================================================
 -- ====================== SETTING TAB =========================
