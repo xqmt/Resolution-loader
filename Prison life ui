@@ -39,16 +39,50 @@ local Window = Library:CreateWindow({
 
 -- ============ TABS ============
 local Tabs = {
-    Main    = Window:AddTab("Main",    "crosshair",       "Core features"),
+    Main    = Window:AddTab("Main",    "crosshair",       "Combat features"),
     World   = Window:AddTab("World",   "globe",           "World appearance settings"),
     Visual  = Window:AddTab("Visual",  "eye",             "ESP and Visual Customization"),
-    Gun     = Window:AddTab("Gun",     "shopping-basket", "Weapons and Gun Mods"),
+    Gun     = Window:AddTab("Gun",     "flame",           "Weapons and Gun Mods"),
     Mods    = Window:AddTab("Misc",    "wrench",          "Player and Vehicle Modifications"),
     Misc    = Window:AddTab("info",    "info",            "Info, Updates and Feedback"),
     Setting = Window:AddTab("Setting", "settings",        "Customize the UI behavior and appearance"),
 }
 
 Library:SetDPIScale(95)
+
+-- ============ COLOR PICKER SCREEN CLAMP FIX (defined early) ============
+local function ClampColorPickerToScreen(OptionIdx)
+    local CP = Options[OptionIdx]
+    if not CP or not CP.ColorMenu then return end
+
+    local ColorMenu = CP.ColorMenu
+    local OriginalOpen = ColorMenu.Open
+
+    ColorMenu.Open = function(self, ...)
+        OriginalOpen(self, ...)
+
+        task.defer(function()
+            local Camera = workspace.CurrentCamera
+            if not Camera then return end
+
+            local ViewportSize = Camera.ViewportSize
+            local MenuSize = self.Menu.AbsoluteSize
+            local Margin = 8
+
+            local CurrentPos = self.Menu.Position
+            local X = CurrentPos.X.Offset
+            local Y = CurrentPos.Y.Offset
+
+            local MaxX = math.max(Margin, ViewportSize.X - MenuSize.X - Margin)
+            local MaxY = math.max(Margin, ViewportSize.Y - MenuSize.Y - Margin)
+
+            X = math.clamp(X, Margin, MaxX)
+            Y = math.clamp(Y, Margin, MaxY)
+
+            self.Menu.Position = UDim2.fromOffset(X, Y)
+        end)
+    end
+end
 
 -- ============================================================
 -- ======================= MISC TAB ===========================
@@ -802,7 +836,7 @@ EnvironmentNetworkTab:AddCheckbox("RemoveFog", {
     end,
 })
 
--- ============ CUSTOM SKYBOX (FIXED) ============
+-- ============ CUSTOM SKYBOX ============
 local SkyboxTab = EnvironmentTabbox:AddTab("", "cloud")
 
 SkyboxTab:AddCheckbox("SkyboxEnabled", {
@@ -830,7 +864,7 @@ SkyboxTab:AddDropdown("Skyboxes", {
 
 SkyboxTab:AddLabel("Note: If the skybox does not appear, the selected asset may be broken.", true)
 
--- ============ ATMOSPHERE (NEW) ============
+-- ============ ATMOSPHERE ============
 local AtmosphereTab = EnvironmentTabbox:AddTab("", "cloud-sun")
 
 AtmosphereTab:AddCheckbox("AtmosphereEnabled", {
@@ -928,7 +962,6 @@ AtmosphereTab:AddSlider("AtmosphereDensity", {
 local MinecraftBox = Tabs.World:AddRightGroupbox("Minecraft Texture", "package")
 MinecraftBox:SetDescription("Applies Minecraft-style textures to the world")
 
--- State
 local MCState = {
     applied = false,
     variants = {},
@@ -945,7 +978,7 @@ local mc_textures = {
     ["Wood"]          = "http://www.roblox.com/asset/?id=3258599312",
     ["Brick"]         = "http://www.roblox.com/asset/?id=10777285622",
     ["Concrete"]      = "http://www.roblox.com/asset/?id=15622710576",
-    ["CorrodedMetal"] = "rbxassetid://78612695839404",
+    ["CorrodedMetal"] = "http://www.roblox.com/asset/?id=78612695839404",
     ["Metal"]         = "http://www.roblox.com/asset/?id=121650613091353",
     ["WoodPlanks"]    = "http://www.roblox.com/asset/?id=8676581022",
     ["SmoothPlastic"] = "http://www.roblox.com/asset/?id=15622710576",
@@ -1079,6 +1112,228 @@ MinecraftBox:AddButton({
         end
     end,
 })
+
+-- ============================================================
+-- ==================== WEATHER (NEW) =========================
+-- ============================================================
+
+local WeatherBox = Tabs.World:AddRightGroupbox("Weather", "cloud-rain")
+WeatherBox:SetDescription("weather particles that follow your camera")
+
+local WeatherState = {
+    enabled     = false,
+    part        = nil,
+    particle    = nil,
+    color       = Color3.fromRGB(255, 255, 255),
+    rate        = 1000,
+    speedScale  = 1,
+    type        = "rain",
+    connection  = nil,
+}
+
+local weather_types = {
+    ["rain"] = {
+        ["Speed"]             = NumberRange.new(60, 60),
+        ["LockedToPart"]      = true,
+        ["Rate"]              = 600,
+        ["Texture"]           = "rbxassetid://1822883048",
+        ["EmissionDirection"] = Enum.NormalId.Bottom,
+        ["Transparency"]      = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 1),
+            NumberSequenceKeypoint.new(0.25, 0.7842668294906616),
+            NumberSequenceKeypoint.new(0.75, 0.7842668294906616),
+            NumberSequenceKeypoint.new(1, 1),
+        },
+        ["Lifetime"]          = NumberRange.new(0.800000011920929, 0.800000011920929),
+        ["LightEmission"]     = 0.05000000074505806,
+        ["LightInfluence"]    = 0.8999999761581421,
+        ["Orientation"]       = Enum.ParticleOrientation.FacingCameraWorldUp,
+        ["Size"]              = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 10),
+            NumberSequenceKeypoint.new(1, 10),
+        },
+    },
+    ["snow"] = {
+        ["Transparency"]      = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 0.7374999523162842),
+            NumberSequenceKeypoint.new(0.973, 0.768750011920929),
+            NumberSequenceKeypoint.new(1, 1),
+        },
+        ["Texture"]           = "http://www.roblox.com/asset/?id=99851851",
+        ["SpreadAngle"]       = Vector2.new(50, 50),
+        ["Speed"]             = NumberRange.new(30, 30),
+        ["LightEmission"]     = 0.5,
+        ["Rate"]              = 1000,
+        ["EmissionDirection"] = Enum.NormalId.Bottom,
+        ["Size"]              = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 0.33096909523010254),
+            NumberSequenceKeypoint.new(0.551, 0.40189146995544434),
+            NumberSequenceKeypoint.new(1, 0.33096909523010254),
+        },
+    },
+    ["light rain"] = {
+        ["LockedToPart"]      = true,
+        ["Rate"]              = 500,
+        ["Squash"]            = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 3),
+            NumberSequenceKeypoint.new(1, 3),
+        },
+        ["LightInfluence"]    = 0.30000001192092896,
+        ["Transparency"]      = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 0),
+            NumberSequenceKeypoint.new(0.435, 0),
+            NumberSequenceKeypoint.new(1, 0),
+        },
+        ["Texture"]           = "rbxasset://textures/particles/sparkles_main.dds",
+        ["Speed"]             = NumberRange.new(30, 50),
+        ["Lifetime"]          = NumberRange.new(9, 9),
+        ["LightEmission"]     = 0.5,
+        ["Brightness"]        = 2,
+        ["EmissionDirection"] = Enum.NormalId.Bottom,
+        ["Orientation"]       = Enum.ParticleOrientation.FacingCameraWorldUp,
+        ["Size"]              = NumberSequence.new{
+            NumberSequenceKeypoint.new(0, 0.20000000298023224),
+            NumberSequenceKeypoint.new(1, 0.20000000298023224),
+        },
+    },
+}
+
+local function stopWeather()
+    if WeatherState.connection then
+        WeatherState.connection:Disconnect()
+        WeatherState.connection = nil
+    end
+    if WeatherState.part then
+        WeatherState.part:Destroy()
+        WeatherState.part = nil
+    end
+    WeatherState.particle = nil
+end
+
+local function buildParticle()
+    local data = weather_types[WeatherState.type]
+    if not data or not WeatherState.part then return end
+
+    local particle = Instance.new("ParticleEmitter")
+    for prop, value in pairs(data) do
+        pcall(function() particle[prop] = value end)
+    end
+
+    particle.Rate = WeatherState.rate
+
+    if data.Speed then
+        particle.Speed = NumberRange.new(
+            data.Speed.Min * WeatherState.speedScale,
+            data.Speed.Max * WeatherState.speedScale
+        )
+    end
+
+    particle.Color  = ColorSequence.new(WeatherState.color)
+    particle.Parent = WeatherState.part
+    WeatherState.particle = particle
+end
+
+local function startWeather()
+    stopWeather()
+
+    local part = Instance.new("Part")
+    part.Size         = Vector3.new(40, 40, 85)
+    part.CanCollide   = false
+    part.Massless     = true
+    part.CastShadow   = false
+    part.Transparency = 1
+    part.Anchored     = true
+    part.Name         = "\0"
+    part.Parent       = workspace
+    WeatherState.part = part
+
+    buildParticle()
+
+    WeatherState.connection = RunService.RenderStepped:Connect(function()
+        local cam = workspace.CurrentCamera
+        if cam and WeatherState.part and WeatherState.part.Parent then
+            WeatherState.part.CFrame = CFrame.new(cam.CFrame.Position + Vector3.new(0, 20, 0))
+        end
+    end)
+end
+
+WeatherBox:AddCheckbox("WeatherEnabled", {
+    Text    = "Enable Weather",
+    Tooltip = "Spawns a weather particle emitter that follows your camera",
+    Default = false,
+    Callback = function(v)
+        WeatherState.enabled = v
+        if v then
+            startWeather()
+        else
+            stopWeather()
+        end
+    end,
+})
+
+WeatherBox:AddDropdown("WeatherType", {
+    Values  = { "rain", "snow", "light rain" },
+    Default = "rain",
+    Text    = "Weather Type",
+    Tooltip = "Select the weather particle preset",
+    Callback = function(Value)
+        WeatherState.type = Value
+        if WeatherState.enabled then
+            startWeather()
+        end
+    end,
+})
+
+WeatherBox:AddDivider()
+
+WeatherBox:AddLabel("Weather Color"):AddColorPicker("WeatherColor", {
+    Default = Color3.fromRGB(255, 255, 255),
+    Title   = "Weather Color",
+    Text    = "Weather Color",
+    Tooltip = "Tint color applied to all weather particles",
+    Callback = function(Value)
+        WeatherState.color = Value
+        if WeatherState.particle then
+            WeatherState.particle.Color = ColorSequence.new(Value)
+        end
+    end,
+})
+
+WeatherBox:AddSlider("WeatherRate", {
+    Text     = "Weather Rate",
+    Tooltip  = "How many particles are emitted per second",
+    Default  = 1000,
+    Min      = 100,
+    Max      = 5000,
+    Rounding = 0,
+    Callback = function(Value)
+        WeatherState.rate = Value
+        if WeatherState.particle then
+            WeatherState.particle.Rate = Value
+        end
+    end,
+})
+
+WeatherBox:AddSlider("WeatherSpeed", {
+    Text     = "Speed Timescale",
+    Tooltip  = "Multiplies the base particle speed (fall speed)",
+    Default  = 0.45,
+    Min      = 0.1,
+    Max      = 5,
+    Rounding = 2,
+    Callback = function(Value)
+        WeatherState.speedScale = Value
+        local data = weather_types[WeatherState.type]
+        if WeatherState.particle and data and data.Speed then
+            WeatherState.particle.Speed = NumberRange.new(
+                data.Speed.Min * Value,
+                data.Speed.Max * Value
+            )
+        end
+    end,
+})
+
+WeatherBox:AddLabel("Note: weather follows camera position in real time", true)
 
 -- ============================================================
 -- ======================= VISUAL TAB =========================
@@ -2422,40 +2677,7 @@ TeleportPlayerTab:AddButton({
     end,
 })
 
--- ============ COLOR PICKER SCREEN CLAMP FIX ============
-local function ClampColorPickerToScreen(OptionIdx)
-    local CP = Options[OptionIdx]
-    if not CP or not CP.ColorMenu then return end
-
-    local ColorMenu = CP.ColorMenu
-    local OriginalOpen = ColorMenu.Open
-
-    ColorMenu.Open = function(self, ...)
-        OriginalOpen(self, ...)
-
-        task.defer(function()
-            local Camera = workspace.CurrentCamera
-            if not Camera then return end
-
-            local ViewportSize = Camera.ViewportSize
-            local MenuSize = self.Menu.AbsoluteSize
-            local Margin = 8
-
-            local CurrentPos = self.Menu.Position
-            local X = CurrentPos.X.Offset
-            local Y = CurrentPos.Y.Offset
-
-            local MaxX = math.max(Margin, ViewportSize.X - MenuSize.X - Margin)
-            local MaxY = math.max(Margin, ViewportSize.Y - MenuSize.Y - Margin)
-
-            X = math.clamp(X, Margin, MaxX)
-            Y = math.clamp(Y, Margin, MaxY)
-
-            self.Menu.Position = UDim2.fromOffset(X, Y)
-        end)
-    end
-end
-
+-- ============ COLOR PICKER CLAMP REGISTRATION ============
 ClampColorPickerToScreen("FOVColor")
 ClampColorPickerToScreen("ESPTargetColor")
 ClampColorPickerToScreen("FogColor")
@@ -2470,6 +2692,7 @@ ClampColorPickerToScreen("GradientColor")
 ClampColorPickerToScreen("OutdoorGradient")
 ClampColorPickerToScreen("AtmosphereColor")
 ClampColorPickerToScreen("AtmosphereDecay")
+ClampColorPickerToScreen("WeatherColor")
 
 -- ============================================================
 -- ====================== SETTING TAB =========================
