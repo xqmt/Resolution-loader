@@ -834,6 +834,165 @@ EnvironmentCloudTab:AddDropdown("Skyboxes", {
     end,
 })
 
+-- ============ MINECRAFT TEXTURE ============
+local MinecraftBox = Tabs.World:AddRightGroupbox("Minecraft Texture", "package")
+MinecraftBox:SetDescription("Applies Minecraft-style textures to the world")
+
+-- State
+local MCState = {
+    applied = false,
+    variants = {},
+    restores = {},
+    connection = nil,
+}
+
+local material_service = game:GetService("MaterialService")
+
+local mc_textures = {
+    ["Slate"]         = "http://www.roblox.com/asset/?id=8676746437",
+    ["Grass"]         = "http://www.roblox.com/asset/?id=9267183930",
+    ["Sand"]          = "http://www.roblox.com/asset/?id=12624140843",
+    ["Wood"]          = "http://www.roblox.com/asset/?id=3258599312",
+    ["Brick"]         = "http://www.roblox.com/asset/?id=10777285622",
+    ["Concrete"]      = "http://www.roblox.com/asset/?id=15622710576",
+    ["CorrodedMetal"] = "rbxassetid://78612695839404",
+    ["Metal"]         = "http://www.roblox.com/asset/?id=121650613091353",
+    ["WoodPlanks"]    = "http://www.roblox.com/asset/?id=8676581022",
+    ["SmoothPlastic"] = "http://www.roblox.com/asset/?id=15622710576",
+    ["Plastic"]       = "http://www.roblox.com/asset/?id=15622710576",
+}
+
+local function mc_apply_texture(descendant)
+    if descendant:IsA("BasePart") then
+        local white = Color3.fromRGB(254, 253, 255)
+        local mat_name = descendant.Material.Name
+        local texture = mc_textures[mat_name]
+
+        if (texture or descendant.Color == white) and descendant.Transparency < 0.8 then
+            if not MCState.restores[descendant] then
+                MCState.restores[descendant] = descendant.Color
+                descendant.Color = white
+            end
+        end
+    end
+end
+
+local function applyMinecraftTexture()
+    if MCState.applied then return end
+    MCState.applied = true
+
+    -- clear old variants
+    for _, v in ipairs(MCState.variants) do
+        pcall(function() v:Destroy() end)
+    end
+    MCState.variants = {}
+
+    -- create material variants
+    for name, id in pairs(mc_textures) do
+        local ok, enum_material = pcall(function() return Enum.Material[name] end)
+        if ok and enum_material then
+            local ok2, material = pcall(function()
+                local m = Instance.new("MaterialVariant")
+                m.MetalnessMap = id
+                m.NormalMap    = id
+                m.BaseMaterial = enum_material
+                m.Name         = name
+                m.StudsPerTile = 5
+                m.RoughnessMap = id
+                m.ColorMap     = id
+                m.Parent       = material_service
+                return m
+            end)
+            if ok2 and material then
+                table.insert(MCState.variants, material)
+            end
+        end
+    end
+
+    -- apply to map parts
+    local map_targets = {
+        workspace:FindFirstChild("MAP"),
+        workspace:FindFirstChild("Prison_Cellblock"),
+        workspace:FindFirstChild("Doors"),
+        workspace
+    }
+
+    for _, target in ipairs(map_targets) do
+        if target then
+            if target == workspace then
+                for _, obj in ipairs(workspace:GetChildren()) do
+                    if obj:IsA("Model") or obj:IsA("Folder") then
+                        for _, d in ipairs(obj:GetDescendants()) do
+                            mc_apply_texture(d)
+                        end
+                    elseif obj:IsA("BasePart") then
+                        mc_apply_texture(obj)
+                    end
+                end
+            else
+                for _, d in ipairs(target:GetDescendants()) do
+                    mc_apply_texture(d)
+                end
+            end
+        end
+    end
+
+    MCState.connection = workspace.DescendantAdded:Connect(mc_apply_texture)
+end
+
+local function removeMinecraftTexture()
+    if not MCState.applied then return end
+    MCState.applied = false
+
+    if MCState.connection then
+        MCState.connection:Disconnect()
+        MCState.connection = nil
+    end
+
+    for _, v in ipairs(MCState.variants) do
+        pcall(function() v:Destroy() end)
+    end
+    MCState.variants = {}
+
+    for part, originalColor in pairs(MCState.restores) do
+        pcall(function()
+            if part and part.Parent then
+                part.Color = originalColor
+            end
+        end)
+    end
+    MCState.restores = {}
+end
+
+MinecraftBox:AddCheckbox("MinecraftTextureToggle", {
+    Text = "Enable Minecraft Texture",
+    Tooltip = "Applies Minecraft-style textures to the world (map, doors, cellblock)",
+    Default = false,
+    Callback = function(v)
+        if v then
+            applyMinecraftTexture()
+            Library:Notify({ Title = "Minecraft Texture", Text = "Minecraft texture enabled" })
+        else
+            removeMinecraftTexture()
+            Library:Notify({ Title = "Minecraft Texture", Text = "Minecraft texture disabled" })
+        end
+    end,
+})
+
+MinecraftBox:AddLabel("Note: Might reduce FPS on low-end devices", true)
+
+MinecraftBox:AddButton({
+    Text = "Re-apply Texture",
+    Func = function()
+        if MCState.applied then
+            removeMinecraftTexture()
+            task.wait(0.1)
+            applyMinecraftTexture()
+            Library:Notify({ Title = "Minecraft Texture", Text = "Texture re-applied" })
+        end
+    end,
+})
+
 -- ============================================================
 -- ======================= VISUAL TAB =========================
 -- ============================================================
