@@ -1662,7 +1662,7 @@ TracerBox:AddLabel("Target Tracer Color"):AddColorPicker("TracerColor", {
 -- ============================================================
 
 -- ============ GET WEAPONS ============
-local GetWeaponsBox = Tabs.Gun:AddLeftGroupbox("Get Weapons", "sword")
+local GetWeaponsBox = Tabs.Gun:AddLeftGroupbox("Get Weapons [maybe detected]", "sword")
 
 GetWeaponsBox:AddDropdown("GetWeaponsList", {
     Values = {"MP5", "AK-47", "M4A1", "FAL", "Remington 870", "M700"},
