@@ -11,6 +11,7 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
 
 Library.Scheme.AccentColor = Color3.fromRGB(255, 156, 228)
 Library.Scheme.BackgroundColor = Color3.fromRGB(6, 6, 6)
@@ -188,6 +189,10 @@ local UpdatesBox = Tabs.Misc:AddLeftGroupbox("Updates", "bell")
 
 UpdatesBox:AddLabel("Prison Life", true)
 UpdatesBox:AddLabel(
+    "- Added Atmosphere Controls\n" ..
+    "  (Color / Decay / Glare / Haze / Offset / Density)\n" ..
+    "- Added Skybox Color Picker Support\n" ..
+    "- Fixed Skybox not applying\n" ..
     "- Added Hit Particles Color Picker\n" ..
     "- Added Rainbow Particles Mode\n" ..
     "- Added Rainbow Speed Control\n" ..
@@ -201,13 +206,9 @@ UpdatesBox:AddLabel(
     "  Credits to A2Flacko\n" ..
     "- Added Anti Sit\n" ..
     "  to prevent kick exploits\n" ..
-    "- Added Korblox\n" ..
-    "  Visual\n" ..
-    "- Added Headless\n" ..
-    "  Visual\n" ..
+    "- Added Korblox / Headless\n" ..
     "- Added Weapon Textures\n" ..
-    "  Credits to OnlyAdrian\n" ..
-    "- Added Hit Cham (Neon)",
+    "  Credits to OnlyAdrian",
     true
 )
 
@@ -571,7 +572,7 @@ AimbotMidBox:AddSlider("HitChance", {
     end,
 })
 
--- ============ FACE TARGET GROUPBOX (NEW) ============
+-- ============ FACE TARGET GROUPBOX ============
 local FaceTargetBox = Tabs.Main:AddRightGroupbox("Face Target", "smile")
 FaceTargetBox:SetDescription("Forces your character to look at the current target")
 
@@ -638,7 +639,6 @@ FOVEyeTab:AddSlider("FOVSize", {
     end,
 })
 
--- ============ FOV THICKNESS (NEW) ============
 FOVEyeTab:AddSlider("FOVThickness", {
     Text = "FOV Circle Thickness",
     Default = 1,
@@ -727,7 +727,7 @@ EnvironmentBox:AddLabel("World appearance settings", true)
 
 local EnvironmentTabbox = EnvironmentBox:AddTabbox()
 local EnvironmentNetworkTab = EnvironmentTabbox:AddTab("Network", "globe")
-local EnvironmentCloudTab = EnvironmentTabbox:AddTab("Cloud", "cloud")
+local EnvironmentCloudTab = EnvironmentTabbox:AddTab("Sky", "cloud")
 
 -- ============ WORLD GRADIENT ============
 local WorldGradientEnabled = false
@@ -803,33 +803,124 @@ EnvironmentNetworkTab:AddCheckbox("RemoveFog", {
     end,
 })
 
--- ============ CUSTOM SKYBOX ============
-local CustomSkyboxEnabled = false
-local CurrentSkybox = "None"
+-- ============ CUSTOM SKYBOX (FIXED) ============
+local SkyboxTab = EnvironmentTabbox:AddTab("Skybox", "sun")
 
-EnvironmentCloudTab:AddCheckbox("CustomSkybox", {
-    Text = "Custom Skybox (not working)",
-    Tooltip = "Enables applying a custom skybox",
+SkyboxTab:AddCheckbox("SkyboxEnabled", {
+    Text = "Enable Custom Skybox",
+    Tooltip = "Enables applying a custom skybox to the world",
     Default = false,
     Callback = function(v)
-        CustomSkyboxEnabled = v
-        if v then
-            setSkybox(CurrentSkybox)
-        else
-            setSkybox("None")
+        if getgenv().SetSkyboxEnabled then
+            getgenv().SetSkyboxEnabled(v)
         end
     end,
 })
 
-EnvironmentCloudTab:AddDropdown("Skyboxes", {
-    Values = {"None", "Minecraft", "Minecraft 2", "dark star", "snow", "realistic", "solid black", "blue"},
-    Default = "None",
-    Text = "Skyboxes",
-    Tooltip = "Choose your skybox",
+SkyboxTab:AddDropdown("Skyboxes", {
+    Values = { "Minecraft", "Minecraft 2", "dark star", "snow", "realistic", "solid black", "blue" },
+    Default = "Minecraft",
+    Text = "Skybox Preset",
+    Tooltip = "Choose your skybox preset",
     Callback = function(Value)
-        CurrentSkybox = Value
-        if CustomSkyboxEnabled then
-            setSkybox(Value)
+        if getgenv().SetSelectedSkybox then
+            getgenv().SetSelectedSkybox(Value)
+        end
+    end,
+})
+
+SkyboxTab:AddLabel("Note: If the skybox does not appear, the selected asset may be broken.", true)
+
+-- ============ ATMOSPHERE (NEW) ============
+local AtmosphereTab = EnvironmentTabbox:AddTab("Atmosphere", "cloud-sun")
+
+AtmosphereTab:AddCheckbox("AtmosphereEnabled", {
+    Text = "Enable Atmosphere",
+    Tooltip = "Adds a custom Atmosphere instance to Lighting",
+    Default = false,
+    Callback = function(v)
+        if getgenv().SetAtmosphereEnabled then
+            getgenv().SetAtmosphereEnabled(v)
+        end
+    end,
+})
+
+AtmosphereTab:AddDivider()
+
+AtmosphereTab:AddLabel("Tint Color"):AddColorPicker("AtmosphereColor", {
+    Default = Color3.fromRGB(178, 200, 255),
+    Title = "Tint Color",
+    Text = "Atmosphere Color",
+    Tooltip = "Sets the main tint color of the Atmosphere",
+    Callback = function(Value)
+        if getgenv().SetAtmosphereColor then
+            getgenv().SetAtmosphereColor(Value)
+        end
+    end,
+})
+
+AtmosphereTab:AddLabel("Decay Color"):AddColorPicker("AtmosphereDecay", {
+    Default = Color3.fromRGB(255, 178, 120),
+    Title = "Decay Color",
+    Text = "Atmosphere Decay",
+    Tooltip = "Color that the atmosphere transitions to at sunset/sunrise",
+    Callback = function(Value)
+        if getgenv().SetAtmosphereDecay then
+            getgenv().SetAtmosphereDecay(Value)
+        end
+    end,
+})
+
+AtmosphereTab:AddDivider()
+
+AtmosphereTab:AddSlider("AtmosphereGlare", {
+    Text = "Glare Intensity",
+    Default = 0.4,
+    Min = 0.1,
+    Max = 10,
+    Rounding = 2,
+    Callback = function(Value)
+        if getgenv().SetAtmosphereGlare then
+            getgenv().SetAtmosphereGlare(Value)
+        end
+    end,
+})
+
+AtmosphereTab:AddSlider("AtmosphereHaze", {
+    Text = "Haze Density",
+    Default = 1.2,
+    Min = 0.1,
+    Max = 10,
+    Rounding = 2,
+    Callback = function(Value)
+        if getgenv().SetAtmosphereHaze then
+            getgenv().SetAtmosphereHaze(Value)
+        end
+    end,
+})
+
+AtmosphereTab:AddSlider("AtmosphereOffset", {
+    Text = "Horizon Offset",
+    Default = 0.25,
+    Min = 0.01,
+    Max = 1,
+    Rounding = 2,
+    Callback = function(Value)
+        if getgenv().SetAtmosphereOffset then
+            getgenv().SetAtmosphereOffset(Value)
+        end
+    end,
+})
+
+AtmosphereTab:AddSlider("AtmosphereDensity", {
+    Text = "Atmosphere Density",
+    Default = 0.35,
+    Min = 0.01,
+    Max = 1,
+    Rounding = 2,
+    Callback = function(Value)
+        if getgenv().SetAtmosphereDensity then
+            getgenv().SetAtmosphereDensity(Value)
         end
     end,
 })
@@ -881,13 +972,11 @@ local function applyMinecraftTexture()
     if MCState.applied then return end
     MCState.applied = true
 
-    -- clear old variants
     for _, v in ipairs(MCState.variants) do
         pcall(function() v:Destroy() end)
     end
     MCState.variants = {}
 
-    -- create material variants
     for name, id in pairs(mc_textures) do
         local ok, enum_material = pcall(function() return Enum.Material[name] end)
         if ok and enum_material then
@@ -909,7 +998,6 @@ local function applyMinecraftTexture()
         end
     end
 
-    -- apply to map parts
     local map_targets = {
         workspace:FindFirstChild("MAP"),
         workspace:FindFirstChild("Prison_Cellblock"),
@@ -1565,7 +1653,7 @@ local SoundTab = WeaponModsTabbox:AddTab("", "volume-2")
 local NotifyTab = WeaponModsTabbox:AddTab("", "bell")
 local FxTab = WeaponModsTabbox:AddTab("", "sparkles")
 
--- ============ HIT EFFECTS TAB (UPDATED) ============
+-- ============ HIT EFFECTS TAB ============
 FxTab:AddLabel("Hit Particles")
 
 FxTab:AddCheckbox("HitParticleEnabled", {
@@ -1606,7 +1694,6 @@ FxTab:AddSlider("HitParticleCount", {
 
 FxTab:AddDivider()
 
--- ============ PARTICLE COLOR / RAINBOW (NEW) ============
 FxTab:AddLabel("Particle Color")
 
 FxTab:AddCheckbox("HitParticleColorEnabled", {
@@ -2380,6 +2467,10 @@ ClampColorPickerToScreen("ColorScreenKillEffectColor")
 ClampColorPickerToScreen("ESPTextColor")
 ClampColorPickerToScreen("ESPTargetTextColor")
 ClampColorPickerToScreen("HitParticleColor")
+ClampColorPickerToScreen("GradientColor")
+ClampColorPickerToScreen("OutdoorGradient")
+ClampColorPickerToScreen("AtmosphereColor")
+ClampColorPickerToScreen("AtmosphereDecay")
 
 -- ============================================================
 -- ====================== SETTING TAB =========================
