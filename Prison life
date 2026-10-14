@@ -1201,12 +1201,13 @@ getgenv().SetInfiniteJumpEnabled = function(v)
 end
 
 -- ============ INVISIBLE ============
--- Method by A2Flacko
+-- Method by A2Flacko (ปรับให้โปร่งใสสนิท + White Outline Highlight)
 local InvisibleRealCFrame = nil
 local InvisibleAnimationTrack = nil
 local InvisibleRenderKey = "PrecisionInvisibleRender"
 local InvisibleOriginalTransparency = {}
 local InvisibleOriginalCanCollide = {}
+local InvisibleHighlightName = "InvisibleOutlineHighlight"
 
 local function loadInvisibleAnimation(character)
     local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -1245,6 +1246,10 @@ local function stopInvisible()
     InvisibleRealCFrame = nil
 
     if character then
+        -- ===== ลบ Highlight ออก =====
+        local hl = character:FindFirstChild(InvisibleHighlightName)
+        if hl then hl:Destroy() end
+
         for _, part in ipairs(character:GetDescendants()) do
             if part:IsA("BasePart") and part ~= rootPart then
                 if InvisibleOriginalTransparency[part] ~= nil then
@@ -1276,14 +1281,30 @@ local function startInvisible()
     table.clear(InvisibleOriginalTransparency)
     table.clear(InvisibleOriginalCanCollide)
     for _, part in ipairs(character:GetDescendants()) do
-        if part:IsA("BasePart") and part ~= rootPart then
+        if part:IsA("BasePart") then
             InvisibleOriginalTransparency[part] = part.Transparency
             InvisibleOriginalCanCollide[part] = part.CanCollide
-            part.Transparency = 0.5
-            part.CanCollide = false
+            part.Transparency = 0.99            -- โปร่งใสสนิท
+            if part ~= rootPart then
+                part.CanCollide = false
+            end
         end
     end
-    rootPart.Transparency = 1
+    rootPart.Transparency = 0.99
+
+    -- ===== เพิ่ม Highlight เส้นขอบสีขาว =====
+    local existing = character:FindFirstChild(InvisibleHighlightName)
+    if existing then existing:Destroy() end
+
+    local hl = Instance.new("Highlight")
+    hl.Name = InvisibleHighlightName
+    hl.Adornee = character
+    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    hl.FillColor = Color3.fromRGB(255, 255, 255)
+    hl.FillTransparency = 1            -- ไม่มีสีถม เอาแค่ outline
+    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+    hl.OutlineTransparency = 0         -- เส้นขอบชัดสุด
+    hl.Parent = character
 
     pcall(function()
         RunService:UnbindFromRenderStep(InvisibleRenderKey)
