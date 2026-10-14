@@ -808,7 +808,7 @@ local CustomSkyboxEnabled = false
 local CurrentSkybox = "None"
 
 EnvironmentCloudTab:AddCheckbox("CustomSkybox", {
-    Text = "Custom Skybox",
+    Text = "Custom Skybox (not working)",
     Tooltip = "Enables applying a custom skybox",
     Default = false,
     Callback = function(v)
