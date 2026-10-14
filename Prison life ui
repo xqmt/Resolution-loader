@@ -26,7 +26,7 @@ local Window = Library:CreateWindow({
     Footer = "",
     FooterLeft = "",
     FooterRight = "Prison life",
-    Icon = 93270464646425,
+    Icon = 131454020852501,
     NotifySide = "Right",
     ShowCustomCursor = true,
     Size = UDim2.fromOffset(700, 750),
@@ -319,7 +319,7 @@ if Library.IsMobile then
     local CustomToggleButton = Instance.new("ImageButton")
     CustomToggleButton.Name = "CustomToggleButton"
     CustomToggleButton.BackgroundColor3 = Library.Scheme.BackgroundColor
-    CustomToggleButton.Image = "rbxassetid://93270464646425"
+    CustomToggleButton.Image = "rbxassetid://131454020852501"
     CustomToggleButton.ScaleType = Enum.ScaleType.Fit
     CustomToggleButton.Size = UDim2.fromOffset(40, 40)
     CustomToggleButton.Position = UDim2.fromOffset(6, 6)
