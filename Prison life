@@ -2491,17 +2491,13 @@ end)
 
 -- ============ SKYBOXES ============
 local skyboxes = {
-    ["Gray Skybox"] = { SkyboxBk = "rbxassetid://154987705", SkyboxDn = "rbxassetid://154987705", SkyboxFt = "rbxassetid://154987705", SkyboxLf = "rbxassetid://154987705", SkyboxRt = "rbxassetid://154987705", SkyboxUp = "rbxassetid://154987705" },
-    ["2knw & Donk666 Skybox"] = { SkyboxBk = "rbxassetid://121222457209872", SkyboxDn = "rbxassetid://121222457209872", SkyboxFt = "rbxassetid://121222457209872", SkyboxLf = "rbxassetid://121222457209872", SkyboxRt = "rbxassetid://121222457209872", SkyboxUp = "rbxassetid://121222457209872" },
-    ["Snow Skybox"] = { SkyboxBk = "rbxassetid://155657655", SkyboxDn = "rbxassetid://155674246", SkyboxFt = "rbxassetid://155657609", SkyboxLf = "rbxassetid://155657671", SkyboxRt = "rbxassetid://155657619", SkyboxUp = "rbxassetid://155674931" },
-    ["Cartoon Skybox"] = { SkyboxBk = "rbxassetid://15114954171", SkyboxDn = "rbxassetid://15114958869", SkyboxFt = "rbxassetid://15114963740", SkyboxLf = "rbxassetid://15114957947", SkyboxRt = "rbxassetid://15114955238", SkyboxUp = "rbxassetid://15114948718" },
-    ["Lince Skybox"] = { SkyboxBk = "rbxassetid://102112718813044", SkyboxDn = "rbxassetid://102112718813044", SkyboxFt = "rbxassetid://102112718813044", SkyboxLf = "rbxassetid://102112718813044", SkyboxRt = "rbxassetid://102112718813044", SkyboxUp = "rbxassetid://102112718813044" },
-    ["Red Skybox"] = { SkyboxBk = "rbxassetid://401664839", SkyboxDn = "rbxassetid://401664862", SkyboxFt = "rbxassetid://401664960", SkyboxLf = "rbxassetid://401664881", SkyboxRt = "rbxassetid://401664901", SkyboxUp = "rbxassetid://401664936" },
-    ["Slam Skybox"] = { SkyboxBk = "rbxassetid://111576755001670", SkyboxDn = "rbxassetid://111576755001670", SkyboxFt = "rbxassetid://111576755001670", SkyboxLf = "rbxassetid://111576755001670", SkyboxRt = "rbxassetid://111576755001670", SkyboxUp = "rbxassetid://111576755001670" },
-    ["Green Eyeball Skybox"] = { SkyboxBk = "rbxassetid://113857258921684", SkyboxDn = "rbxassetid://131099902234134", SkyboxFt = "rbxassetid://98342317659302", SkyboxLf = "rbxassetid://130914716725043", SkyboxRt = "rbxassetid://93970360759256", SkyboxUp = "rbxassetid://135000456639127" },
-    ["Morioh Skybox"] = { SkyboxBk = "rbxassetid://414118015", SkyboxDn = "rbxassetid://414117901", SkyboxFt = "rbxassetid://414117817", SkyboxLf = "rbxassetid://414118150", SkyboxRt = "rbxassetid://414118255", SkyboxUp = "rbxassetid://414118438" },
-    ["Rainy Skybox"] = { SkyboxBk = "rbxassetid://4498828382", SkyboxDn = "rbxassetid://4498828812", SkyboxFt = "rbxassetid://4498829917", SkyboxLf = "rbxassetid://4498830911", SkyboxRt = "rbxassetid://4498830417", SkyboxUp = "rbxassetid://4498831746" },
-    ["Rusk1ddski Skybox"] = { SkyboxBk = "rbxassetid://139878758241374", SkyboxDn = "rbxassetid://139878758241374", SkyboxFt = "rbxassetid://139878758241374", SkyboxLf = "rbxassetid://139878758241374", SkyboxRt = "rbxassetid://139878758241374", SkyboxUp = "rbxassetid://139878758241374" }
+    ["Minecraft"] = "rbxassetid://96736589365838",
+    ["Minecraft 2"] = "rbxassetid://117301665698887",
+    ["dark star"] = "rbxassetid://4951222008",
+    ["snow"] = "rbxassetid://4604073339",
+    ["realistic"] = "rbxassetid://8464073887",
+    ["solid black"] = "rbxassetid://12300321824",
+    ["blue"] = "rbxassetid://90988519"
 }
 
 function setSkybox(name)
