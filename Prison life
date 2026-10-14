@@ -2491,31 +2491,51 @@ end)
 
 -- ============ SKYBOXES ============
 local skyboxes = {
-    ["Minecraft"] = "rbxassetid://96736589365838",
+    ["Minecraft"]   = "rbxassetid://96736589365838",
     ["Minecraft 2"] = "rbxassetid://117301665698887",
-    ["dark star"] = "rbxassetid://4951222008",
-    ["snow"] = "rbxassetid://4604073339",
-    ["realistic"] = "rbxassetid://8464073887",
+    ["dark star"]   = "rbxassetid://4951222008",
+    ["snow"]        = "rbxassetid://4604073339",
+    ["realistic"]   = "rbxassetid://8464073887",
     ["solid black"] = "rbxassetid://12300321824",
-    ["blue"] = "rbxassetid://90988519"
+    ["blue"]        = "rbxassetid://90988519",
 }
 
-function setSkybox(name)
-    if currentSkybox then
-        pcall(function()
-            if Lighting:FindFirstChild(currentSkybox) then
-                Lighting[currentSkybox]:Destroy()
-            end
-        end)
-        currentSkybox = nil
+local SKYBOX_NAME = "hooksenseSky"
+
+local function UpdateSkybox()
+    -- 1) ลบ Skybox เก่าที่สร้างโดยสคริปต์นี้
+    for _, obj in ipairs(Lighting:GetChildren()) do
+        if obj:IsA("Sky") and obj.Name == SKYBOX_NAME then
+            obj:Destroy()
+        end
     end
-    if name == "None" then return end
-    local data = skyboxes[name]
-    if not data then return end
-    local sky = Instance.new("Sky", Lighting)
-    sky.Name = name
-    for prop, value in pairs(data) do sky[prop] = value end
-    currentSkybox = name
+
+    -- 2) ถ้าปิดอยู่ หรือชื่อที่เลือกไม่มีในตาราง ก็ไม่ต้องสร้างใหม่
+    if not SkyboxEnabled then return end
+    local assetId = skyboxes[SelectedSkybox]
+    if not assetId then return end
+
+    -- 3) ลองโหลดเป็น Object (เผื่อ asset เป็น Sky สำเร็จรูป)
+    local success, result = pcall(function()
+        return game:GetObjects(assetId)[1]
+    end)
+
+    local NewSky
+    if success and result and result:IsA("Sky") then
+        NewSky = result:Clone()
+    else
+        -- 4) ถ้าโหลดไม่ได้ ใช้ assetId เป็น texture ทั้ง 6 ด้าน
+        NewSky = Instance.new("Sky")
+        NewSky.SkyboxBk = assetId
+        NewSky.SkyboxDn = assetId
+        NewSky.SkyboxFt = assetId
+        NewSky.SkyboxLf = assetId
+        NewSky.SkyboxRt = assetId
+        NewSky.SkyboxUp = assetId
+    end
+
+    NewSky.Name = SKYBOX_NAME
+    NewSky.Parent = Lighting
 end
 
 -- ============ CUSTOM BULLET COLOR ============
