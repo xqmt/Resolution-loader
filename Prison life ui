@@ -822,7 +822,7 @@ EnvironmentCloudTab:AddCheckbox("CustomSkybox", {
 })
 
 EnvironmentCloudTab:AddDropdown("Skyboxes", {
-    Values = {"None", "Gray Skybox", "2knw & Donk666 Skybox", "Snow Skybox", "Cartoon Skybox", "Lince Skybox", "Red Skybox", "Slam Skybox", "Green Eyeball Skybox", "Morioh Skybox", "Rainy Skybox", "Rusk1ddski Skybox"},
+    Values = {"None", "Minecraft", "Gray Skybox", "2knw & Donk666 Skybox", "Snow Skybox", "Cartoon Skybox", "Lince Skybox", "Red Skybox", "Slam Skybox", "Green Eyeball Skybox", "Morioh Skybox", "Rainy Skybox", "Rusk1ddski Skybox"},
     Default = "None",
     Text = "Skyboxes",
     Tooltip = "Choose your skybox",
