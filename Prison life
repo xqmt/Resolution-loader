@@ -92,6 +92,19 @@ getgenv().SilentAimSettings = {
     HitParticleColorEnabled   = false,
     HitParticleRainbow        = false,
     HitParticleRainbowSpeed   = 1,
+
+    -- ===== ATMOSPHERE =====
+    AtmosphereEnabled = false,
+    AtmosphereColor   = Color3.fromRGB(178, 200, 255),
+    AtmosphereDecay   = Color3.fromRGB(255, 178, 120),
+    AtmosphereGlare   = 0.4,
+    AtmosphereHaze    = 1.2,
+    AtmosphereOffset  = 0.25,
+    AtmosphereDensity = 0.35,
+
+    -- ===== SKYBOX =====
+    SkyboxEnabled  = false,
+    SelectedSkybox = "Minecraft",
 }
 
 local Settings = getgenv().SilentAimSettings
@@ -2524,19 +2537,16 @@ local skyboxes = {
 local SKYBOX_NAME = "hooksenseSky"
 
 local function UpdateSkybox()
-    -- 1) ลบ Skybox เก่าที่สร้างโดยสคริปต์นี้
     for _, obj in ipairs(Lighting:GetChildren()) do
-        if obj:IsA("Sky") and obj.Name == SKYBOX_NAME then
+        if obj:IsA("Sky") and (obj.Name == SKYBOX_NAME or obj.Name == "hooksenseDefaultSky") then
             obj:Destroy()
         end
     end
 
-    -- 2) ถ้าปิดอยู่ หรือชื่อที่เลือกไม่มีในตาราง ก็ไม่ต้องสร้างใหม่
-    if not SkyboxEnabled then return end
-    local assetId = skyboxes[SelectedSkybox]
+    if not Settings.SkyboxEnabled then return end
+    local assetId = skyboxes[Settings.SelectedSkybox]
     if not assetId then return end
 
-    -- 3) ลองโหลดเป็น Object (เผื่อ asset เป็น Sky สำเร็จรูป)
     local success, result = pcall(function()
         return game:GetObjects(assetId)[1]
     end)
@@ -2545,7 +2555,6 @@ local function UpdateSkybox()
     if success and result and result:IsA("Sky") then
         NewSky = result:Clone()
     else
-        -- 4) ถ้าโหลดไม่ได้ ใช้ assetId เป็น texture ทั้ง 6 ด้าน
         NewSky = Instance.new("Sky")
         NewSky.SkyboxBk = assetId
         NewSky.SkyboxDn = assetId
@@ -2557,6 +2566,88 @@ local function UpdateSkybox()
 
     NewSky.Name = SKYBOX_NAME
     NewSky.Parent = Lighting
+end
+
+-- ============ ATMOSPHERE ============
+local function UpdateAtmosphere()
+    local atmos = Lighting:FindFirstChildOfClass("Atmosphere")
+    if Settings.AtmosphereEnabled then
+        if not atmos then
+            atmos = Instance.new("Atmosphere")
+            atmos.Name = "hooksenseAtmosphere"
+            atmos.Parent = Lighting
+        end
+        atmos.Color   = Settings.AtmosphereColor
+        atmos.Decay   = Settings.AtmosphereDecay
+        atmos.Glare   = Settings.AtmosphereGlare
+        atmos.Haze    = Settings.AtmosphereHaze
+        atmos.Offset  = Settings.AtmosphereOffset
+        atmos.Density = Settings.AtmosphereDensity
+    else
+        if atmos then atmos:Destroy() end
+    end
+end
+
+UpdateAtmosphere()
+UpdateSkybox()
+
+-- ============ SETTERS FOR UI (color picker ใช้) ============
+getgenv().SetSkyboxEnabled = function(v)
+    Settings.SkyboxEnabled = v == true
+    UpdateSkybox()
+end
+
+getgenv().SetSelectedSkybox = function(name)
+    if skyboxes[name] then
+        Settings.SelectedSkybox = name
+        UpdateSkybox()
+    end
+end
+
+getgenv().GetSkyboxList = function()
+    local list = {}
+    for k, _ in pairs(skyboxes) do table.insert(list, k) end
+    table.sort(list)
+    return list
+end
+
+getgenv().SetAtmosphereEnabled = function(v)
+    Settings.AtmosphereEnabled = v == true
+    UpdateAtmosphere()
+end
+
+getgenv().SetAtmosphereColor = function(color)
+    if typeof(color) == "Color3" then
+        Settings.AtmosphereColor = color
+        UpdateAtmosphere()
+    end
+end
+
+getgenv().SetAtmosphereDecay = function(color)
+    if typeof(color) == "Color3" then
+        Settings.AtmosphereDecay = color
+        UpdateAtmosphere()
+    end
+end
+
+getgenv().SetAtmosphereGlare = function(v)
+    Settings.AtmosphereGlare = tonumber(v) or 0.4
+    UpdateAtmosphere()
+end
+
+getgenv().SetAtmosphereHaze = function(v)
+    Settings.AtmosphereHaze = tonumber(v) or 1.2
+    UpdateAtmosphere()
+end
+
+getgenv().SetAtmosphereOffset = function(v)
+    Settings.AtmosphereOffset = tonumber(v) or 0.25
+    UpdateAtmosphere()
+end
+
+getgenv().SetAtmosphereDensity = function(v)
+    Settings.AtmosphereDensity = tonumber(v) or 0.35
+    UpdateAtmosphere()
 end
 
 -- ============ CUSTOM BULLET COLOR ============
