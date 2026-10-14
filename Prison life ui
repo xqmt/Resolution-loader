@@ -19,6 +19,22 @@ Library.Scheme.MainColor = Color3.fromRGB(12, 12, 12)
 Library.Scheme.OutlineColor = Color3.fromRGB(0, 0, 0)
 Library.Scheme.DarkColor = Color3.fromRGB(4, 5, 8)
 
+-- ============ BRIDGE FOR MAIN SCRIPT ============
+-- Center Panel ใน main script เรียกใช้ flags["..."] และ menu_references["..."]
+-- bridge นี้ทำให้ Options[...] เข้าถึงได้จาก getgenv
+getgenv().menu_references = getgenv().menu_references or setmetatable({}, {
+    __index = function(_, k)
+        return Options[k]
+    end,
+})
+
+getgenv().flags = getgenv().flags or setmetatable({}, {
+    __index = function(_, k)
+        local opt = Options[k]
+        return opt and opt.Value
+    end,
+})
+
 -- ============ WINDOW SETUP ============
 local Window = Library:CreateWindow({
     Title = "Swiftlyㅤㅤㅤㅤㅤㅤ",
@@ -242,7 +258,9 @@ UpdatesBox:AddLabel(
     "  to prevent kick exploits\n" ..
     "- Added Korblox / Headless\n" ..
     "- Added Weapon Textures\n" ..
-    "  Credits to OnlyAdrian",
+    "  Credits to OnlyAdrian\n" ..
+    "- Added Center Panel (World tab)\n" ..
+    "- Added Aim Method dropdown",
     true
 )
 
@@ -518,6 +536,17 @@ AimbotLeftBox:AddDropdown("TargetPart", {
     end,
 })
 
+-- ============ AIM METHOD (NEW) ============
+AimbotLeftBox:AddDropdown("AimMethod", {
+    Values = {"Raycast", "FindPartOnRayWithIgnoreList", "FindPartOnRayWithWhitelist", "FindPartOnRay"},
+    Default = "Raycast",
+    Text = "Aim Method",
+    Tooltip = "Ray method used for silent aim redirection. 'Raycast' works with most games",
+    Callback = function(Value)
+        getgenv().SilentAimSettings.Method = Value
+    end,
+})
+
 -- ============ HITBOX EXPANDER ============
 local HitboxExpanderBox = Tabs.Main:AddRightGroupbox("Hitbox Expander", "maximize-2")
 HitboxExpanderBox:SetDescription("Enlarges player hitboxes")
@@ -646,10 +675,12 @@ local FOVIconTabbox = FOVBox:AddTabbox()
 local FOVEyeTab = FOVIconTabbox:AddTab("FOV", "scan-eye")
 local FOVUsersTab = FOVIconTabbox:AddTab("Users", "users")
 
-FOVEyeTab:AddCheckbox("HideFOV", {
+-- ปรับ HideFOV → ShowFOVCircle (sync กับ FOVEnabled ใน main)
+FOVEyeTab:AddCheckbox("ShowFOVCircle", {
     Text = "Show FOV Circle",
     Default = true,
     Callback = function(v)
+        getgenv().SilentAimSettings.FOVEnabled = v
         toggleFOVCircle(not v)
     end,
 }):AddColorPicker("FOVColor", {
@@ -1114,7 +1145,7 @@ MinecraftBox:AddButton({
 })
 
 -- ============================================================
--- ==================== WEATHER (NEW) =========================
+-- ==================== WEATHER ================================
 -- ============================================================
 
 local WeatherBox = Tabs.World:AddRightGroupbox("Weather", "cloud-rain")
@@ -1334,6 +1365,53 @@ WeatherBox:AddSlider("WeatherSpeed", {
 })
 
 WeatherBox:AddLabel("Note: weather follows camera position in real time", true)
+
+-- ============================================================
+-- ==================== CENTER PANEL ==========================
+-- ============================================================
+-- ใช้ชื่อ flag ตรงกับ main script:
+--   world_center_panel / center_panel_primary_color /
+--   center_panel_secondary_color / center_panel_show_state
+-- main script จะผูก callback เองผ่าน menu_references[...]
+
+local CenterPanelBox = Tabs.World:AddRightGroupbox("Center Panel", "heart")
+CenterPanelBox:SetDescription("Animated 'swiftly fly' HUD with heart-beat and state text")
+
+CenterPanelBox:AddCheckbox("world_center_panel", {
+    Text = "Enable Center Panel",
+    Tooltip = "เปิด/ปิด แผงกลางจอ (swiftly fly + สถานะ reloading/invisible/unsafe)",
+    Default = false,
+    Callback = function(v) end,
+})
+
+CenterPanelBox:AddDivider()
+
+CenterPanelBox:AddLabel("Primary Color"):AddColorPicker("center_panel_primary_color", {
+    Default = Color3.fromRGB(255, 156, 228),
+    Title = "Primary Color",
+    Text = "Primary Color",
+    Tooltip = "สีของหัวใจ เงา และ overlay",
+    Callback = function(Value) end,
+})
+
+CenterPanelBox:AddLabel("Secondary Color"):AddColorPicker("center_panel_secondary_color", {
+    Default = Color3.fromRGB(255, 255, 255),
+    Title = "Secondary Color",
+    Text = "Secondary Color",
+    Tooltip = "สีของข้อความ 'swiftly fly' และสถานะ",
+    Callback = function(Value) end,
+})
+
+CenterPanelBox:AddDivider()
+
+CenterPanelBox:AddCheckbox("center_panel_show_state", {
+    Text = "Show State Text",
+    Tooltip = "แสดงข้อความ reloading / invisible / unsafe ใต้ panel",
+    Default = true,
+    Callback = function(v) end,
+})
+
+CenterPanelBox:AddLabel("State legend: unsafe (idle) / invisible (on) / reloading (gun)", true)
 
 -- ============================================================
 -- ======================= VISUAL TAB =========================
@@ -2693,6 +2771,8 @@ ClampColorPickerToScreen("OutdoorGradient")
 ClampColorPickerToScreen("AtmosphereColor")
 ClampColorPickerToScreen("AtmosphereDecay")
 ClampColorPickerToScreen("WeatherColor")
+ClampColorPickerToScreen("center_panel_primary_color")
+ClampColorPickerToScreen("center_panel_secondary_color")
 
 -- ============================================================
 -- ====================== SETTING TAB =========================
