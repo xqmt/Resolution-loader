@@ -893,8 +893,8 @@ local function resetAllHighlights()
                 
                 highlight.FillColor = teamColor
                 highlight.OutlineColor = teamColor
-                highlight.FillTransparency = 0.85
-                highlight.OutlineTransparency = 0
+                highlight.FillTransparency = 0.65
+                highlight.OutlineTransparency = 0.55
             end
             
             local head = plr.Character:FindFirstChild("Head")
@@ -923,7 +923,7 @@ local function highlightTarget(targetPlayer)
         highlight.FillColor = targetColor
         highlight.OutlineColor = targetColor
         highlight.FillTransparency = 0.65
-        highlight.OutlineTransparency = 0
+        highlight.OutlineTransparency = 0.55
     end
 end
 
