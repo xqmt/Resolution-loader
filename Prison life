@@ -892,9 +892,9 @@ local function resetAllHighlights()
                 elseif plr.Team and plr.Team.TeamColor then teamColor = plr.Team.TeamColor.Color end
                 
                 highlight.FillColor = teamColor
-                highlight.OutlineColor = teamColor
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                 highlight.FillTransparency = 0.65
-                highlight.OutlineTransparency = 0.55
+                highlight.OutlineTransparency = 0.45
             end
             
             local head = plr.Character:FindFirstChild("Head")
@@ -921,9 +921,9 @@ local function highlightTarget(targetPlayer)
     local highlight = targetPlayer.Character:FindFirstChild("ESPHighlight")
     if highlight and highlight:IsA("Highlight") then
         highlight.FillColor = targetColor
-        highlight.OutlineColor = targetColor
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
         highlight.FillTransparency = 0.65
-        highlight.OutlineTransparency = 0.55
+        highlight.OutlineTransparency = 0.45
     end
 end
 
