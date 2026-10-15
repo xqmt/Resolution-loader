@@ -1,3 +1,4 @@
+ลบ note หรือ คําอธิบายทั้งหมดใน group box ต่างๆให้หมด
 -- UI Script Precision | Prison Life
 local repo = "https://raw.githubusercontent.com/majeskooooo/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
