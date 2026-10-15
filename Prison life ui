@@ -33,7 +33,7 @@ local Window = Library:CreateWindow({
     Resizable = true,
     SidebarCompacted = false,
     ShowMobileButtons = false,
-    CornerRadius = 12,
+    CornerRadius = 10,
     Font = Enum.Font.Cartoon,
 })
 
