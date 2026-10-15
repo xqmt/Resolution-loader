@@ -21,11 +21,11 @@ Library.Scheme.DarkColor = Color3.fromRGB(4, 5, 8)
 
 -- ============ WINDOW SETUP ============
 local Window = Library:CreateWindow({
-    Title = "Swiftlyㅤㅤㅤㅤㅤㅤ",
+    Title = "Subatomic.sysㅤㅤㅤ",
     Footer = "",
     FooterLeft = "",
     FooterRight = "Prison life",
-    Icon = 15098628027,
+    Icon = 78661451733151,
     NotifySide = "Right",
     ShowCustomCursor = true,
     Size = UDim2.fromOffset(700, 750),
@@ -319,7 +319,7 @@ if Library.IsMobile then
     local CustomToggleButton = Instance.new("ImageButton")
     CustomToggleButton.Name = "CustomToggleButton"
     CustomToggleButton.BackgroundColor3 = Library.Scheme.BackgroundColor
-    CustomToggleButton.Image = "rbxassetid://15098628027"
+    CustomToggleButton.Image = "rbxassetid://78661451733151"
     CustomToggleButton.ScaleType = Enum.ScaleType.Fit
     CustomToggleButton.Size = UDim2.fromOffset(40, 40)
     CustomToggleButton.Position = UDim2.fromOffset(6, 6)
