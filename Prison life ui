@@ -234,8 +234,6 @@ UpdatesBox:AddLabel(
     "- Improved Particle Rendering\n" ..
     "- Added Face Target Controls\n" ..
     "- Added FOV Thickness Slider\n" ..
-    "- Added Wallbang System (Range + Keybind)\n" ..
-    "- Added Auto Shoot Mode (Visible / Wallbang)\n" ..
     "- Added Invisible\n" ..
     "  Credits to A2Flacko\n" ..
     "- Added Anti-invisible\n" ..
@@ -597,80 +595,6 @@ AimbotMidBox:AddSlider("HitChance", {
         getgenv().SilentAimSettings.HitChance = Value
     end,
 })
-
--- ============ WALLBANG GROUPBOX ============
-local WallbangBox = Tabs.Main:AddLeftGroupbox("Wallbang", "shield")
-
-WallbangBox:AddCheckbox("WallbangEnabled", {
-    Text = "Enable Wallbang",
-    Tooltip = "Allows Silent Aim to shoot through walls when the target is not visible",
-    Default = false,
-    Callback = function(v)
-        if getgenv().SetWallbangEnabled then
-            getgenv().SetWallbangEnabled(v)
-        else
-            getgenv().SilentAimSettings.WallbangEnabled = v
-        end
-    end,
-})
-
-WallbangBox:AddSlider("WallbangRange", {
-    Text = "Wallbang Range",
-    Tooltip = "Maximum search range (studs) used to find a valid wallbang ray",
-    Default = 20,
-    Min = 5,
-    Max = 100,
-    Rounding = 0,
-    Callback = function(Value)
-        if getgenv().SetWallbangRange then
-            getgenv().SetWallbangRange(Value)
-        else
-            getgenv().SilentAimSettings.WallbangRange = Value
-        end
-    end,
-})
-
-WallbangBox:AddDropdown("AutoShootMode", {
-    Values = {"Visible Only", "Wallbang If Can"},
-    Default = "Visible Only",
-    Text = "Auto Shoot Mode",
-    Tooltip = "Visible Only: ยิงเฉพาะเมื่อเห็นเป้า | Wallbang If Can: ยิงทะลุกำแพงถ้าทำได้",
-    Callback = function(Value)
-        if getgenv().SetAutoShootMode then
-            getgenv().SetAutoShootMode(Value)
-        else
-            getgenv().SilentAimSettings.AutoShootMode = Value
-        end
-    end,
-})
-
-WallbangBox:AddDivider()
-
-WallbangBox:AddLabel("Wallbang Keybind"):AddKeyPicker("WallbangKeybind", {
-    Default = "G",
-    NoUI = false,
-    Text = "Wallbang Toggle Keybind",
-    Callback = function()
-        if getgenv().SetWallbangEnabled then
-            getgenv().SetWallbangEnabled(not getgenv().SilentAimSettings.WallbangEnabled)
-        else
-            getgenv().SilentAimSettings.WallbangEnabled = not getgenv().SilentAimSettings.WallbangEnabled
-        end
-        if Options.WallbangEnabled then
-            Options.WallbangEnabled:SetValue(getgenv().SilentAimSettings.WallbangEnabled)
-        end
-    end,
-})
-
--- Sync keybind กลับไปยัง Main Script
-task.spawn(function()
-    while task.wait(0.1) do
-        local keyValue = Options.WallbangKeybind and Options.WallbangKeybind.Value
-        if keyValue then
-            getgenv().SilentAimSettings.WallbangKeybind = keyValue
-        end
-    end
-end)
 
 -- ============ FACE TARGET GROUPBOX ============
 local FaceTargetBox = Tabs.Main:AddRightGroupbox("Face Target", "smile")
