@@ -1,4 +1,3 @@
-ลบ note หรือ คําอธิบายทั้งหมดใน group box ต่างๆให้หมด
 -- UI Script Precision | Prison Life
 local repo = "https://raw.githubusercontent.com/majeskooooo/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
@@ -261,7 +260,6 @@ UpdatesBox:AddButton({
 
 -- ============ FEEDBACK SYSTEM GROUP ============
 local FeedbackBox = Tabs.Misc:AddRightGroupbox("Feedback System", "mail")
-FeedbackBox:SetDescription("Send feedback to developer (Join the Discord Server for More Info)")
 
 FeedbackBox:AddLabel("Your feedback")
 
@@ -424,15 +422,6 @@ AimbotLeftBox:AddCheckbox("ForceFieldCheck", {
     end,
 })
 
-local AutoshootWarningLabel = AimbotLeftBox:AddLabel("Note: Autoshot is not compatible with Hitchance", true)
-
-do
-    local warningInstance = AutoshootWarningLabel.Holder and AutoshootWarningLabel.Holder:FindFirstChildOfClass("TextLabel")
-    if warningInstance then
-        warningInstance.TextColor3 = Color3.fromRGB(255, 70, 70)
-    end
-end
-
 AimbotLeftBox:AddDivider()
 
 AimbotLeftBox:AddDropdown("TargetTeams", {
@@ -522,7 +511,6 @@ AimbotLeftBox:AddDropdown("TargetPart", {
 
 -- ============ HITBOX EXPANDER ============
 local HitboxExpanderBox = Tabs.Main:AddRightGroupbox("Hitbox Expander", "maximize-2")
-HitboxExpanderBox:SetDescription("Enlarges player hitboxes")
 
 HitboxExpanderBox:AddCheckbox("EnableHitboxExpander", {
     Text = "Enable Hitbox Expander",
@@ -610,7 +598,6 @@ AimbotMidBox:AddSlider("HitChance", {
 
 -- ============ FACE TARGET GROUPBOX ============
 local FaceTargetBox = Tabs.Main:AddRightGroupbox("Face Target", "smile")
-FaceTargetBox:SetDescription("Forces your character to look at the current target")
 
 FaceTargetBox:AddCheckbox("FaceTargetEnabled", {
     Text = "Enable Face Target",
@@ -759,8 +746,6 @@ FOVUsersTab:AddButton({
 
 local EnvironmentBox = Tabs.World:AddLeftGroupbox("Environment", "trees")
 
-EnvironmentBox:AddLabel("World appearance settings", true)
-
 local EnvironmentTabbox = EnvironmentBox:AddTabbox()
 local EnvironmentNetworkTab = EnvironmentTabbox:AddTab("", "globe")
 
@@ -864,8 +849,6 @@ SkyboxTab:AddDropdown("Skyboxes", {
     end,
 })
 
-SkyboxTab:AddLabel("Note: If the skybox does not appear, the selected asset may be broken.", true)
-
 -- ============ ATMOSPHERE ============
 local AtmosphereTab = EnvironmentTabbox:AddTab("", "cloud-sun")
 
@@ -962,7 +945,6 @@ AtmosphereTab:AddSlider("AtmosphereDensity", {
 
 -- ============ MINECRAFT TEXTURE ============
 local MinecraftBox = Tabs.World:AddRightGroupbox("Minecraft Texture", "package")
-MinecraftBox:SetDescription("Applies Minecraft-style textures to the world")
 
 local MCState = {
     applied = false,
@@ -1101,8 +1083,6 @@ MinecraftBox:AddCheckbox("MinecraftTextureToggle", {
     end,
 })
 
-MinecraftBox:AddLabel("Note: Might reduce FPS on low-end devices", true)
-
 MinecraftBox:AddButton({
     Text = "Re-apply Texture",
     Func = function()
@@ -1120,7 +1100,6 @@ MinecraftBox:AddButton({
 -- ============================================================
 
 local WeatherBox = Tabs.World:AddRightGroupbox("Weather", "cloud-rain")
-WeatherBox:SetDescription("weather particles that follow your camera")
 
 local WeatherState = {
     enabled     = false,
@@ -1335,14 +1314,11 @@ WeatherBox:AddSlider("WeatherSpeed", {
     end,
 })
 
-WeatherBox:AddLabel("Note: weather follows camera position in real time", true)
-
 -- ============================================================
 -- ==================== TIME CONTROL ==========================
 -- ============================================================
 
 local TimeControlBox = Tabs.World:AddLeftGroupbox("Time Control", "clock")
-TimeControlBox:SetDescription("Custom clock time with bypass")
 
 local ClockState = {
     enabled        = false,
@@ -1475,8 +1451,6 @@ TimeControlBox:AddButton({
         })
     end,
 })
-
-TimeControlBox:AddLabel("Note: Bypasses day/night cycle by intercepting replicated ClockTime changes", true)
 
 -- ============================================================
 -- ======================= VISUAL TAB =========================
@@ -1654,7 +1628,6 @@ TracerBox:AddLabel("Target Tracer Color"):AddColorPicker("TracerColor", {
 -- ============================================================
 
 local AuraBox = Tabs.Visual:AddRightGroupbox("Wind Aura", "wind")
-AuraBox:SetDescription("Wind particle aura attached to your HumanoidRootPart")
 
 local AuraState = {
     Enabled        = false,
@@ -2233,8 +2206,6 @@ PaintTab:AddDropdown("WeaponTexture", {
     end,
 })
 
-PaintTab:AddLabel("Credits to OnlyAdrian", true)
-
 local SoundTab = WeaponModsTabbox:AddTab("", "volume-2")
 local NotifyTab = WeaponModsTabbox:AddTab("", "bell")
 local FxTab = WeaponModsTabbox:AddTab("", "sparkles")
@@ -2711,7 +2682,6 @@ end
 
 -- ============ VEHICLE MOD ============
 local VehicleModBox = Tabs.Mods:AddLeftGroupbox("Vehicle Mod", "car")
-VehicleModBox:SetDescription("Vehicle Modifications")
 local VehicleModsTabbox = VehicleModBox:AddTabbox()
 
 local VehicleFlyTab = VehicleModsTabbox:AddTab("Fly", "wind")
@@ -2760,8 +2730,6 @@ task.spawn(function()
 end)
 
 VehicleFlyTab:AddDivider()
-
-VehicleFlyTab:AddLabel("Sit in vehicle to Activate", true)
 
 VehicleFlyTab:AddSlider("VehicleFlyHeight", {
     Text = "Height (Y)",
@@ -2842,15 +2810,6 @@ VehicleCustomTab:AddButton({
         end
     end,
 })
-
-local VehicleBannableWarningLabel = VehicleCustomTab:AddLabel("Bannable, use at your own risk", true)
-
-do
-    local warningInstance = VehicleBannableWarningLabel.Holder and VehicleBannableWarningLabel.Holder:FindFirstChildOfClass("TextLabel")
-    if warningInstance then
-        warningInstance.TextColor3 = Color3.fromRGB(235, 70, 70)
-    end
-end
 
 -- ============ PLAYER OPTIONS / SPECTATE HELPERS ============
 local playerOptions = {"Select a player..."}
