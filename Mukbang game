@@ -21,7 +21,7 @@ WindUI:AddTheme({
 local Window = WindUI:CreateWindow({
     Title   = "Swiftly",
     Folder  = "Swiftly_MuBangConfig.json",
-    Icon    = "rbxassetid://9824380503",
+    Icon    = "code-xml",
     Theme   = "Dark",
     Acrylic = false,
     Transparent = true,
@@ -43,7 +43,7 @@ local Window = WindUI:CreateWindow({
     },
     OpenButton = {
         Title = "Swiftly",
-        Icon = "github",
+        Icon = "code-xml",
         CornerRadius = UDim.new(1, 0),
         StrokeThickness = 1,
         Enabled = true,
