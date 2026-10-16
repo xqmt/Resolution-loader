@@ -8,13 +8,13 @@ local LocalPlayer = Players.LocalPlayer
 -- Theme Configuration
 WindUI:AddTheme({
     Name = "Dark",
-    Accent = Color3.fromHex("#18181b"),
-    Background = Color3.fromHex("#101010"),
+    Accent = Color3.fromHex("#E8B4B8"),
+    Background = Color3.fromHex("#000000"),
     Outline = Color3.fromHex("#FFFFFF"),
     Text = Color3.fromHex("#FFFFFF"),
     Placeholder = Color3.fromHex("#7a7a7a"),
-    Button = Color3.fromHex("#52525b"),
-    Icon = Color3.fromHex("#a1a1aa"),
+    Button = Color3.fromHex("#E8B4B8"),
+    Icon = Color3.fromHex("#FDE2E4"),
 })
 
 -- Create Window
