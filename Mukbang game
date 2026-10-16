@@ -21,11 +21,11 @@ WindUI:AddTheme({
 local Window = WindUI:CreateWindow({
     Title   = "Swiftly",
     Folder  = "Swiftly_MuBangConfig.json",
-    Icon    = "github",
+    Icon    = "rbxassetid://9824380503",
     Theme   = "Dark",
     Acrylic = false,
     Transparent = true,
-    Background = "rbxassetid://7224215094",
+    Background = "rbxassetid://124089341668354",
     Size    = UDim2.fromOffset(680, 460),
     MinSize = Vector2.new(560, 350),
     MaxSize = Vector2.new(850, 560),
