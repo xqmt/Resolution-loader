@@ -7,6 +7,27 @@ task.spawn(function()
     end)
 end)
 
+-- =========================================================
+-- CUSTOM FONT (Smallest Pixel 7) for ESP
+-- =========================================================
+local HttpService = game:GetService("HttpService")
+
+local fontUrl = "https://raw.githubusercontent.com/viera1337/primordial/main/Smallest_Pixel_7.ttf"
+local fontFileName = "smallest_pixel_7.ttf"
+local jsonFileName = "smallest_pixel_7.json"
+
+if not isfile(fontFileName) then
+    writefile(fontFileName, game:HttpGet(fontUrl))
+end
+
+writefile(jsonFileName, HttpService:JSONEncode({
+    name = "SmallestPixel7",
+    faces = {{name = "Regular", weight = 400, style = "normal", assetId = getcustomasset(fontFileName)}}
+}))
+
+local SKEET_FONT = Font.new(getcustomasset(jsonFileName))
+local FONT_SIZE = 10.5
+
 -- load ui
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
@@ -17,7 +38,7 @@ Library.Font = Enum.Font.Cartoon
 Library.MainFont = Enum.Font.Cartoon 
 
 local GlobalFontSetting = Enum.Font.Cartoon
-local ESPFontSetting = Enum.Font.Cartoon
+local ESPFontSetting = SKEET_FONT
 
 local OldNotify = Library.Notify
 Library.Notify = function(self, text, time)
@@ -121,12 +142,6 @@ local HitOverlayImages = {
     ["4"] = "rbxassetid://127684638975340",
 }
 
-local SelfHighlightEnabled = false
-local SelfHighlightMainColor = Color3.fromRGB(0, 255, 150)
-local SelfHighlightOutlineColor = Color3.fromRGB(255, 255, 255)
-local SelfHighlightFillTrans = 0.5
-local SelfHighlightOutlineTrans = 0.0
-
 local SkyboxEnabled = false
 local SelectedSkybox = "Minecraft"
 local SkyboxIDs = {
@@ -214,7 +229,6 @@ local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 local TargetVelocityHistory = {}
 
--- esp connection 
 local SkeletonConnections = {
     {"Head", "UpperTorso"},
     {"UpperTorso", "LowerTorso"},
@@ -239,7 +253,6 @@ local SkeletonConnections = {
 
 local TargetGuiParent = LocalPlayer:WaitForChild("PlayerGui", 5) or (CoreGui:FindFirstChild("RobloxGui") or CoreGui)
 
--- hit overlay
 local function TriggerHitOverlay()
     if not HitOverlayEnabled then return end
 
@@ -281,7 +294,6 @@ local function TriggerHitOverlay()
     end)
 end
 
--- hit notify
 local function ShowCustomHitNotification(targetName, partName, damage, weaponName)
     if not HitNotifyEnabled then return end
     
@@ -296,7 +308,6 @@ local function ShowCustomHitNotification(targetName, partName, damage, weaponNam
     Library:Notify(notifyText, HitNotifyDuration)
 end
 
--- hit sounds 
 local function PlayHitSound()
     if HitSoundMode == "None" or not SoundIDs[HitSoundMode] then return end
     local Sound = Instance.new("Sound")
@@ -307,7 +318,6 @@ local function PlayHitSound()
     Sound:Destroy()
 end
 
--- skybox
 local function UpdateSkybox()
     for _, obj in ipairs(Lighting:GetChildren()) do
         if obj:IsA("Sky") and (obj.Name == "hooksenseSky" or obj.Name == "Sky") then
@@ -335,7 +345,6 @@ local function UpdateSkybox()
     end
 end
 
--- atmosphere 
 local function UpdateAtmosphere()
     local atmos = Lighting:FindFirstChildOfClass("Atmosphere")
     if AtmosphereEnabled then
@@ -370,7 +379,6 @@ end
 
 UpdateAtmosphere()
 
--- aura particle
 local function ClearAuraParticles()
 	for i = #ActiveParticles, 1, -1 do
 		if ActiveParticles[i] then
@@ -444,7 +452,6 @@ if LocalPlayer.Character then
 	end
 end
 
--- other
 local DeltaGradientGui = Instance.new("ScreenGui")
 DeltaGradientGui.Name = "hooksense_DeltaGradientGui"
 DeltaGradientGui.ResetOnSpawn = false
@@ -538,7 +545,6 @@ local function isBehindWall(targetPart)
     return raycastResult ~= nil
 end
 
--- Check status for Da Hood (Knocked / Grabbed)
 local function isKnocked(char)
     if not KnockCheckEnabled or not char then return false end
     local koValue = char:FindFirstChild("KO") or char:FindFirstChild("K.O")
@@ -613,7 +619,6 @@ local function GetTargetInFOV()
     return TempPlayer, TempTargetChar
 end
 
--- lock button 
 local LockButtonGui = Instance.new("ScreenGui")
 LockButtonGui.Name = "hooksense_TargetLockButtonGui"
 LockButtonGui.ResetOnSpawn = false
@@ -888,14 +893,12 @@ local function BindHealthTracker(targetPlayer)
     end)
 end
 
--- void hide
 local RunService = game:GetService("RunService")
 local spinAngle = 0
 local jitterToggle = false
 local LastCameraRotation = Camera.CFrame.LookVector
 
 RunService.RenderStepped:Connect(function()
-    -- Auto Shoot Logic
     if AutoShootEnabled and SilentAimEnabled and CurrentAimTargetPosition then
         if LocalPlayer.Character then
             local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
@@ -1226,7 +1229,7 @@ Options.TransitionSpeedSlider:OnChanged(function()
     TransitionSpeed = Options.TransitionSpeedSlider.Value
 end)
 
-TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Distance", Default = 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999, Min = 1, Max = 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999, Rounding = 0 })
+TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Distance", Default = 10000, Min = 1, Max = 100000, Rounding = 0 })
 Options.MaxDistanceSlider:OnChanged(function()
     MaxTargetDistance = Options.MaxDistanceSlider.Value
 end)
@@ -1523,7 +1526,7 @@ local function CreateTitleLabel(name)
     label.Name = name or "ESP_TitleLabel"
     label.BackgroundTransparency = 1
     label.BorderSizePixel = 0
-    label.Font = ESPFontSetting
+    label.FontFace = SKEET_FONT
     label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
     label.TextStrokeTransparency = 0.2
     label.Visible = false
@@ -1991,7 +1994,7 @@ RunService.RenderStepped:Connect(function()
                             })
 
                             if Toggles.EspHealthText and Toggles.EspHealthText.Value then
-                                esp.HealthText.Font = ESPFontSetting
+                                esp.HealthText.FontFace = SKEET_FONT
                                 esp.HealthText.Text = tostring(math.round(targetHp))
                                 esp.HealthText.TextSize = hpTextSizeCustom or subTextSize
                                 esp.HealthText.TextColor3 = hpTextColor
@@ -2034,7 +2037,7 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         if Toggles.EspName and Toggles.EspName.Value then
-                            esp.Name.Font = ESPFontSetting
+                            esp.Name.FontFace = SKEET_FONT
                             esp.Name.Text = selectedName
                             esp.Name.TextSize = dynamicNameSize
                             esp.Name.TextColor3 = nameColor
@@ -2053,7 +2056,7 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         if Toggles.EspDistance and Toggles.EspDistance.Value then
-                            esp.Distance.Font = ESPFontSetting
+                            esp.Distance.FontFace = SKEET_FONT
                             local dist = math.floor(currentDist)
                             esp.Distance.Text = "[ " .. tostring(dist) .. "m ]"
                             esp.Distance.TextSize = distSizeCustom or subTextSize
@@ -2072,7 +2075,7 @@ RunService.RenderStepped:Connect(function()
                             local heldTool = character:FindFirstChildOfClass("Tool")
                             local toolName = heldTool and heldTool.Name or "None"
 
-                            esp.Tool.Font = ESPFontSetting
+                            esp.Tool.FontFace = SKEET_FONT
                             esp.Tool.Text = toolName
                             esp.Tool.TextSize = toolSizeCustom or subTextSize
                             esp.Tool.TextColor3 = toolColor
@@ -2134,19 +2137,15 @@ HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromR
 EspLineGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
 EspLineGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.95, Min = 0, Max = 1, Rounding = 2 })
 
-EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "Font", Values = RobloxFontsList, Default = table.find(RobloxFontsList, "SourceSansBold") or 1, Multi = false })
+EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "Font", Values = {"SmallestPixel7"}, Default = 1, Multi = false })
 
-Options.ESPFontDropdown:OnChanged(function(val)
+Options.ESPFontDropdown:OnChanged(function()
     pcall(function()
-        local selectedFontName = type(val) == "string" and val or Options.ESPFontDropdown.Value
-        local targetFont = Enum.Font[selectedFontName]
-        if not targetFont then return end
-        ESPFontSetting = targetFont
         for _, esp in pairs(ESP_Drawing_Storage) do
-            if esp.Name then esp.Name.Font = targetFont end
-            if esp.HealthText then esp.HealthText.Font = targetFont end
-            if esp.Distance then esp.Distance.Font = targetFont end
-            if esp.Tool then esp.Tool.Font = targetFont end
+            if esp.Name then esp.Name.FontFace = SKEET_FONT end
+            if esp.HealthText then esp.HealthText.FontFace = SKEET_FONT end
+            if esp.Distance then esp.Distance.FontFace = SKEET_FONT end
+            if esp.Tool then esp.Tool.FontFace = SKEET_FONT end
         end
     end)
 end)
@@ -2184,11 +2183,11 @@ SkeletonToggle:AddColorPicker("SkeletonOutlineColor", { Default = Color3.fromRGB
 EspSkeletonGroup:AddSlider("SkeletonThicknessSlider", { Text = "Skeleton Line Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
 EspSkeletonGroup:AddSlider("SkeletonOutlineThicknessSlider", { Text = "Skeleton Outline Thickness", Default = 2.5, Min = 1.0, Max = 8.0, Rounding = 1 })
 
-TextSizeGroup:AddToggle("CustomTextSize", { Text = "Enable", Default = false })
-TextSizeGroup:AddSlider("NameSizeSlider", { Text = "Name Size", Default = 13, Min = 6, Max = 40, Rounding = 0 })
-TextSizeGroup:AddSlider("HpTextSizeSlider", { Text = "HP Text Size", Default = 10, Min = 6, Max = 40, Rounding = 0 })
-TextSizeGroup:AddSlider("DistanceSizeSlider", { Text = "Distance Size", Default = 10, Min = 6, Max = 40, Rounding = 0 })
-TextSizeGroup:AddSlider("ToolEquippedSizeSlider", { Text = "Tool Equipped Size", Default = 10, Min = 6, Max = 40, Rounding = 0 })
+TextSizeGroup:AddToggle("CustomTextSize", { Text = "Enable", Default = true })
+TextSizeGroup:AddSlider("NameSizeSlider", { Text = "Name Size", Default = 9, Min = 6, Max = 40, Rounding = 0 })
+TextSizeGroup:AddSlider("HpTextSizeSlider", { Text = "HP Text Size", Default = 9, Min = 6, Max = 40, Rounding = 0 })
+TextSizeGroup:AddSlider("DistanceSizeSlider", { Text = "Distance Size", Default = 9, Min = 6, Max = 40, Rounding = 0 })
+TextSizeGroup:AddSlider("ToolEquippedSizeSlider", { Text = "Tool Equipped Size", Default = 9, Min = 6, Max = 40, Rounding = 0 })
 
 local MoveLeftBox = Tabs.Movement:AddLeftGroupbox("Anti Aim")
 local CharacterModifierBox = Tabs.Movement:AddRightGroupbox("Void Hide")
