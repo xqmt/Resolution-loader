@@ -7,6 +7,8 @@ task.spawn(function()
     end)
 end)
 
+local HttpService = game:GetService("HttpService")
+
 local fontUrl = "https://raw.githubusercontent.com/viera1337/primordial/main/Smallest_Pixel_7.ttf"
 local fontFileName = "smallest_pixel_7.ttf"
 local jsonFileName = "smallest_pixel_7.json"
@@ -1224,7 +1226,7 @@ Options.TransitionSpeedSlider:OnChanged(function()
     TransitionSpeed = Options.TransitionSpeedSlider.Value
 end)
 
-TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Distance", Default = 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999, Min = 1, Max = 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999, Rounding = 0 })
+TargetGroupBox:AddSlider("MaxDistanceSlider", { Text = "Max Distance", Default = 10000, Min = 1, Max = 100000, Rounding = 0 })
 Options.MaxDistanceSlider:OnChanged(function()
     MaxTargetDistance = Options.MaxDistanceSlider.Value
 end)
