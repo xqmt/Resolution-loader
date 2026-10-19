@@ -25,6 +25,53 @@ writefile(jsonFileName, HttpService:JSONEncode({
 local SKEET_FONT = Font.new(getcustomasset(jsonFileName))
 local FONT_SIZE = 10.5
 
+local function DownloadAndRegisterFont(displayName, fileName, url)
+    if not isfile(fileName) then
+        local ok, data = pcall(function()
+            return game:HttpGet(url, true)
+        end)
+        if ok and data and #data > 0 then
+            writefile(fileName, data)
+        else
+            return nil
+        end
+    end
+
+    local jsonFile = displayName .. ".json"
+    local okJson = pcall(function()
+        writefile(jsonFile, HttpService:JSONEncode({
+            name = displayName,
+            faces = {{
+                name = "Regular",
+                weight = 400,
+                style = "normal",
+                assetId = getcustomasset(fileName)
+            }}
+        }))
+    end)
+    if not okJson then return nil end
+
+    local okFont, fontObj = pcall(function()
+        return Font.new(getcustomasset(jsonFile))
+    end)
+    return okFont and fontObj or nil
+end
+
+local CustomFonts = {
+    ["SmallestPixel7"] = SKEET_FONT,
+}
+
+CustomFonts["proggy tiny"] = DownloadAndRegisterFont(
+    "proggy tiny",
+    "ProggyTiny.ttf",
+    "https://raw.githubusercontent.com/DE4CON/ProggyTiny/main/ProggyTiny.ttf"
+)
+
+-- fallback to SmallestPixel7 if download failed
+if not CustomFonts["proggy tiny"] then
+    CustomFonts["proggy tiny"] = SKEET_FONT
+end
+
 -- load ui
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
@@ -1523,7 +1570,7 @@ local function CreateTitleLabel(name)
     label.Name = name or "ESP_TitleLabel"
     label.BackgroundTransparency = 1
     label.BorderSizePixel = 0
-    label.FontFace = SKEET_FONT
+    label.FontFace = ESPFontSetting
     label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
     label.TextStrokeTransparency = 0.2
     label.Visible = false
@@ -1536,9 +1583,6 @@ local function ImplementESPSetup(holder)
     pcall(function()
         holder.BoxOutline = CreateSquare(3, Color3.fromRGB(0, 0, 0))
         holder.BoxMain = CreateSquare(1, Color3.fromRGB(255, 255, 255))
-
-        holder.LineESPOutline = CreateLine(3, Color3.fromRGB(0, 0, 0))
-        holder.LineESPMain = CreateLine(1, Color3.fromRGB(255, 255, 255))
 
         holder.SkeletonLines = {}
         for i = 1, #SkeletonConnections do
@@ -1658,9 +1702,6 @@ local function SetVisibilityFalse(esp)
         if esp.BoxOutline then esp.BoxOutline.Visible = false end
         if esp.BoxMain then esp.BoxMain.Visible = false end
 
-        if esp.LineESPOutline then esp.LineESPOutline.Visible = false end
-        if esp.LineESPMain then esp.LineESPMain.Visible = false end
-
         if esp.SkeletonLines then
             for _, pair in ipairs(esp.SkeletonLines) do
                 if pair.Outline then pair.Outline.Visible = false end
@@ -1711,13 +1752,6 @@ RunService.RenderStepped:Connect(function()
         local skeletonOutlineColor = GetColor("SkeletonOutlineColor", Color3.fromRGB(0, 0, 0))
         local skeletonThickness = Options.SkeletonThicknessSlider and Options.SkeletonThicknessSlider.Value or 1.5
         local skeletonOutlineThickness = Options.SkeletonOutlineThicknessSlider and Options.SkeletonOutlineThicknessSlider.Value or 3.5
-
-        local lineESPEnabled = Toggles.EspLine and Toggles.EspLine.Value
-        local lineESPColor = GetColor("LineESPColor", Color3.fromRGB(255, 255, 255))
-        local lineESPOutlineColor = GetColor("LineESPOutlineColor", Color3.fromRGB(0, 0, 0))
-        local lineESPThickness = Options.LineESPThicknessSlider and Options.LineESPThicknessSlider.Value or 1.5
-        local lineESPOutlineThickness = Options.LineESPOutlineThicknessSlider and Options.LineESPOutlineThicknessSlider.Value or 3.5
-        local lineESPPosMode = Options.LineESPPosDropdown and Options.LineESPPosDropdown.Value or "Bottom"
 
         local nameColor = GetColor("NameColor", Color3.fromRGB(255, 255, 255))
         local distColor = GetColor("DistColor", Color3.fromRGB(255, 255, 255))
@@ -1862,35 +1896,6 @@ RunService.RenderStepped:Connect(function()
                             if esp.BoxMain then esp.BoxMain.Visible = false end
                         end
 
-                        if lineESPEnabled then
-                            local lineStartPos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
-                            if lineESPPosMode == "Center" then
-                                lineStartPos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-                            elseif lineESPPosMode == "Top" then
-                                lineStartPos = Vector2.new(Camera.ViewportSize.X / 2, 0)
-                            end
-
-                            local targetPos2D = Vector2.new(rootPos.X, rootPos.Y)
-
-                            if esp.LineESPOutline then
-                                esp.LineESPOutline.From = lineStartPos
-                                esp.LineESPOutline.To = targetPos2D
-                                esp.LineESPOutline.Thickness = lineESPOutlineThickness
-                                esp.LineESPOutline.Color = lineESPOutlineColor
-                                esp.LineESPOutline.Visible = true
-                            end
-                            if esp.LineESPMain then
-                                esp.LineESPMain.From = lineStartPos
-                                esp.LineESPMain.To = targetPos2D
-                                esp.LineESPMain.Thickness = lineESPThickness
-                                esp.LineESPMain.Color = lineESPColor
-                                esp.LineESPMain.Visible = true
-                            end
-                        else
-                            if esp.LineESPOutline then esp.LineESPOutline.Visible = false end
-                            if esp.LineESPMain then esp.LineESPMain.Visible = false end
-                        end
-
                         if skeletonEnabled then
                             for idx, connection in ipairs(SkeletonConnections) do
                                 local partA = character:FindFirstChild(connection[1])
@@ -1991,7 +1996,7 @@ RunService.RenderStepped:Connect(function()
                             })
 
                             if Toggles.EspHealthText and Toggles.EspHealthText.Value then
-                                esp.HealthText.FontFace = SKEET_FONT
+                                esp.HealthText.FontFace = ESPFontSetting
                                 esp.HealthText.Text = tostring(math.round(targetHp))
                                 esp.HealthText.TextSize = hpTextSizeCustom or subTextSize
                                 esp.HealthText.TextColor3 = hpTextColor
@@ -2034,7 +2039,7 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         if Toggles.EspName and Toggles.EspName.Value then
-                            esp.Name.FontFace = SKEET_FONT
+                            esp.Name.FontFace = ESPFontSetting
                             esp.Name.Text = selectedName
                             esp.Name.TextSize = dynamicNameSize
                             esp.Name.TextColor3 = nameColor
@@ -2053,7 +2058,7 @@ RunService.RenderStepped:Connect(function()
                         end
 
                         if Toggles.EspDistance and Toggles.EspDistance.Value then
-                            esp.Distance.FontFace = SKEET_FONT
+                            esp.Distance.FontFace = ESPFontSetting
                             local dist = math.floor(currentDist)
                             esp.Distance.Text = "[ " .. tostring(dist) .. "m ]"
                             esp.Distance.TextSize = distSizeCustom or subTextSize
@@ -2072,7 +2077,7 @@ RunService.RenderStepped:Connect(function()
                             local heldTool = character:FindFirstChildOfClass("Tool")
                             local toolName = heldTool and heldTool.Name or "None"
 
-                            esp.Tool.FontFace = SKEET_FONT
+                            esp.Tool.FontFace = ESPFontSetting
                             esp.Tool.Text = toolName
                             esp.Tool.TextSize = toolSizeCustom or subTextSize
                             esp.Tool.TextColor3 = toolColor
@@ -2098,7 +2103,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 local EspMainGroup = Tabs.ESP:AddLeftGroupbox("ESP Main")
-local EspLineGroup = Tabs.ESP:AddLeftGroupbox("Line & Highlight")
+local EspLineGroup = Tabs.ESP:AddLeftGroupbox("Highlight")
 
 local EspTextGroup = Tabs.ESP:AddRightGroupbox("Text & Display")
 local EspSkeletonGroup = Tabs.ESP:AddRightGroupbox("Skeleton")
@@ -2118,14 +2123,6 @@ EspMainGroup:AddLabel("Fill Color 3"):AddColorPicker("EspBoxFillColor3", { Defau
 EspMainGroup:AddToggle("EspBoxFillRotate", { Text = "Rotate Fill", Default = false })
 EspMainGroup:AddSlider("EspBoxFillRotateSpeed", { Text = "Fill Rotation Speed", Default = 1, Min = 1, Max = 10, Rounding = 1 })
 
-local LineESPToggle = EspLineGroup:AddToggle("EspLine", { Text = "Enable Line ESP", Default = false })
-LineESPToggle:AddColorPicker("LineESPColor", { Default = Color3.fromRGB(255, 255, 255), Title = "Line ESP Color" })
-LineESPToggle:AddColorPicker("LineESPOutlineColor", { Default = Color3.fromRGB(0, 0, 0), Title = "Line ESP Outline Color" })
-
-EspLineGroup:AddDropdown("LineESPPosDropdown", { Text = "Line ESP Position", Values = {"Bottom", "Center", "Top"}, Default = 1, Multi = false })
-EspLineGroup:AddSlider("LineESPThicknessSlider", { Text = "Line ESP Thickness", Default = 1, Min = 0.5, Max = 5.0, Rounding = 1 })
-EspLineGroup:AddSlider("LineESPOutlineThicknessSlider", { Text = "Line ESP Outline Thickness", Default = 2.5, Min = 1.0, Max = 8.0, Rounding = 1 })
-
 local HighlightToggle = EspLineGroup:AddToggle("EspHighlight", { Text = "Enable Highlights", Default = false })
 HighlightToggle:AddColorPicker("HighlightVisibleColor", { Default = Color3.fromRGB(0, 255, 0), Title = "Visible Color" })
 HighlightToggle:AddColorPicker("HighlightInvisibleColor", { Default = Color3.fromRGB(255, 0, 0), Title = "Invisible Color" })
@@ -2134,15 +2131,22 @@ HighlightToggle:AddColorPicker("HighlightOutlineColor", { Default = Color3.fromR
 EspLineGroup:AddSlider("HighlightFillTransSlider", { Text = "Main Color Transparency", Default = 0.55, Min = 0, Max = 1, Rounding = 2 })
 EspLineGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Transparency", Default = 0.95, Min = 0, Max = 1, Rounding = 2 })
 
-EspTextGroup:AddDropdown("ESPFontDropdown", { Text = "Font", Values = {"SmallestPixel7"}, Default = 1, Multi = false })
+EspTextGroup:AddDropdown("ESPFontDropdown", {
+    Text = "Font",
+    Values = {"SmallestPixel7", "proggy tiny"},
+    Default = 1,
+    Multi = false
+})
 
 Options.ESPFontDropdown:OnChanged(function()
     pcall(function()
+        local selectedName = Options.ESPFontDropdown.Value
+        ESPFontSetting = CustomFonts[selectedName] or SKEET_FONT
         for _, esp in pairs(ESP_Drawing_Storage) do
-            if esp.Name then esp.Name.FontFace = SKEET_FONT end
-            if esp.HealthText then esp.HealthText.FontFace = SKEET_FONT end
-            if esp.Distance then esp.Distance.FontFace = SKEET_FONT end
-            if esp.Tool then esp.Tool.FontFace = SKEET_FONT end
+            if esp.Name then esp.Name.FontFace = ESPFontSetting end
+            if esp.HealthText then esp.HealthText.FontFace = ESPFontSetting end
+            if esp.Distance then esp.Distance.FontFace = ESPFontSetting end
+            if esp.Tool then esp.Tool.FontFace = ESPFontSetting end
         end
     end)
 end)
