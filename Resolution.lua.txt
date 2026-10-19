@@ -72,6 +72,14 @@ if not CustomFonts["proggy tiny"] then
     CustomFonts["proggy tiny"] = SKEET_FONT
 end
 
+-- SourceSansBold from Enum.Font
+pcall(function()
+    CustomFonts["SourceSansBold"] = Font.fromEnum(Enum.Font.SourceSansBold)
+end)
+if not CustomFonts["SourceSansBold"] then
+    CustomFonts["SourceSansBold"] = SKEET_FONT
+end
+
 -- load ui
 local repo = "https://raw.githubusercontent.com/cloudsense-pub/UELinoriaLib/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
@@ -2133,7 +2141,7 @@ EspLineGroup:AddSlider("HighlightOutlineTransSlider", { Text = "Outline Color Tr
 
 EspTextGroup:AddDropdown("ESPFontDropdown", {
     Text = "Font",
-    Values = {"SmallestPixel7", "proggy tiny"},
+    Values = {"SmallestPixel7", "proggy tiny", "SourceSansBold"},
     Default = 1,
     Multi = false
 })
