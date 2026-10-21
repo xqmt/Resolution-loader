@@ -558,7 +558,7 @@ do
 	local createWindow = v3.CreateWindow
 
 	local tbl = {
-		Title = "Onyx - Premium",
+		Title = "Swiftly - Premium",
 		Icon = "solar:planet-bold",
 		Author = "Murder Mystery 2",
 		Folder = "OnyxV2",
@@ -587,13 +587,13 @@ end
 v2:Tag({ Title = "@OnyxScripts", Icon = "youtube", Color = Color3.fromHex("#ffffff"), Radius = 6 })
 
 v2:Tag({
-	Title = "discord.gg/onyxscripts",
+	Title = "Cracked",
 	Icon = "message-square-more",
 	Color = Color3.fromHex("#ffffff"),
 	Radius = 6,
 })
 
-v2:Tag({ Title = "Mobile & PC", Icon = "smartphone", Color = Color3.fromHex("#ffffff"), Radius = 6 })
+v2:Tag({ Title = "v3", Icon = "github", Color = Color3.fromHex("#ffffff"), Radius = 6 })
 
 task.spawn(function()
 	local tbl = { ["discord.gg/onyxscripts"] = true, ["Mobile & PC"] = true, ["@OnyxScripts"] = true }
