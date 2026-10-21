@@ -248,7 +248,7 @@ do
 	textLabel.TextXAlignment = Enum.TextXAlignment.Left
 	textLabel.TextColor3 = Color3.fromRGB(242, 242, 248)
 	textLabel.TextTransparency = 1
-	textLabel.Text = "Loading Swiftly..."
+	textLabel.Text = "Loading U T O P I A ..."
 	textLabel.Parent = frame2
 	local textLabel2 = Instance.new("TextLabel")
 	textLabel2.Position = UDim2.fromOffset(81, 43)
