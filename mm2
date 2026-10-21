@@ -558,7 +558,7 @@ do
 	local createWindow = v3.CreateWindow
 
 	local tbl = {
-		Title = "U T O P I A",
+		Title = "U T O P I A - Premium",
 		Icon = "solar:planet-bold",
 		Author = "Murder Mystery 2",
 		Folder = "OnyxV2",
@@ -584,7 +584,6 @@ do
 	v2 = createWindow(v3, tbl)
 end
 
-v2:Tag({ Title = "Premium", Icon = "star", Color = Color3.fromHex("#ffffff"), Radius = 6 })
 
 task.spawn(function()
 	local tbl = { ["discord.gg/onyxscripts"] = true, ["Mobile & PC"] = true, ["@OnyxScripts"] = true }
