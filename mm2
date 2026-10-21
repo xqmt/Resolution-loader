@@ -558,7 +558,7 @@ do
 	local createWindow = v3.CreateWindow
 
 	local tbl = {
-		Title = "Swiftly - Premium",
+		Title = "U T O P I A",
 		Icon = "solar:planet-bold",
 		Author = "Murder Mystery 2",
 		Folder = "OnyxV2",
@@ -585,8 +585,6 @@ do
 end
 
 v2:Tag({ Title = "Premium", Icon = "star", Color = Color3.fromHex("#ffffff"), Radius = 6 })
-
-v2:Tag({ Title = "v3", Icon = "github", Color = Color3.fromHex("#ffffff"), Radius = 6 })
 
 task.spawn(function()
 	local tbl = { ["discord.gg/onyxscripts"] = true, ["Mobile & PC"] = true, ["@OnyxScripts"] = true }
@@ -824,7 +822,7 @@ end)
 local color = Color3.fromHex
 
 v2:EditOpenButton({
-	Title = "Open Swiftly",
+	Title = "U T O P I A",
 	Icon = "solar:planet-bold",
 	CornerRadius = UDim.new(0, 16),
 	StrokeThickness = 1.5,
