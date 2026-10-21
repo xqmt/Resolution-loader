@@ -248,7 +248,7 @@ do
 	textLabel.TextXAlignment = Enum.TextXAlignment.Left
 	textLabel.TextColor3 = Color3.fromRGB(242, 242, 248)
 	textLabel.TextTransparency = 1
-	textLabel.Text = "Loading Onyx"
+	textLabel.Text = "Loading Swiftly..."
 	textLabel.Parent = frame2
 	local textLabel2 = Instance.new("TextLabel")
 	textLabel2.Position = UDim2.fromOffset(81, 43)
@@ -584,14 +584,7 @@ do
 	v2 = createWindow(v3, tbl)
 end
 
-v2:Tag({ Title = "@OnyxScripts", Icon = "youtube", Color = Color3.fromHex("#ffffff"), Radius = 6 })
-
-v2:Tag({
-	Title = "Cracked",
-	Icon = "message-square-more",
-	Color = Color3.fromHex("#ffffff"),
-	Radius = 6,
-})
+v2:Tag({ Title = "Premium", Icon = "star", Color = Color3.fromHex("#ffffff"), Radius = 6 })
 
 v2:Tag({ Title = "v3", Icon = "github", Color = Color3.fromHex("#ffffff"), Radius = 6 })
 
@@ -831,10 +824,10 @@ end)
 local color = Color3.fromHex
 
 v2:EditOpenButton({
-	Title = "Onyx",
+	Title = "Open Swiftly",
 	Icon = "solar:planet-bold",
 	CornerRadius = UDim.new(0, 16),
-	StrokeThickness = 2,
+	StrokeThickness = 1.5,
 	Color = ColorSequence.new(Color3.fromHex("#2a2a32"), color("#c9c9d4")),
 	OnlyMobile = false,
 	Enabled = true,
