@@ -558,7 +558,7 @@ do
 	local createWindow = v3.CreateWindow
 
 	local tbl = {
-		Title = "U T O P I A - Premium",
+		Title = "cyrus.xyz",
 		Icon = "solar:planet-bold",
 		Author = "Murder Mystery 2",
 		Folder = "OnyxV2",
@@ -821,7 +821,7 @@ end)
 local color = Color3.fromHex
 
 v2:EditOpenButton({
-	Title = "U T O P I A",
+	Title = "cyrus.xyz",
 	Icon = "solar:planet-bold",
 	CornerRadius = UDim.new(0, 16),
 	StrokeThickness = 1.5,
